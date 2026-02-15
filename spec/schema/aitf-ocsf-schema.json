@@ -1,0 +1,330 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitf.io/schema/ocsf/v1",
+  "title": "AITF OCSF Event Schema",
+  "description": "JSON Schema for AITF OCSF Category 7 AI events",
+  "type": "object",
+  "definitions": {
+    "OCSFMetadata": {
+      "type": "object",
+      "required": ["version", "product"],
+      "properties": {
+        "version": { "type": "string", "const": "1.1.0" },
+        "product": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "default": "AITF" },
+            "vendor_name": { "type": "string" },
+            "version": { "type": "string" }
+          }
+        },
+        "uid": { "type": "string", "format": "uuid" },
+        "correlation_uid": { "type": "string" },
+        "original_time": { "type": "string", "format": "date-time" },
+        "logged_time": { "type": "string", "format": "date-time" }
+      }
+    },
+    "OCSFActor": {
+      "type": "object",
+      "properties": {
+        "user": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "uid": { "type": "string" },
+            "email_addr": { "type": "string", "format": "email" },
+            "type": { "type": "string" }
+          }
+        },
+        "session": {
+          "type": "object",
+          "properties": {
+            "uid": { "type": "string" },
+            "created_time": { "type": "string", "format": "date-time" }
+          }
+        },
+        "app_name": { "type": "string" }
+      }
+    },
+    "OCSFDevice": {
+      "type": "object",
+      "properties": {
+        "hostname": { "type": "string" },
+        "ip": { "type": "string" },
+        "type": { "type": "string" },
+        "os": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "version": { "type": "string" }
+          }
+        },
+        "cloud": {
+          "type": "object",
+          "properties": {
+            "provider": { "type": "string" },
+            "region": { "type": "string" },
+            "account_uid": { "type": "string" }
+          }
+        },
+        "container": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "uid": { "type": "string" },
+            "image": { "type": "string" }
+          }
+        }
+      }
+    },
+    "AIModelInfo": {
+      "type": "object",
+      "required": ["model_id", "provider"],
+      "properties": {
+        "model_id": { "type": "string" },
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "provider": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["llm", "embedding", "image", "audio", "multimodal"]
+        },
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "temperature": { "type": "number" },
+            "top_p": { "type": "number" },
+            "max_tokens": { "type": "integer" }
+          }
+        }
+      }
+    },
+    "AITokenUsage": {
+      "type": "object",
+      "properties": {
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "total_tokens": { "type": "integer", "minimum": 0 },
+        "cached_tokens": { "type": "integer", "minimum": 0 },
+        "reasoning_tokens": { "type": "integer", "minimum": 0 },
+        "estimated_cost_usd": { "type": "number", "minimum": 0 }
+      }
+    },
+    "AILatencyMetrics": {
+      "type": "object",
+      "properties": {
+        "total_ms": { "type": "number", "minimum": 0 },
+        "time_to_first_token_ms": { "type": "number", "minimum": 0 },
+        "tokens_per_second": { "type": "number", "minimum": 0 },
+        "queue_time_ms": { "type": "number", "minimum": 0 },
+        "inference_time_ms": { "type": "number", "minimum": 0 }
+      }
+    },
+    "ComplianceMetadata": {
+      "type": "object",
+      "properties": {
+        "nist_ai_rmf": {
+          "type": "object",
+          "properties": {
+            "controls": { "type": "array", "items": { "type": "string" } },
+            "function": { "type": "string" }
+          }
+        },
+        "mitre_atlas": {
+          "type": "object",
+          "properties": {
+            "techniques": { "type": "array", "items": { "type": "string" } },
+            "tactic": { "type": "string" }
+          }
+        },
+        "iso_42001": {
+          "type": "object",
+          "properties": {
+            "controls": { "type": "array", "items": { "type": "string" } },
+            "clause": { "type": "string" }
+          }
+        },
+        "eu_ai_act": {
+          "type": "object",
+          "properties": {
+            "articles": { "type": "array", "items": { "type": "string" } },
+            "risk_level": { "type": "string" }
+          }
+        },
+        "soc2": {
+          "type": "object",
+          "properties": {
+            "controls": { "type": "array", "items": { "type": "string" } },
+            "criteria": { "type": "string" }
+          }
+        },
+        "gdpr": {
+          "type": "object",
+          "properties": {
+            "articles": { "type": "array", "items": { "type": "string" } },
+            "lawful_basis": { "type": "string" }
+          }
+        },
+        "ccpa": {
+          "type": "object",
+          "properties": {
+            "sections": { "type": "array", "items": { "type": "string" } },
+            "category": { "type": "string" }
+          }
+        }
+      }
+    },
+    "AISecurityFinding": {
+      "type": "object",
+      "required": ["finding_type", "risk_level", "risk_score", "confidence"],
+      "properties": {
+        "finding_type": { "type": "string" },
+        "owasp_category": { "type": "string" },
+        "risk_level": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low", "info"]
+        },
+        "risk_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "detection_method": { "type": "string" },
+        "blocked": { "type": "boolean" },
+        "details": { "type": "string" },
+        "pii_types": { "type": "array", "items": { "type": "string" } },
+        "matched_patterns": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "AIBaseEvent": {
+      "type": "object",
+      "required": ["activity_id", "category_uid", "class_uid", "type_uid", "time", "severity_id", "status_id", "metadata"],
+      "properties": {
+        "activity_id": { "type": "integer" },
+        "category_uid": { "type": "integer", "const": 7 },
+        "class_uid": { "type": "integer" },
+        "type_uid": { "type": "integer" },
+        "time": { "type": "string", "format": "date-time" },
+        "severity_id": { "type": "integer", "minimum": 0, "maximum": 6 },
+        "status_id": { "type": "integer" },
+        "message": { "type": "string" },
+        "metadata": { "$ref": "#/definitions/OCSFMetadata" },
+        "actor": { "$ref": "#/definitions/OCSFActor" },
+        "device": { "$ref": "#/definitions/OCSFDevice" },
+        "compliance": { "$ref": "#/definitions/ComplianceMetadata" },
+        "observables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "type": "string" },
+              "value": { "type": "string" }
+            }
+          }
+        },
+        "enrichments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "value": { "type": "string" },
+              "type": { "type": "string" },
+              "provider": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "AIModelInferenceEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/AIBaseEvent" },
+        {
+          "type": "object",
+          "required": ["model", "token_usage", "finish_reason"],
+          "properties": {
+            "class_uid": { "const": 7001 },
+            "model": { "$ref": "#/definitions/AIModelInfo" },
+            "token_usage": { "$ref": "#/definitions/AITokenUsage" },
+            "latency": { "$ref": "#/definitions/AILatencyMetrics" },
+            "request_content": { "type": "string" },
+            "response_content": { "type": "string" },
+            "streaming": { "type": "boolean" },
+            "tools_provided": { "type": "integer" },
+            "finish_reason": { "type": "string" },
+            "cost": {
+              "type": "object",
+              "properties": {
+                "input_cost_usd": { "type": "number" },
+                "output_cost_usd": { "type": "number" },
+                "total_cost_usd": { "type": "number" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AIAgentActivityEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/AIBaseEvent" },
+        {
+          "type": "object",
+          "required": ["agent_name", "agent_id", "session_id"],
+          "properties": {
+            "class_uid": { "const": 7002 },
+            "agent_name": { "type": "string" },
+            "agent_id": { "type": "string" },
+            "agent_type": { "type": "string" },
+            "framework": { "type": "string" },
+            "session_id": { "type": "string" },
+            "step_type": { "type": "string" },
+            "step_index": { "type": "integer" },
+            "thought": { "type": "string" },
+            "action": { "type": "string" },
+            "observation": { "type": "string" },
+            "delegation_target": { "type": "string" },
+            "team_info": {
+              "type": "object",
+              "properties": {
+                "team_name": { "type": "string" },
+                "topology": { "type": "string" },
+                "members": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AIToolExecutionEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/AIBaseEvent" },
+        {
+          "type": "object",
+          "required": ["tool_name", "tool_type", "is_error"],
+          "properties": {
+            "class_uid": { "const": 7003 },
+            "tool_name": { "type": "string" },
+            "tool_type": { "type": "string" },
+            "tool_input": { "type": "string" },
+            "tool_output": { "type": "string" },
+            "is_error": { "type": "boolean" },
+            "duration_ms": { "type": "number" },
+            "mcp_server": { "type": "string" },
+            "skill_category": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "AISecurityFindingEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/AIBaseEvent" },
+        {
+          "type": "object",
+          "required": ["finding_type", "risk_level", "risk_score", "confidence", "blocked"],
+          "properties": {
+            "class_uid": { "const": 7005 },
+            "finding": { "$ref": "#/definitions/AISecurityFinding" }
+          }
+        }
+      ]
+    }
+  }
+}
