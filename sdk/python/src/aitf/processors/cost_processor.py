@@ -6,12 +6,16 @@ based on model pricing tables and token usage.
 
 from __future__ import annotations
 
+import threading
 from typing import Any
 
 from opentelemetry.context import Context
 from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
 
 from aitf.semantic_conventions.attributes import CostAttributes, GenAIAttributes
+
+# Maximum reasonable token count per request (prevents overflow/abuse)
+_MAX_TOKENS = 10_000_000
 
 # Model pricing per 1M tokens (USD) - updated Feb 2026
 MODEL_PRICING: dict[str, dict[str, float]] = {
@@ -82,6 +86,7 @@ class CostProcessor(SpanProcessor):
         self._budget_limit = budget_limit
         self._currency = currency
         self._total_cost = 0.0
+        self._lock = threading.Lock()
 
     def on_start(self, span: Span, parent_context: Context | None = None) -> None:
         """Add default attribution attributes."""
@@ -106,7 +111,8 @@ class CostProcessor(SpanProcessor):
 
         cost = self.calculate_cost(str(model), int(input_tokens), int(output_tokens))
         if cost:
-            self._total_cost += cost["total_cost"]
+            with self._lock:
+                self._total_cost += cost["total_cost"]
 
     def calculate_cost(
         self,
@@ -118,6 +124,10 @@ class CostProcessor(SpanProcessor):
 
         Returns dict with input_cost, output_cost, total_cost, or None if model unknown.
         """
+        # Validate token counts
+        input_tokens = max(0, min(input_tokens, _MAX_TOKENS))
+        output_tokens = max(0, min(output_tokens, _MAX_TOKENS))
+
         pricing = self._get_pricing(model)
         if not pricing:
             return None
@@ -159,29 +169,34 @@ class CostProcessor(SpanProcessor):
 
         # Add budget info
         if self._budget_limit:
+            with self._lock:
+                total = self._total_cost
             attributes[CostAttributes.BUDGET_LIMIT] = self._budget_limit
-            attributes[CostAttributes.BUDGET_USED] = self._total_cost
+            attributes[CostAttributes.BUDGET_USED] = total
             attributes[CostAttributes.BUDGET_REMAINING] = max(
-                0, self._budget_limit - self._total_cost
+                0, self._budget_limit - total
             )
 
         return attributes
 
     @property
     def total_cost(self) -> float:
-        return self._total_cost
+        with self._lock:
+            return self._total_cost
 
     @property
     def budget_remaining(self) -> float | None:
         if self._budget_limit is None:
             return None
-        return max(0, self._budget_limit - self._total_cost)
+        with self._lock:
+            return max(0, self._budget_limit - self._total_cost)
 
     @property
     def budget_exceeded(self) -> bool:
         if self._budget_limit is None:
             return False
-        return self._total_cost > self._budget_limit
+        with self._lock:
+            return self._total_cost > self._budget_limit
 
     def _get_pricing(self, model: str) -> dict[str, float] | None:
         """Look up pricing for a model, with fuzzy matching."""

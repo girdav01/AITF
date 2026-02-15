@@ -10,8 +10,11 @@ from __future__ import annotations
 
 import json
 import logging
+import ssl
+import threading
 from pathlib import Path
 from typing import Any, Sequence
+from urllib.parse import urlparse
 
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExporter, SpanExportResult
@@ -21,6 +24,60 @@ from aitf.ocsf.mapper import OCSFMapper
 from aitf.ocsf.schema import AIBaseEvent
 
 logger = logging.getLogger(__name__)
+
+# Maximum output file size (500MB) to prevent unbounded growth
+_MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024
+
+# Localhost hosts allowed for HTTP (development only)
+_DEV_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+def _validate_endpoint(endpoint: str, api_key: str | None = None) -> str:
+    """Validate and sanitize an endpoint URL.
+
+    Enforces HTTPS for non-localhost endpoints, especially when API keys
+    are used. Prevents SSRF by restricting to http(s) schemes.
+    """
+    parsed = urlparse(endpoint)
+
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(
+            f"Unsupported URL scheme '{parsed.scheme}'. Only http and https are allowed."
+        )
+
+    is_dev_host = parsed.hostname in _DEV_HOSTS if parsed.hostname else False
+
+    # Enforce HTTPS when API key is present and not localhost
+    if api_key and parsed.scheme != "https" and not is_dev_host:
+        raise ValueError(
+            "HTTPS is required when using API key authentication. "
+            "Use https:// or connect to localhost for development."
+        )
+
+    # Warn if using HTTP even without API key (non-localhost)
+    if parsed.scheme == "http" and not is_dev_host:
+        logger.warning(
+            "Using insecure HTTP endpoint. Consider using HTTPS for production."
+        )
+
+    return endpoint
+
+
+def _validate_output_path(output_file: str) -> Path:
+    """Validate output file path to prevent path traversal.
+
+    Resolves the path and ensures it doesn't traverse outside
+    its parent directory unexpectedly.
+    """
+    path = Path(output_file).resolve()
+
+    # Check for path traversal attempts
+    if ".." in Path(output_file).parts:
+        raise ValueError(
+            f"Path traversal detected in output path: {output_file}"
+        )
+
+    return path
 
 
 class OCSFExporter(SpanExporter):
@@ -50,16 +107,26 @@ class OCSFExporter(SpanExporter):
         include_raw_span: bool = False,
         api_key: str | None = None,
     ):
-        self._endpoint = endpoint
-        self._output_file = output_file
+        # Validate endpoint URL
+        if endpoint:
+            self._endpoint = _validate_endpoint(endpoint, api_key)
+        else:
+            self._endpoint = None
+
         self._include_raw_span = include_raw_span
         self._api_key = api_key
         self._mapper = OCSFMapper()
         self._compliance_mapper = ComplianceMapper(frameworks=compliance_frameworks)
         self._event_count = 0
+        self._lock = threading.Lock()
 
+        # Validate and create output file path
         if output_file:
-            Path(output_file).parent.mkdir(parents=True, exist_ok=True)
+            resolved = _validate_output_path(output_file)
+            self._output_file = str(resolved)
+            resolved.parent.mkdir(parents=True, exist_ok=True)
+        else:
+            self._output_file = None
 
     def export(self, spans: Sequence[ReadableSpan]) -> SpanExportResult:
         """Export spans as OCSF events."""
@@ -77,7 +144,8 @@ class OCSFExporter(SpanExporter):
 
             event_dict = ocsf_event.model_dump(exclude_none=True)
             events.append(event_dict)
-            self._event_count += 1
+            with self._lock:
+                self._event_count += 1
 
         if not events:
             return SpanExportResult.SUCCESS
@@ -94,13 +162,24 @@ class OCSFExporter(SpanExporter):
             return SpanExportResult.FAILURE
 
     def _export_to_file(self, events: list[dict[str, Any]]) -> None:
-        """Write OCSF events to JSONL file."""
+        """Write OCSF events to JSONL file with size limit enforcement."""
+        output_path = Path(self._output_file)
+
+        # Check file size to prevent unbounded growth
+        if output_path.exists() and output_path.stat().st_size > _MAX_FILE_SIZE_BYTES:
+            logger.warning(
+                "OCSF output file exceeds %d bytes, rotating",
+                _MAX_FILE_SIZE_BYTES,
+            )
+            rotated = output_path.with_suffix(".jsonl.old")
+            output_path.rename(rotated)
+
         with open(self._output_file, "a") as f:
             for event in events:
                 f.write(json.dumps(event, default=str) + "\n")
 
     def _export_to_endpoint(self, events: list[dict[str, Any]]) -> None:
-        """Send OCSF events to HTTP endpoint."""
+        """Send OCSF events to HTTP endpoint with TLS enforcement."""
         try:
             import urllib.request
 
@@ -115,7 +194,11 @@ class OCSFExporter(SpanExporter):
                 headers=headers,
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=30) as resp:
+
+            # Create SSL context for HTTPS connections
+            ssl_context = ssl.create_default_context()
+
+            with urllib.request.urlopen(req, timeout=30, context=ssl_context) as resp:
                 if resp.status >= 400:
                     logger.error("OCSF endpoint returned %d", resp.status)
         except Exception as exc:
@@ -139,7 +222,8 @@ class OCSFExporter(SpanExporter):
 
     @property
     def event_count(self) -> int:
-        return self._event_count
+        with self._lock:
+            return self._event_count
 
     def shutdown(self) -> None:
         pass

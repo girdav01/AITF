@@ -9,6 +9,8 @@ Based on PII detection patterns from AITelemetry project.
 from __future__ import annotations
 
 import hashlib
+import hmac
+import os
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -18,7 +20,12 @@ from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
 
 from aitf.semantic_conventions.attributes import SecurityAttributes
 
+# Maximum content length to analyze (prevent unbounded CPU usage)
+_MAX_CONTENT_LENGTH = 100_000
+
 # PII detection patterns
+# Note: Credit card pattern uses explicit groups instead of nested
+# quantifiers to prevent ReDoS
 PII_PATTERNS: dict[str, re.Pattern] = {
     "email": re.compile(
         r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
@@ -30,7 +37,8 @@ PII_PATTERNS: dict[str, re.Pattern] = {
         r"\b\d{3}-\d{2}-\d{4}\b"
     ),
     "credit_card": re.compile(
-        r"\b(?:\d{4}[-\s]?){3}\d{4}\b"
+        # Explicit repetition instead of nested quantifier {3} to prevent ReDoS
+        r"\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b"
     ),
     "api_key": re.compile(
         r"\b(?:sk-|pk-|ak-|key-)[A-Za-z0-9]{20,}\b"
@@ -65,7 +73,7 @@ class PIIProcessor(SpanProcessor):
     Can operate in three modes:
     - "flag": Detect PII and add span attributes (default)
     - "redact": Replace PII with [REDACTED] placeholder
-    - "hash": Replace PII with SHA-256 hash
+    - "hash": Replace PII with HMAC-SHA256 hash (keyed, non-reversible)
 
     Usage:
         provider.add_span_processor(PIIProcessor(
@@ -79,19 +87,38 @@ class PIIProcessor(SpanProcessor):
         detect_types: list[str] | None = None,
         action: str = "flag",
         custom_patterns: dict[str, re.Pattern] | None = None,
+        hash_key: bytes | None = None,
     ):
         self._detect_types = detect_types or list(PII_PATTERNS.keys())
         self._action = action
         self._patterns: dict[str, re.Pattern] = {}
+
+        # Generate a random HMAC key for PII hashing if not provided
+        # This ensures hashes are unique per processor instance and
+        # cannot be reversed by an attacker who knows the algorithm
+        self._hash_key = hash_key or os.urandom(32)
 
         # Build active pattern set
         for pii_type in self._detect_types:
             if pii_type in PII_PATTERNS:
                 self._patterns[pii_type] = PII_PATTERNS[pii_type]
 
-        # Add custom patterns
+        # Validate and add custom patterns
         if custom_patterns:
-            self._patterns.update(custom_patterns)
+            for name, pattern in custom_patterns.items():
+                if not isinstance(pattern, re.Pattern):
+                    raise TypeError(
+                        f"Custom pattern '{name}' must be a compiled re.Pattern"
+                    )
+                # Verify the pattern compiles and test it with empty string
+                # to detect obvious issues
+                try:
+                    pattern.search("")
+                except re.error as e:
+                    raise ValueError(
+                        f"Custom pattern '{name}' is invalid: {e}"
+                    ) from e
+                self._patterns[name] = pattern
 
     def on_start(self, span: Span, parent_context: Context | None = None) -> None:
         pass
@@ -126,6 +153,10 @@ class PIIProcessor(SpanProcessor):
 
     def detect_pii(self, text: str) -> list[PIIDetection]:
         """Detect PII in text. Returns list of PIIDetection objects."""
+        # Truncate to prevent excessive CPU usage
+        if len(text) > _MAX_CONTENT_LENGTH:
+            text = text[:_MAX_CONTENT_LENGTH]
+
         detections: list[PIIDetection] = []
         for pii_type, pattern in self._patterns.items():
             matches = list(pattern.finditer(text))
@@ -153,7 +184,12 @@ class PIIProcessor(SpanProcessor):
                 if self._action == "redact":
                     replacement = f"[{detection.pii_type.upper()}_REDACTED]"
                 elif self._action == "hash":
-                    hash_val = hashlib.sha256(original.encode()).hexdigest()[:12]
+                    # Use HMAC-SHA256 with instance-specific key for secure hashing
+                    hash_val = hmac.new(
+                        self._hash_key,
+                        original.encode(),
+                        hashlib.sha256,
+                    ).hexdigest()[:16]
                     replacement = f"[{detection.pii_type.upper()}:{hash_val}]"
                 else:
                     continue

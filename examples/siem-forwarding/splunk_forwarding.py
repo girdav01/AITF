@@ -63,11 +63,37 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname
 # Configuration
 # ---------------------------------------------------------------------------
 
+def _get_splunk_verify_ssl() -> bool:
+    """Parse SSL verification setting with security warning."""
+    val = os.getenv("SPLUNK_VERIFY_SSL", "true").lower() == "true"
+    if not val:
+        logger.warning(
+            "SECURITY WARNING: TLS verification is disabled for Splunk HEC. "
+            "This should ONLY be used in development with self-signed certificates. "
+            "Never disable TLS verification in production."
+        )
+    return val
+
+
+def _get_splunk_hec_url() -> str:
+    """Get and validate the Splunk HEC URL."""
+    url = os.getenv(
+        "SPLUNK_HEC_URL", "https://splunk.example.com:8088/services/collector"
+    )
+    if url.startswith("http://") and not any(
+        url.startswith(f"http://{h}") for h in ("localhost", "127.0.0.1", "[::1]")
+    ):
+        logger.warning(
+            "SECURITY WARNING: Splunk HEC URL uses plain HTTP (%s). "
+            "Use HTTPS in production to protect HEC tokens and event data.",
+            url,
+        )
+    return url
+
+
 SPLUNK_CONFIG = {
     # HEC endpoint URL
-    "hec_url": os.getenv(
-        "SPLUNK_HEC_URL", "https://splunk.example.com:8088/services/collector"
-    ),
+    "hec_url": _get_splunk_hec_url(),
     # HEC authentication token
     "hec_token": os.getenv("SPLUNK_HEC_TOKEN", ""),
     # Index for AI telemetry events
@@ -79,7 +105,7 @@ SPLUNK_CONFIG = {
     # Host identifier
     "host": os.getenv("HOSTNAME", "aitf-pipeline"),
     # TLS verification (set to False for self-signed certs in dev)
-    "verify_ssl": os.getenv("SPLUNK_VERIFY_SSL", "true").lower() == "true",
+    "verify_ssl": _get_splunk_verify_ssl(),
     # Batch settings
     "batch_size": 100,
     "flush_interval_seconds": 10,

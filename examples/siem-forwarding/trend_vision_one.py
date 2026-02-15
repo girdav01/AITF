@@ -27,6 +27,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import time
 import uuid
 from datetime import datetime, timezone
@@ -771,10 +772,19 @@ def correlate_ai_with_security_events(
     for ai_event in ai_events:
         observables = ai_event.get("observables", [])
         for observable in observables:
+            # Sanitize observable value to prevent query injection
+            obs_value = str(observable.get("value", ""))
+            # Remove characters that could alter query semantics
+            obs_value = re.sub(r'["\\\n\r\t]', "", obs_value)
+            # Limit length to prevent oversized queries
+            obs_value = obs_value[:200]
+            if not obs_value:
+                continue
+
             correlation_query = {
                 "query": (
                     f"NOT productName:AITF AND "
-                    f"observableValue:\"{observable.get('value', '')}\""
+                    f"observableValue:\"{obs_value}\""
                 ),
                 "top": 50,
                 "period": {

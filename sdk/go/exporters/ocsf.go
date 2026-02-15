@@ -7,19 +7,30 @@ package exporters
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/girdav01/AITF/sdk/go/ocsf"
 
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
+
+// devHosts are localhost addresses where HTTP is allowed for development.
+var devHosts = map[string]bool{
+	"localhost": true,
+	"127.0.0.1": true,
+	"::1":       true,
+}
 
 // OCSFExporter exports OTel spans as OCSF Category 7 AI events.
 // Implements the sdktrace.SpanExporter interface.
@@ -32,6 +43,7 @@ type OCSFExporter struct {
 	compliance     *ocsf.ComplianceMapper
 	eventCount     int
 	mu             sync.Mutex
+	client         *http.Client
 }
 
 // OCSFExporterOption configures the OCSFExporter.
@@ -64,17 +76,75 @@ func WithAPIKey(key string) OCSFExporterOption {
 	return func(e *OCSFExporter) { e.apiKey = key }
 }
 
+// validateEndpoint validates the endpoint URL for security.
+// Enforces HTTPS when API key is present and not localhost.
+func validateEndpoint(endpoint, apiKey string) error {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return fmt.Errorf("invalid endpoint URL: %w", err)
+	}
+
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("unsupported URL scheme '%s'; only http and https are allowed", u.Scheme)
+	}
+
+	hostname := u.Hostname()
+	isDev := devHosts[hostname]
+
+	// Enforce HTTPS when API key is present and not localhost
+	if apiKey != "" && u.Scheme != "https" && !isDev {
+		return fmt.Errorf("HTTPS is required when using API key authentication; use https:// or localhost for development")
+	}
+
+	return nil
+}
+
+// validateOutputPath validates the output file path to prevent path traversal.
+func validateOutputPath(outputFile string) (string, error) {
+	// Check for path traversal
+	if strings.Contains(outputFile, "..") {
+		return "", fmt.Errorf("path traversal detected in output path: %s", outputFile)
+	}
+	absPath, err := filepath.Abs(outputFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve output path: %w", err)
+	}
+	return absPath, nil
+}
+
 // NewOCSFExporter creates a new OCSF exporter.
 func NewOCSFExporter(opts ...OCSFExporterOption) (*OCSFExporter, error) {
 	e := &OCSFExporter{
 		mapper:     ocsf.NewOCSFMapper(),
 		compliance: ocsf.NewComplianceMapper(nil),
+		client: &http.Client{
+			Timeout: 30 * time.Second,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					MinVersion: tls.VersionTLS12,
+				},
+			},
+		},
 	}
 	for _, opt := range opts {
 		opt(e)
 	}
 
+	// Validate endpoint URL
+	if e.endpoint != "" {
+		if err := validateEndpoint(e.endpoint, e.apiKey); err != nil {
+			return nil, err
+		}
+	}
+
+	// Validate and create output file path
 	if e.outputFile != "" {
+		absPath, err := validateOutputPath(e.outputFile)
+		if err != nil {
+			return nil, err
+		}
+		e.outputFile = absPath
+
 		dir := filepath.Dir(e.outputFile)
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create output directory %s: %w", dir, err)
@@ -181,7 +251,8 @@ func (e *OCSFExporter) enrichCompliance(event interface{}, eventType string) {
 
 // exportToFile writes OCSF events to a JSONL file.
 func (e *OCSFExporter) exportToFile(events []map[string]interface{}) error {
-	f, err := os.OpenFile(e.outputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	// Use restrictive file permissions (owner read/write only)
+	f, err := os.OpenFile(e.outputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to open output file: %w", err)
 	}
@@ -217,8 +288,7 @@ func (e *OCSFExporter) exportToEndpoint(ctx context.Context, events []map[string
 		req.Header.Set("Authorization", "Bearer "+e.apiKey)
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := e.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send to endpoint: %w", err)
 	}

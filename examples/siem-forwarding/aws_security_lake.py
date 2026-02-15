@@ -23,6 +23,7 @@ import io
 import json
 import logging
 import os
+import threading
 import time
 import uuid
 from datetime import datetime, timezone
@@ -337,6 +338,7 @@ class SecurityLakeS3Exporter(SpanExporter):
         self._flush_interval = flush_interval_seconds
         self._max_buffer_size = max_buffer_size
         self._buffer: list[dict[str, Any]] = []
+        self._lock = threading.Lock()
         self._last_flush = time.time()
         self._mapper = OCSFMapper()
         self._s3 = boto3.client("s3", region_name=config["aws_region"])
@@ -347,16 +349,19 @@ class SecurityLakeS3Exporter(SpanExporter):
         for span in spans:
             ocsf_event = self._mapper.map_span(span)
             if ocsf_event is not None:
-                self._buffer.append(ocsf_event.model_dump(exclude_none=True))
+                with self._lock:
+                    self._buffer.append(ocsf_event.model_dump(exclude_none=True))
 
         # Flush if buffer is full or interval elapsed
         now = time.time()
+        with self._lock:
+            buffer_size = len(self._buffer)
         should_flush = (
-            len(self._buffer) >= self._max_buffer_size
+            buffer_size >= self._max_buffer_size
             or (now - self._last_flush) >= self._flush_interval
         )
 
-        if should_flush and self._buffer:
+        if should_flush and buffer_size > 0:
             try:
                 self._flush_to_s3()
                 return SpanExportResult.SUCCESS
@@ -368,12 +373,12 @@ class SecurityLakeS3Exporter(SpanExporter):
 
     def _flush_to_s3(self) -> None:
         """Write buffered events to S3 as a Parquet file."""
-        if not self._buffer:
-            return
-
-        events = self._buffer.copy()
-        self._buffer.clear()
-        self._last_flush = time.time()
+        with self._lock:
+            if not self._buffer:
+                return
+            events = self._buffer.copy()
+            self._buffer.clear()
+            self._last_flush = time.time()
 
         # Convert to Parquet
         parquet_bytes = convert_events_to_parquet(events)
@@ -648,6 +653,7 @@ def run_athena_query(
     query_name: str,
     config: dict[str, Any],
     output_location: str | None = None,
+    timeout_seconds: int = 300,
 ) -> dict[str, Any]:
     """Execute a predefined Athena query against Security Lake.
 
@@ -655,6 +661,7 @@ def run_athena_query(
         query_name: Key from ATHENA_QUERIES dictionary.
         config: Security Lake configuration dictionary.
         output_location: S3 path for Athena query results.
+        timeout_seconds: Maximum time to wait for query completion (default: 300s).
 
     Returns:
         dict with query execution ID and status.
@@ -685,8 +692,9 @@ def run_athena_query(
     execution_id = response["QueryExecutionId"]
     logger.info("Started Athena query '%s': %s", query_name, execution_id)
 
-    # Poll for completion
-    while True:
+    # Poll for completion with timeout
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
         status_response = athena.get_query_execution(
             QueryExecutionId=execution_id
         )
@@ -696,6 +704,11 @@ def run_athena_query(
             break
 
         time.sleep(2)
+    else:
+        logger.error(
+            "Query '%s' timed out after %ds", query_name, timeout_seconds
+        )
+        return {"execution_id": execution_id, "state": "TIMEOUT", "reason": "Poll timeout exceeded"}
 
     if state != "SUCCEEDED":
         reason = status_response["QueryExecution"]["Status"].get(
