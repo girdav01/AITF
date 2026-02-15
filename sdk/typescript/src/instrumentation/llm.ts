@@ -22,6 +22,20 @@ import {
 
 const TRACER_NAME = "aitf.instrumentation.llm";
 
+/** Known options that should not be passed as extra span attributes. */
+const KNOWN_OPTIONS = new Set([
+  "model",
+  "operation",
+  "system",
+  "temperature",
+  "maxTokens",
+  "stream",
+  "tools",
+]);
+
+/** Allowed attribute key prefix for extra options. */
+const EXTRA_ATTR_PREFIX = "gen_ai.request.";
+
 /** Options for tracing an LLM inference operation. */
 export interface TraceInferenceOptions {
   model: string;
@@ -289,22 +303,25 @@ export class LLMInstrumentor {
       );
     }
 
-    // Add extra attributes
+    // Add extra attributes with validation
+    // Only allow known-safe keys under gen_ai.request.* namespace
     for (const [key, value] of Object.entries(options)) {
       if (
-        ![
-          "model",
-          "operation",
-          "system",
-          "temperature",
-          "maxTokens",
-          "stream",
-          "tools",
-        ].includes(key) &&
-        value !== undefined
+        !Object.prototype.hasOwnProperty.call(options, key) ||
+        KNOWN_OPTIONS.has(key) ||
+        value === undefined
       ) {
-        const attrKey = `gen_ai.request.${key}`;
-        attributes[attrKey] = value as string | number | boolean;
+        continue;
+      }
+      // Only allow simple scalar types as attribute values
+      if (
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean"
+      ) {
+        // Validate key to prevent attribute namespace pollution
+        const sanitizedKey = key.replace(/[^a-zA-Z0-9_]/g, "_");
+        attributes[`${EXTRA_ATTR_PREFIX}${sanitizedKey}`] = value;
       }
     }
 

@@ -14,6 +14,9 @@ import {
   SecurityAttributes,
 } from "../semantic-conventions/attributes";
 
+/** Maximum content length to analyze (prevent unbounded CPU usage). */
+const MAX_CONTENT_LENGTH = 100_000;
+
 /** A security finding detected in a span. */
 export interface SecurityFinding {
   threatType: string;
@@ -27,6 +30,7 @@ export interface SecurityFinding {
 }
 
 // OWASP LLM Top 10 detection patterns (adapted from AITelemetry)
+// Note: All patterns use bounded quantifiers to prevent ReDoS
 const PROMPT_INJECTION_PATTERNS: RegExp[] = [
   /ignore\s+(all\s+)?previous\s+instructions/i,
   /ignore\s+(all\s+)?above\s+instructions/i,
@@ -59,7 +63,8 @@ const SYSTEM_PROMPT_LEAK_PATTERNS: RegExp[] = [
 ];
 
 const DATA_EXFILTRATION_PATTERNS: RegExp[] = [
-  /(send|post|transmit|upload)\s+.*(to|at)\s+https?:\/\//i,
+  // Bounded quantifier to prevent ReDoS (was: .* which causes catastrophic backtracking)
+  /(send|post|transmit|upload)\s+[^\n]{0,200}(to|at)\s+https?:\/\//i,
   /(curl|wget|fetch)\s+/i,
   /base64\s+encode/i,
   /exfiltrat/i,
@@ -68,8 +73,9 @@ const DATA_EXFILTRATION_PATTERNS: RegExp[] = [
 const COMMAND_INJECTION_PATTERNS: RegExp[] = [
   /;\s*(rm|del|drop|shutdown|kill)\s+/i,
   /\|\s*(bash|sh|cmd|powershell)/i,
-  /`.*`/,
-  /\$\(.*\)/,
+  // Bounded quantifiers to prevent ReDoS (was: `.*` and \$\(.*\))
+  /`[^`]{0,500}`/,
+  /\$\([^)]{0,500}\)/,
   /&&\s*(rm|del|drop)/i,
 ];
 
@@ -146,7 +152,6 @@ export class SecurityProcessor implements SpanProcessor {
       return;
     }
 
-    const findings: SecurityFinding[] = [];
     const contentToAnalyze: string[] = [];
 
     // Extract content from events
@@ -189,12 +194,19 @@ export class SecurityProcessor implements SpanProcessor {
     }
 
     // Run detection patterns
+    const findings: SecurityFinding[] = [];
     for (const content of contentToAnalyze) {
       findings.push(...this._analyzeContent(content));
     }
 
-    // Findings are available via analyze_text for direct use.
-    // On ReadableSpan, attributes cannot be modified after the span ends.
+    // Log findings since ReadableSpan attributes are immutable
+    if (findings.length > 0) {
+      const maxRisk = Math.max(...findings.map((f) => f.riskScore));
+      const threats = findings.map((f) => f.threatType);
+      console.warn(
+        `AITF Security: findings detected - risk_score=${maxRisk} threats=${threats.join(",")}`
+      );
+    }
   }
 
   /**
@@ -206,6 +218,11 @@ export class SecurityProcessor implements SpanProcessor {
   }
 
   private _analyzeContent(content: string): SecurityFinding[] {
+    // Truncate content to prevent excessive CPU usage
+    if (content.length > MAX_CONTENT_LENGTH) {
+      content = content.slice(0, MAX_CONTENT_LENGTH);
+    }
+
     const findings: SecurityFinding[] = [];
 
     if (this._detectPromptInjection) {
@@ -218,7 +235,7 @@ export class SecurityProcessor implements SpanProcessor {
             riskScore: 80.0,
             confidence: 0.85,
             detectionMethod: "pattern",
-            details: `Pattern matched: ${pattern.source}`,
+            details: "Prompt injection pattern detected",
             blocked: false,
           });
           break;
@@ -236,7 +253,7 @@ export class SecurityProcessor implements SpanProcessor {
             riskScore: 95.0,
             confidence: 0.9,
             detectionMethod: "pattern",
-            details: `Jailbreak pattern: ${pattern.source}`,
+            details: "Jailbreak attempt detected",
             blocked: false,
           });
           break;
@@ -254,7 +271,7 @@ export class SecurityProcessor implements SpanProcessor {
             riskScore: 60.0,
             confidence: 0.75,
             detectionMethod: "pattern",
-            details: `System prompt leak pattern: ${pattern.source}`,
+            details: "System prompt leak attempt detected",
             blocked: false,
           });
           break;
@@ -272,7 +289,7 @@ export class SecurityProcessor implements SpanProcessor {
             riskScore: 85.0,
             confidence: 0.7,
             detectionMethod: "pattern",
-            details: `Data exfiltration pattern: ${pattern.source}`,
+            details: "Data exfiltration pattern detected",
             blocked: false,
           });
           break;
@@ -290,7 +307,7 @@ export class SecurityProcessor implements SpanProcessor {
             riskScore: 90.0,
             confidence: 0.8,
             detectionMethod: "pattern",
-            details: `Command injection pattern: ${pattern.source}`,
+            details: "Command injection pattern detected",
             blocked: false,
           });
           break;
@@ -308,7 +325,7 @@ export class SecurityProcessor implements SpanProcessor {
             riskScore: 80.0,
             confidence: 0.75,
             detectionMethod: "pattern",
-            details: `SQL injection pattern: ${pattern.source}`,
+            details: "SQL injection pattern detected",
             blocked: false,
           });
           break;

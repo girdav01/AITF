@@ -8,6 +8,7 @@ Based on OWASP detection patterns from AITelemetry project.
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 from typing import Any
@@ -16,6 +17,11 @@ from opentelemetry.context import Context
 from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
 
 from aitf.semantic_conventions.attributes import GenAIAttributes, SecurityAttributes
+
+logger = logging.getLogger(__name__)
+
+# Maximum content length to analyze (prevent unbounded CPU usage)
+_MAX_CONTENT_LENGTH = 100_000
 
 
 @dataclass
@@ -33,6 +39,7 @@ class SecurityFinding:
 
 
 # OWASP LLM Top 10 detection patterns (adapted from AITelemetry)
+# Note: All patterns use bounded quantifiers to prevent ReDoS
 PROMPT_INJECTION_PATTERNS = [
     re.compile(r"ignore\s+(all\s+)?previous\s+instructions", re.IGNORECASE),
     re.compile(r"ignore\s+(all\s+)?above\s+instructions", re.IGNORECASE),
@@ -65,7 +72,8 @@ SYSTEM_PROMPT_LEAK_PATTERNS = [
 ]
 
 DATA_EXFILTRATION_PATTERNS = [
-    re.compile(r"(send|post|transmit|upload)\s+.*(to|at)\s+https?://", re.IGNORECASE),
+    # Bounded quantifier to prevent ReDoS (was: .* which causes catastrophic backtracking)
+    re.compile(r"(send|post|transmit|upload)\s+[^\n]{0,200}(to|at)\s+https?://", re.IGNORECASE),
     re.compile(r"(curl|wget|fetch)\s+", re.IGNORECASE),
     re.compile(r"base64\s+encode", re.IGNORECASE),
     re.compile(r"exfiltrat", re.IGNORECASE),
@@ -74,8 +82,9 @@ DATA_EXFILTRATION_PATTERNS = [
 COMMAND_INJECTION_PATTERNS = [
     re.compile(r";\s*(rm|del|drop|shutdown|kill)\s+", re.IGNORECASE),
     re.compile(r"\|\s*(bash|sh|cmd|powershell)", re.IGNORECASE),
-    re.compile(r"`.*`"),
-    re.compile(r"\$\(.*\)"),
+    # Bounded quantifiers to prevent ReDoS (was: `.*` and \$\(.*\))
+    re.compile(r"`[^`]{0,500}`"),
+    re.compile(r"\$\([^)]{0,500}\)"),
     re.compile(r"&&\s*(rm|del|drop)", re.IGNORECASE),
 ]
 
@@ -166,14 +175,18 @@ class SecurityProcessor(SpanProcessor):
         for content in content_to_analyze:
             findings.extend(self._analyze_content(content))
 
-        # Apply findings to span (note: span is ReadableSpan, so we log findings as info)
+        # Log findings since ReadableSpan attributes are immutable
         if findings:
             max_risk = max(f.risk_score for f in findings)
             max_level = max(findings, key=lambda f: f.risk_score).risk_level
-            # Findings are attached as span events during on_start or via
-            # a wrapping processor. For ReadableSpan, we emit via logging.
-            # In practice, use this processor with a BatchSpanProcessor
-            # that captures findings before span ends.
+            threat_types = [f.threat_type for f in findings]
+            logger.warning(
+                "Security findings detected in span %s: risk_level=%s risk_score=%.1f threats=%s",
+                span.context.span_id if span.context else "unknown",
+                max_level,
+                max_risk,
+                threat_types,
+            )
 
     def analyze_text(self, text: str) -> list[SecurityFinding]:
         """Public API to analyze text for security threats.
@@ -183,6 +196,10 @@ class SecurityProcessor(SpanProcessor):
         return self._analyze_content(text)
 
     def _analyze_content(self, content: str) -> list[SecurityFinding]:
+        # Truncate content to prevent excessive CPU usage
+        if len(content) > _MAX_CONTENT_LENGTH:
+            content = content[:_MAX_CONTENT_LENGTH]
+
         findings: list[SecurityFinding] = []
 
         if self._detect_prompt_injection:
@@ -194,7 +211,7 @@ class SecurityProcessor(SpanProcessor):
                         risk_level=SecurityAttributes.RiskLevel.HIGH,
                         risk_score=80.0,
                         confidence=0.85,
-                        details=f"Pattern matched: {pattern.pattern}",
+                        details="Prompt injection pattern detected",
                     ))
                     break
 
@@ -207,7 +224,7 @@ class SecurityProcessor(SpanProcessor):
                         risk_level=SecurityAttributes.RiskLevel.CRITICAL,
                         risk_score=95.0,
                         confidence=0.90,
-                        details=f"Jailbreak pattern: {pattern.pattern}",
+                        details="Jailbreak attempt detected",
                     ))
                     break
 
@@ -220,7 +237,7 @@ class SecurityProcessor(SpanProcessor):
                         risk_level=SecurityAttributes.RiskLevel.MEDIUM,
                         risk_score=60.0,
                         confidence=0.75,
-                        details=f"System prompt leak pattern: {pattern.pattern}",
+                        details="System prompt leak attempt detected",
                     ))
                     break
 
@@ -233,7 +250,7 @@ class SecurityProcessor(SpanProcessor):
                         risk_level=SecurityAttributes.RiskLevel.HIGH,
                         risk_score=85.0,
                         confidence=0.70,
-                        details=f"Data exfiltration pattern: {pattern.pattern}",
+                        details="Data exfiltration pattern detected",
                     ))
                     break
 
@@ -246,7 +263,7 @@ class SecurityProcessor(SpanProcessor):
                         risk_level=SecurityAttributes.RiskLevel.CRITICAL,
                         risk_score=90.0,
                         confidence=0.80,
-                        details=f"Command injection pattern: {pattern.pattern}",
+                        details="Command injection pattern detected",
                     ))
                     break
 
@@ -259,7 +276,7 @@ class SecurityProcessor(SpanProcessor):
                         risk_level=SecurityAttributes.RiskLevel.HIGH,
                         risk_score=80.0,
                         confidence=0.75,
-                        details=f"SQL injection pattern: {pattern.pattern}",
+                        details="SQL injection pattern detected",
                     ))
                     break
 

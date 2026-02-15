@@ -9,7 +9,6 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import * as http from "http";
 import * as https from "https";
 import { URL } from "url";
 import { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
@@ -18,6 +17,9 @@ import { OCSFMapper } from "../ocsf/mapper";
 import { ComplianceMapper } from "../ocsf/compliance-mapper";
 import { AIBaseEvent, stripNulls } from "../ocsf/schema";
 
+/** Localhost hosts allowed for HTTP (development only). */
+const DEV_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+
 /** Options for configuring the OCSFExporter. */
 export interface OCSFExporterOptions {
   endpoint?: string;
@@ -25,6 +27,42 @@ export interface OCSFExporterOptions {
   complianceFrameworks?: string[];
   includeRawSpan?: boolean;
   apiKey?: string;
+}
+
+/**
+ * Validate endpoint URL for security.
+ * Enforces HTTPS when API key is present and not localhost.
+ */
+function validateEndpoint(endpoint: string, apiKey?: string): void {
+  const url = new URL(endpoint);
+
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error(
+      `Unsupported URL scheme '${url.protocol}'. Only http: and https: are allowed.`
+    );
+  }
+
+  const isDev = DEV_HOSTS.has(url.hostname);
+
+  // Enforce HTTPS when API key is present and not localhost
+  if (apiKey && url.protocol !== "https:" && !isDev) {
+    throw new Error(
+      "HTTPS is required when using API key authentication. " +
+        "Use https:// or connect to localhost for development."
+    );
+  }
+}
+
+/**
+ * Validate output file path to prevent path traversal.
+ */
+function validateOutputPath(outputFile: string): string {
+  if (outputFile.includes("..")) {
+    throw new Error(
+      `Path traversal detected in output path: ${outputFile}`
+    );
+  }
+  return path.resolve(outputFile);
 }
 
 /**
@@ -56,19 +94,29 @@ export class OCSFExporter implements SpanExporter {
   private _eventCount = 0;
 
   constructor(options: OCSFExporterOptions = {}) {
-    this._endpoint = options.endpoint ?? null;
-    this._outputFile = options.outputFile ?? null;
-    this._includeRawSpan = options.includeRawSpan ?? false;
     this._apiKey = options.apiKey ?? null;
+    this._includeRawSpan = options.includeRawSpan ?? false;
     this._mapper = new OCSFMapper();
     this._complianceMapper = new ComplianceMapper({
       frameworks: options.complianceFrameworks,
     });
 
-    // Ensure output directory exists
-    if (this._outputFile) {
-      const dir = path.dirname(this._outputFile);
+    // Validate endpoint URL
+    if (options.endpoint) {
+      validateEndpoint(options.endpoint, options.apiKey);
+      this._endpoint = options.endpoint;
+    } else {
+      this._endpoint = null;
+    }
+
+    // Validate and ensure output directory exists
+    if (options.outputFile) {
+      const resolved = validateOutputPath(options.outputFile);
+      this._outputFile = resolved;
+      const dir = path.dirname(resolved);
       fs.mkdirSync(dir, { recursive: true });
+    } else {
+      this._outputFile = null;
     }
   }
 
@@ -133,7 +181,10 @@ export class OCSFExporter implements SpanExporter {
     const lines = events
       .map((event) => JSON.stringify(event))
       .join("\n");
-    fs.appendFileSync(this._outputFile, lines + "\n", "utf-8");
+    fs.appendFileSync(this._outputFile, lines + "\n", {
+      encoding: "utf-8",
+      mode: 0o600, // Restrictive file permissions
+    });
   }
 
   private async _exportToEndpoint(
@@ -143,7 +194,13 @@ export class OCSFExporter implements SpanExporter {
 
     const url = new URL(this._endpoint);
     const payload = JSON.stringify(events);
-    const isHttps = url.protocol === "https:";
+
+    // Enforce HTTPS for all non-localhost endpoints
+    if (url.protocol !== "https:" && !DEV_HOSTS.has(url.hostname)) {
+      console.warn(
+        "OCSF: Using insecure HTTP endpoint. Consider using HTTPS for production."
+      );
+    }
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -154,17 +211,16 @@ export class OCSFExporter implements SpanExporter {
     }
 
     return new Promise<void>((resolve, reject) => {
-      const requestOptions: http.RequestOptions = {
+      const requestOptions = {
         hostname: url.hostname,
-        port: url.port,
+        port: url.port || (url.protocol === "https:" ? 443 : 80),
         path: url.pathname + url.search,
         method: "POST",
         headers,
         timeout: 30000,
       };
 
-      const transport = isHttps ? https : http;
-      const req = transport.request(requestOptions, (res) => {
+      const req = https.request(requestOptions, (res) => {
         if (res.statusCode && res.statusCode >= 400) {
           reject(
             new Error(

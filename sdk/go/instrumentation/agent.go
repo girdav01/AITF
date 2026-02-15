@@ -3,6 +3,7 @@ package instrumentation
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -46,6 +47,7 @@ type AgentSession struct {
 	agentName string
 	sessionID string
 	stepCount int
+	mu        sync.Mutex
 }
 
 // TraceSession starts an agent session span.
@@ -90,11 +92,15 @@ func (a *AgentInstrumentor) TraceSession(ctx context.Context, cfg SessionConfig)
 
 // Step starts an agent step span as a child of the session.
 func (s *AgentSession) Step(ctx context.Context, stepType string) (context.Context, *AgentStep) {
+	s.mu.Lock()
 	s.stepCount++
+	currentStep := s.stepCount
+	s.mu.Unlock()
+
 	attrs := []attribute.KeyValue{
 		semconv.AgentNameKey.String(s.agentName),
 		semconv.AgentStepTypeKey.String(stepType),
-		semconv.AgentStepIndexKey.Int(s.stepCount),
+		semconv.AgentStepIndexKey.Int(currentStep),
 	}
 
 	ctx, span := s.tracer.Start(ctx,
@@ -108,11 +114,15 @@ func (s *AgentSession) Step(ctx context.Context, stepType string) (context.Conte
 
 // Delegate starts a delegation span.
 func (s *AgentSession) Delegate(ctx context.Context, targetAgent, targetAgentID, reason, strategy string) (context.Context, trace.Span) {
+	s.mu.Lock()
 	s.stepCount++
+	currentStep := s.stepCount
+	s.mu.Unlock()
+
 	attrs := []attribute.KeyValue{
 		semconv.AgentNameKey.String(s.agentName),
 		semconv.AgentStepTypeKey.String(semconv.AgentStepDelegation),
-		semconv.AgentStepIndexKey.Int(s.stepCount),
+		semconv.AgentStepIndexKey.Int(currentStep),
 		semconv.AgentDelegationTargetAgentKey.String(targetAgent),
 		semconv.AgentDelegationTargetAgentIDKey.String(targetAgentID),
 		semconv.AgentDelegationStrategyKey.String(strategy),
@@ -131,7 +141,11 @@ func (s *AgentSession) Delegate(ctx context.Context, targetAgent, targetAgentID,
 
 // End completes the session span.
 func (s *AgentSession) End(err error) {
-	s.span.SetAttributes(semconv.AgentSessionTurnCountKey.Int(s.stepCount))
+	s.mu.Lock()
+	steps := s.stepCount
+	s.mu.Unlock()
+
+	s.span.SetAttributes(semconv.AgentSessionTurnCountKey.Int(steps))
 	if err != nil {
 		s.span.SetStatus(codes.Error, err.Error())
 		s.span.RecordError(err)

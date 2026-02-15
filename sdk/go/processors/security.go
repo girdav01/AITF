@@ -7,6 +7,9 @@ import (
 	"github.com/girdav01/AITF/sdk/go/semconv"
 )
 
+// maxContentLength is the maximum content length to analyze (prevent unbounded CPU usage).
+const maxContentLength = 100000
+
 // SecurityFinding represents a detected security threat.
 type SecurityFinding struct {
 	ThreatType      string
@@ -55,7 +58,8 @@ func NewSecurityProcessor() *SecurityProcessor {
 			`(?i)what\s+(are|is)\s+your\s+(system\s+)?(instructions|prompt|rules)`,
 		}),
 		dataExfilPatterns: compilePatterns([]string{
-			`(?i)(send|post|transmit|upload)\s+.*(to|at)\s+https?://`,
+			// Bounded quantifier to prevent ReDoS (was: .* which causes catastrophic backtracking)
+			`(?i)(send|post|transmit|upload)\s+[^\n]{0,200}(to|at)\s+https?://`,
 			`(?i)(curl|wget|fetch)\s+`,
 			`(?i)exfiltrat`,
 		}),
@@ -68,6 +72,11 @@ func NewSecurityProcessor() *SecurityProcessor {
 
 // AnalyzeText checks text for security threats.
 func (s *SecurityProcessor) AnalyzeText(text string) []SecurityFinding {
+	// Truncate content to prevent excessive CPU usage
+	if len(text) > maxContentLength {
+		text = text[:maxContentLength]
+	}
+
 	var findings []SecurityFinding
 
 	if matchesAny(s.promptInjectionPatterns, text) {
@@ -78,6 +87,7 @@ func (s *SecurityProcessor) AnalyzeText(text string) []SecurityFinding {
 			RiskScore:       80.0,
 			Confidence:      0.85,
 			DetectionMethod: "pattern",
+			Details:         "Prompt injection pattern detected",
 		})
 	}
 
@@ -89,6 +99,7 @@ func (s *SecurityProcessor) AnalyzeText(text string) []SecurityFinding {
 			RiskScore:       95.0,
 			Confidence:      0.90,
 			DetectionMethod: "pattern",
+			Details:         "Jailbreak attempt detected",
 		})
 	}
 
@@ -100,6 +111,7 @@ func (s *SecurityProcessor) AnalyzeText(text string) []SecurityFinding {
 			RiskScore:       60.0,
 			Confidence:      0.75,
 			DetectionMethod: "pattern",
+			Details:         "System prompt leak attempt detected",
 		})
 	}
 
@@ -111,17 +123,19 @@ func (s *SecurityProcessor) AnalyzeText(text string) []SecurityFinding {
 			RiskScore:       85.0,
 			Confidence:      0.70,
 			DetectionMethod: "pattern",
+			Details:         "Data exfiltration pattern detected",
 		})
 	}
 
 	if matchesAny(s.commandInjectionPatterns, text) {
 		findings = append(findings, SecurityFinding{
-			ThreatType:    "command_injection",
-			OWASPCategory: semconv.OWASPLICM05,
-			RiskLevel:     semconv.RiskLevelCritical,
-			RiskScore:     90.0,
-			Confidence:    0.80,
+			ThreatType:      "command_injection",
+			OWASPCategory:   semconv.OWASPLICM05,
+			RiskLevel:       semconv.RiskLevelCritical,
+			RiskScore:       90.0,
+			Confidence:      0.80,
 			DetectionMethod: "pattern",
+			Details:         "Command injection pattern detected",
 		})
 	}
 

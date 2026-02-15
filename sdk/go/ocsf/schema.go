@@ -6,6 +6,8 @@
 package ocsf
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"time"
 )
@@ -240,7 +242,13 @@ func (e *AIBaseEvent) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
 
-// generateUID creates a simple unique identifier.
+// generateUID creates a cryptographically random unique identifier.
+// Uses 16 bytes of randomness (128-bit) for unpredictable UIDs.
 func generateUID() string {
-	return time.Now().UTC().Format("20060102150405.000000000")
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		// Fallback to timestamp-based UID if crypto/rand fails
+		return time.Now().UTC().Format("20060102150405.000000000")
+	}
+	return hex.EncodeToString(b)
 }

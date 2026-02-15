@@ -30,10 +30,33 @@ import math
 import re
 import time
 from abc import ABC, abstractmethod
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
+
+# Maximum number of tracked sessions/entities to prevent unbounded memory growth.
+# When the limit is reached, the oldest entries are evicted (LRU policy).
+_MAX_STATE_ENTRIES = 10_000
+
+
+class BoundedDict(OrderedDict):
+    """An OrderedDict with a maximum size that evicts oldest entries (LRU).
+
+    Used by stateful detection rules to prevent unbounded memory growth
+    in long-running deployments.
+    """
+
+    def __init__(self, maxlen: int = _MAX_STATE_ENTRIES, *args: Any, **kwargs: Any) -> None:
+        self._maxlen = maxlen
+        super().__init__(*args, **kwargs)
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        if key in self:
+            self.move_to_end(key)
+        super().__setitem__(key, value)
+        while len(self) > self._maxlen:
+            self.popitem(last=False)
 
 from aitf.semantic_conventions.attributes import (
     AgentAttributes,
@@ -247,12 +270,13 @@ class UnusualTokenUsage(DetectionRule):
         self._min_samples = min_samples
         self._alpha = ema_alpha
         # Per-model statistics: {model: {"mean": float, "var": float, "n": int}}
-        self._stats: dict[str, dict[str, float]] = defaultdict(
-            lambda: {"mean": 0.0, "var": 0.0, "n": 0}
-        )
+        # Bounded to prevent memory exhaustion with many distinct models
+        self._stats: BoundedDict = BoundedDict(_MAX_STATE_ENTRIES)
 
     def _update_stats(self, model: str, value: float) -> None:
         """Update EMA mean and variance for a model."""
+        if model not in self._stats:
+            self._stats[model] = {"mean": 0.0, "var": 0.0, "n": 0}
         s = self._stats[model]
         s["n"] += 1
         if s["n"] == 1:
@@ -272,6 +296,8 @@ class UnusualTokenUsage(DetectionRule):
         if total_tokens == 0:
             return self._no_match("No token data present")
 
+        if model not in self._stats:
+            self._stats[model] = {"mean": 0.0, "var": 0.0, "n": 0}
         s = self._stats[model]
         self._update_stats(model, total_tokens)
 
@@ -343,7 +369,8 @@ class ModelSwitchingAttack(DetectionRule):
         self._window = window_seconds
         self._model_threshold = model_threshold
         # {session_id: [(timestamp, model), ...]}
-        self._history: dict[str, list[tuple[float, str]]] = defaultdict(list)
+        # Bounded to prevent memory exhaustion with many sessions
+        self._history: BoundedDict = BoundedDict(_MAX_STATE_ENTRIES)
 
     def evaluate(self, event: dict[str, Any]) -> DetectionResult:
         session_id = event.get(AgentAttributes.SESSION_ID, event.get("session_id", ""))
@@ -353,6 +380,8 @@ class ModelSwitchingAttack(DetectionRule):
         if not session_id or not model:
             return self._no_match("Missing session_id or model")
 
+        if session_id not in self._history:
+            self._history[session_id] = []
         history = self._history[session_id]
         history.append((ts, model))
 
@@ -527,7 +556,8 @@ class ExcessiveCostSpike(DetectionRule):
         self._absolute_threshold = absolute_threshold
         self._window = window_seconds
         # {project: [(ts, cost), ...]}
-        self._history: dict[str, list[tuple[float, float]]] = defaultdict(list)
+        # Bounded to prevent memory exhaustion with many projects
+        self._history: BoundedDict = BoundedDict(_MAX_STATE_ENTRIES)
 
     def evaluate(self, event: dict[str, Any]) -> DetectionResult:
         cost = event.get(CostAttributes.TOTAL_COST, 0.0)
@@ -544,6 +574,8 @@ class ExcessiveCostSpike(DetectionRule):
         )
         ts = event.get("timestamp", time.time())
 
+        if project not in self._history:
+            self._history[project] = []
         history = self._history[project]
         history.append((ts, cost))
 
@@ -645,7 +677,8 @@ class AgentLoopDetection(DetectionRule):
         self._max_cycle_length = max_cycle_length
         self._max_cycle_repeats = max_cycle_repeats
         # {session_id: [action1, action2, ...]}
-        self._action_history: dict[str, list[str]] = defaultdict(list)
+        # Bounded to prevent memory exhaustion with many sessions
+        self._action_history: BoundedDict = BoundedDict(_MAX_STATE_ENTRIES)
 
     def _detect_cycle(self, actions: list[str]) -> tuple[bool, list[str], int]:
         """Detect repeating cycles in the action sequence.
@@ -684,6 +717,8 @@ class AgentLoopDetection(DetectionRule):
         if not label:
             return self._no_match("No action/tool/step data")
 
+        if session_id not in self._action_history:
+            self._action_history[session_id] = []
         history = self._action_history[session_id]
         history.append(label)
 
@@ -859,7 +894,8 @@ class AgentSessionHijack(DetectionRule):
         self._max_idle = max_idle_seconds
         self._max_turn_jump = max_turn_jump
         # {session_id: {"agent": str, "framework": str, "last_turn": int, "last_ts": float}}
-        self._sessions: dict[str, dict[str, Any]] = {}
+        # Bounded to prevent memory exhaustion with many sessions
+        self._sessions: BoundedDict = BoundedDict(_MAX_STATE_ENTRIES)
 
     def evaluate(self, event: dict[str, Any]) -> DetectionResult:
         session_id = event.get(AgentAttributes.SESSION_ID, "")
@@ -989,7 +1025,8 @@ class ExcessiveToolCalls(DetectionRule):
         self._max_tools = max_tools_per_session
         self._warning_threshold = warning_threshold
         # {session_id: count}
-        self._counts: dict[str, int] = defaultdict(int)
+        # Bounded to prevent memory exhaustion with many sessions
+        self._counts: BoundedDict = BoundedDict(_MAX_STATE_ENTRIES)
 
     def evaluate(self, event: dict[str, Any]) -> DetectionResult:
         session_id = event.get(AgentAttributes.SESSION_ID, "")
@@ -1004,6 +1041,8 @@ class ExcessiveToolCalls(DetectionRule):
         if not tool_name:
             return self._no_match("Not a tool invocation event")
 
+        if session_id not in self._counts:
+            self._counts[session_id] = 0
         self._counts[session_id] += 1
         count = self._counts[session_id]
 
@@ -1316,9 +1355,8 @@ class DataExfiltrationViaTools(DetectionRule):
     ) -> None:
         self._max_read_volume = max_read_volume_bytes
         # {session_id: {"reads": [tool_name, ...], "total_bytes": int}}
-        self._session_reads: dict[str, dict[str, Any]] = defaultdict(
-            lambda: {"reads": [], "total_bytes": 0}
-        )
+        # Bounded to prevent memory exhaustion with many sessions
+        self._session_reads: BoundedDict = BoundedDict(_MAX_STATE_ENTRIES)
 
     def evaluate(self, event: dict[str, Any]) -> DetectionResult:
         tool_name = event.get(MCPAttributes.TOOL_NAME, "")
@@ -1331,6 +1369,8 @@ class DataExfiltrationViaTools(DetectionRule):
 
         # Track reads
         if tool_name in self._READ_TOOLS and session_id:
+            if session_id not in self._session_reads:
+                self._session_reads[session_id] = {"reads": [], "total_bytes": 0}
             sr = self._session_reads[session_id]
             sr["reads"].append(tool_name)
             sr["total_bytes"] += len(tool_output.encode("utf-8", errors="replace"))
@@ -1440,9 +1480,8 @@ class PIIExfiltrationChain(DetectionRule):
         self._max_types = max_pii_types_per_session
         self._sensitivity_threshold = sensitivity_threshold
         # {session_id: {pii_type: count}}
-        self._session_pii: dict[str, dict[str, int]] = defaultdict(
-            lambda: defaultdict(int)
-        )
+        # Bounded to prevent memory exhaustion with many sessions
+        self._session_pii: BoundedDict = BoundedDict(_MAX_STATE_ENTRIES)
 
     def evaluate(self, event: dict[str, Any]) -> DetectionResult:
         session_id = event.get(AgentAttributes.SESSION_ID, event.get("session_id", ""))
@@ -1462,6 +1501,8 @@ class PIIExfiltrationChain(DetectionRule):
         if not pii_types:
             return self._no_match("No PII types specified")
 
+        if session_id not in self._session_pii:
+            self._session_pii[session_id] = defaultdict(int)
         session_pii = self._session_pii[session_id]
         for pii_type in pii_types:
             session_pii[pii_type] += 1
@@ -1536,7 +1577,8 @@ class JailbreakEscalation(DetectionRule):
         self._max_attempts = max_attempts_per_session
         self._window = escalation_window_seconds
         # {session_id: [(timestamp, technique_type), ...]}
-        self._attempts: dict[str, list[tuple[float, str]]] = defaultdict(list)
+        # Bounded to prevent memory exhaustion with many sessions
+        self._attempts: BoundedDict = BoundedDict(_MAX_STATE_ENTRIES)
 
     def evaluate(self, event: dict[str, Any]) -> DetectionResult:
         session_id = event.get(AgentAttributes.SESSION_ID, event.get("session_id", ""))
@@ -1565,6 +1607,8 @@ class JailbreakEscalation(DetectionRule):
             return self._no_match("No jailbreak patterns in this event")
 
         # Record attempts
+        if session_id not in self._attempts:
+            self._attempts[session_id] = []
         for technique in techniques_found:
             self._attempts[session_id].append((ts, technique))
 
@@ -1646,7 +1690,8 @@ class SupplyChainCompromise(DetectionRule):
         # {model_name: {"hash": "sha256:...", "source": "...", "signer": "..."}}
         self._known_models = known_models or {}
         # Track first-seen model attributes for auto-baseline
-        self._first_seen: dict[str, dict[str, str]] = {}
+        # Bounded to prevent memory exhaustion with many distinct models
+        self._first_seen: BoundedDict = BoundedDict(_MAX_STATE_ENTRIES)
 
     def evaluate(self, event: dict[str, Any]) -> DetectionResult:
         model = event.get(GenAIAttributes.REQUEST_MODEL, "")

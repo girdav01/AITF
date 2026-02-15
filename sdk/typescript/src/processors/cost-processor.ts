@@ -12,6 +12,9 @@ import {
   GenAIAttributes,
 } from "../semantic-conventions/attributes";
 
+/** Maximum reasonable token count per request. */
+const MAX_TOKENS = 10_000_000;
+
 /** Model pricing per 1M tokens (USD). */
 export const MODEL_PRICING: Record<string, { input: number; output: number }> =
   {
@@ -93,9 +96,19 @@ export class CostProcessor implements SpanProcessor {
   private _totalCost = 0;
 
   constructor(options: CostProcessorOptions = {}) {
+    // Use spread from known-safe constant, then merge custom pricing safely
     this._pricing = { ...MODEL_PRICING };
     if (options.customPricing) {
-      Object.assign(this._pricing, options.customPricing);
+      for (const [key, value] of Object.entries(options.customPricing)) {
+        if (!Object.prototype.hasOwnProperty.call(options.customPricing, key)) {
+          continue;
+        }
+        // Reject dangerous property names (prototype pollution prevention)
+        if (key === "__proto__" || key === "constructor" || key === "prototype") {
+          continue;
+        }
+        this._pricing[key] = value;
+      }
     }
     this._defaultUser = options.defaultUser ?? null;
     this._defaultTeam = options.defaultTeam ?? null;
@@ -157,6 +170,10 @@ export class CostProcessor implements SpanProcessor {
     inputTokens: number,
     outputTokens: number
   ): CostResult | null {
+    // Validate token counts
+    inputTokens = Math.max(0, Math.min(inputTokens, MAX_TOKENS));
+    outputTokens = Math.max(0, Math.min(outputTokens, MAX_TOKENS));
+
     const pricing = this._getPricing(model);
     if (!pricing) {
       return null;
@@ -235,7 +252,7 @@ export class CostProcessor implements SpanProcessor {
   private _getPricing(
     model: string
   ): { input: number; output: number } | null {
-    if (this._pricing[model]) {
+    if (Object.prototype.hasOwnProperty.call(this._pricing, model)) {
       return this._pricing[model];
     }
     // Try prefix match (e.g., "gpt-4o-2024-08-06" -> "gpt-4o")
