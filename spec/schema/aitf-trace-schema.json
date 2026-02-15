@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitf.io/schema/trace/v1",
+  "title": "AITF Trace Schema",
+  "description": "JSON Schema for AITF trace span attributes",
+  "type": "object",
+  "definitions": {
+    "gen_ai_attributes": {
+      "type": "object",
+      "properties": {
+        "gen_ai.system": {
+          "type": "string",
+          "description": "AI system provider",
+          "enum": ["openai", "anthropic", "bedrock", "azure", "gcp_vertex", "cohere", "mistral", "meta", "google", "custom"]
+        },
+        "gen_ai.operation.name": {
+          "type": "string",
+          "description": "Operation name",
+          "enum": ["chat", "text_completion", "embeddings", "image_generation", "audio"]
+        },
+        "gen_ai.request.model": { "type": "string", "description": "Requested model ID" },
+        "gen_ai.request.max_tokens": { "type": "integer", "minimum": 1 },
+        "gen_ai.request.temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+        "gen_ai.request.top_p": { "type": "number", "minimum": 0, "maximum": 1 },
+        "gen_ai.request.top_k": { "type": "integer", "minimum": 1 },
+        "gen_ai.request.stream": { "type": "boolean" },
+        "gen_ai.request.tools": { "type": "string", "description": "JSON-encoded tools" },
+        "gen_ai.request.tool_choice": { "type": "string" },
+        "gen_ai.request.response_format": { "type": "string" },
+        "gen_ai.response.id": { "type": "string" },
+        "gen_ai.response.model": { "type": "string" },
+        "gen_ai.response.finish_reasons": { "type": "array", "items": { "type": "string" } },
+        "gen_ai.usage.input_tokens": { "type": "integer", "minimum": 0 },
+        "gen_ai.usage.output_tokens": { "type": "integer", "minimum": 0 },
+        "gen_ai.usage.cached_tokens": { "type": "integer", "minimum": 0 },
+        "gen_ai.usage.reasoning_tokens": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "agent_attributes": {
+      "type": "object",
+      "properties": {
+        "aitf.agent.name": { "type": "string" },
+        "aitf.agent.id": { "type": "string" },
+        "aitf.agent.type": {
+          "type": "string",
+          "enum": ["conversational", "autonomous", "reactive", "proactive"]
+        },
+        "aitf.agent.framework": {
+          "type": "string",
+          "enum": ["langchain", "crewai", "autogen", "semantic_kernel", "langgraph", "custom"]
+        },
+        "aitf.agent.version": { "type": "string" },
+        "aitf.agent.session.id": { "type": "string" },
+        "aitf.agent.session.turn_count": { "type": "integer", "minimum": 0 },
+        "aitf.agent.step.type": {
+          "type": "string",
+          "enum": ["planning", "reasoning", "tool_use", "delegation", "response", "reflection", "memory_access", "guardrail_check", "human_in_loop", "error_recovery"]
+        },
+        "aitf.agent.step.index": { "type": "integer", "minimum": 0 },
+        "aitf.agent.step.thought": { "type": "string" },
+        "aitf.agent.step.action": { "type": "string" },
+        "aitf.agent.step.observation": { "type": "string" },
+        "aitf.agent.delegation.target_agent": { "type": "string" },
+        "aitf.agent.delegation.target_agent_id": { "type": "string" },
+        "aitf.agent.delegation.reason": { "type": "string" },
+        "aitf.agent.delegation.strategy": {
+          "type": "string",
+          "enum": ["round_robin", "capability", "hierarchical", "vote"]
+        },
+        "aitf.agent.team.name": { "type": "string" },
+        "aitf.agent.team.topology": {
+          "type": "string",
+          "enum": ["hierarchical", "peer", "pipeline", "consensus", "debate", "swarm"]
+        },
+        "aitf.agent.team.members": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "mcp_attributes": {
+      "type": "object",
+      "properties": {
+        "aitf.mcp.server.name": { "type": "string" },
+        "aitf.mcp.server.version": { "type": "string" },
+        "aitf.mcp.server.transport": {
+          "type": "string",
+          "enum": ["stdio", "sse", "streamable_http"]
+        },
+        "aitf.mcp.server.url": { "type": "string", "format": "uri" },
+        "aitf.mcp.protocol.version": { "type": "string" },
+        "aitf.mcp.tool.name": { "type": "string" },
+        "aitf.mcp.tool.server": { "type": "string" },
+        "aitf.mcp.tool.input": { "type": "string" },
+        "aitf.mcp.tool.output": { "type": "string" },
+        "aitf.mcp.tool.is_error": { "type": "boolean" },
+        "aitf.mcp.tool.duration_ms": { "type": "number", "minimum": 0 },
+        "aitf.mcp.tool.approval_required": { "type": "boolean" },
+        "aitf.mcp.tool.approved": { "type": "boolean" },
+        "aitf.mcp.resource.uri": { "type": "string" },
+        "aitf.mcp.resource.name": { "type": "string" },
+        "aitf.mcp.resource.mime_type": { "type": "string" },
+        "aitf.mcp.prompt.name": { "type": "string" },
+        "aitf.mcp.sampling.model": { "type": "string" },
+        "aitf.mcp.sampling.max_tokens": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "skill_attributes": {
+      "type": "object",
+      "properties": {
+        "aitf.skill.name": { "type": "string" },
+        "aitf.skill.id": { "type": "string" },
+        "aitf.skill.version": { "type": "string" },
+        "aitf.skill.provider": {
+          "type": "string",
+          "enum": ["builtin", "marketplace", "custom", "mcp"]
+        },
+        "aitf.skill.category": {
+          "type": "string",
+          "enum": ["search", "code", "data", "communication", "analysis", "generation", "knowledge", "security", "integration", "workflow"]
+        },
+        "aitf.skill.input": { "type": "string" },
+        "aitf.skill.output": { "type": "string" },
+        "aitf.skill.status": {
+          "type": "string",
+          "enum": ["success", "error", "timeout", "denied", "retry"]
+        },
+        "aitf.skill.duration_ms": { "type": "number", "minimum": 0 },
+        "aitf.skill.source": { "type": "string" },
+        "aitf.skill.permissions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "security_attributes": {
+      "type": "object",
+      "properties": {
+        "aitf.security.risk_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "aitf.security.risk_level": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low", "info"]
+        },
+        "aitf.security.threat_detected": { "type": "boolean" },
+        "aitf.security.threat_type": { "type": "string" },
+        "aitf.security.owasp_category": {
+          "type": "string",
+          "pattern": "^LLM(0[1-9]|10)$"
+        },
+        "aitf.security.blocked": { "type": "boolean" },
+        "aitf.security.confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "aitf.security.pii.detected": { "type": "boolean" },
+        "aitf.security.pii.types": { "type": "array", "items": { "type": "string" } },
+        "aitf.security.guardrail.name": { "type": "string" },
+        "aitf.security.guardrail.result": {
+          "type": "string",
+          "enum": ["pass", "fail", "warn"]
+        }
+      }
+    },
+    "cost_attributes": {
+      "type": "object",
+      "properties": {
+        "aitf.cost.input_cost": { "type": "number", "minimum": 0 },
+        "aitf.cost.output_cost": { "type": "number", "minimum": 0 },
+        "aitf.cost.total_cost": { "type": "number", "minimum": 0 },
+        "aitf.cost.currency": { "type": "string", "default": "USD" },
+        "aitf.cost.attribution.user": { "type": "string" },
+        "aitf.cost.attribution.team": { "type": "string" },
+        "aitf.cost.attribution.project": { "type": "string" }
+      }
+    },
+    "rag_attributes": {
+      "type": "object",
+      "properties": {
+        "aitf.rag.pipeline.name": { "type": "string" },
+        "aitf.rag.pipeline.stage": {
+          "type": "string",
+          "enum": ["retrieve", "rerank", "generate", "evaluate"]
+        },
+        "aitf.rag.retrieve.database": { "type": "string" },
+        "aitf.rag.retrieve.top_k": { "type": "integer", "minimum": 1 },
+        "aitf.rag.retrieve.results_count": { "type": "integer", "minimum": 0 },
+        "aitf.rag.retrieve.min_score": { "type": "number" },
+        "aitf.rag.retrieve.max_score": { "type": "number" },
+        "aitf.rag.quality.context_relevance": { "type": "number", "minimum": 0, "maximum": 1 },
+        "aitf.rag.quality.faithfulness": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}
