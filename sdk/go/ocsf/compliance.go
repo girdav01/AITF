@@ -74,12 +74,22 @@ var FrameworkMappings = map[string]map[string]map[string]interface{}{
 		"governance":       {"sections": []string{"1798.185"}, "category": "rulemaking"},
 		"identity":         {"sections": []string{"1798.140"}, "category": "personal_information"},
 	},
+	"csa_aicm": {
+		"model_inference":  {"controls": []string{"AIS-04", "MDS-01", "LOG-07"}, "domain": "Model Security"},
+		"agent_activity":   {"controls": []string{"AIS-02", "MDS-05", "GRC-02"}, "domain": "Governance, Risk & Compliance"},
+		"tool_execution":   {"controls": []string{"AIS-01", "AIS-04", "LOG-05"}, "domain": "Application & Interface Security"},
+		"data_retrieval":   {"controls": []string{"DSP-01", "DSP-04", "CEK-03"}, "domain": "Data Security & Privacy"},
+		"security_finding": {"controls": []string{"SEF-03", "TVM-01", "LOG-04"}, "domain": "Security Incident Management"},
+		"supply_chain":     {"controls": []string{"STA-01", "STA-03", "CCC-01"}, "domain": "Supply Chain Management"},
+		"governance":       {"controls": []string{"GRC-01", "A&A-01", "LOG-01"}, "domain": "Governance, Risk & Compliance"},
+		"identity":         {"controls": []string{"IAM-01", "IAM-02", "IAM-04"}, "domain": "Identity & Access Management"},
+	},
 }
 
 // allComplianceFrameworks lists all supported compliance frameworks.
 var allComplianceFrameworks = []string{
 	"nist_ai_rmf", "mitre_atlas", "iso_42001",
-	"eu_ai_act", "soc2", "gdpr", "ccpa",
+	"eu_ai_act", "soc2", "gdpr", "ccpa", "csa_aicm",
 }
 
 // ComplianceMapper maps AI events to compliance framework controls.
@@ -88,7 +98,7 @@ type ComplianceMapper struct {
 }
 
 // NewComplianceMapper creates a new compliance mapper.
-// If frameworks is nil or empty, all 7 frameworks are enabled.
+// If frameworks is nil or empty, all 8 frameworks are enabled.
 func NewComplianceMapper(frameworks []string) *ComplianceMapper {
 	if len(frameworks) == 0 {
 		frameworks = append([]string{}, allComplianceFrameworks...)
@@ -125,6 +135,8 @@ func (c *ComplianceMapper) MapEvent(eventType string) *ComplianceMetadata {
 			result.GDPR = eventMap
 		case "ccpa":
 			result.CCPA = eventMap
+		case "csa_aicm":
+			result.CSAAICM = eventMap
 		}
 	}
 
@@ -207,6 +219,7 @@ func (c *ComplianceMapper) GenerateAuditRecord(
 		"soc2":        compliance.SOC2,
 		"gdpr":        compliance.GDPR,
 		"ccpa":        compliance.CCPA,
+		"csa_aicm":    compliance.CSAAICM,
 	}
 
 	for framework, data := range frameworkData {

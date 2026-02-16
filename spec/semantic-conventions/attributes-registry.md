@@ -306,6 +306,7 @@ The **Mapping** column maps each attribute to applicable frameworks: MITRE ATLAS
 | `aitf.compliance.soc2.controls` | string[] | **Optional** | SOC 2 controls | SOC 2 |
 | `aitf.compliance.gdpr.articles` | string[] | **Optional** | GDPR articles | GDPR Art.5, Art.22 |
 | `aitf.compliance.ccpa.sections` | string[] | **Optional** | CCPA sections | CCPA |
+| `aitf.compliance.csa_aicm.controls` | string[] | **Optional** | CSA AI Controls Matrix controls | CSA AICM |
 
 ---
 

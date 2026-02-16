@@ -456,7 +456,30 @@ MITRE ATLAS (Adversarial Threat Landscape for AI Systems) is a knowledge base of
 ## 4. CSA AI Controls Matrix
 
 ### Overview
-The Cloud Security Alliance AI Controls Matrix (AICM) provides 243 control objectives across 18 security domains for cloud-based AI systems.
+The Cloud Security Alliance AI Controls Matrix (AICM) provides 243 control objectives across 18 security domains for cloud-based AI systems. It extends the Cloud Controls Matrix (CCM v4) with AI-specific controls, including a dedicated Model Security (MDS) domain, and defines a shared responsibility model across four provider types: Cloud Service Provider (CSP), Model Provider (MP), Orchestrated Service Provider (OSP), and Application Provider (AP).
+
+### 18 Control Domains
+
+| Domain ID | Domain Name | Controls | AI Relevance |
+|-----------|-------------|----------|--------------|
+| **A&A** | Audit & Assurance | A&A-01 to A&A-06 | AI system audit trails, compliance evidence, third-party assessments |
+| **AIS** | Application & Interface Security | AIS-01 to AIS-07 | LLM API security, prompt/completion interfaces, input validation |
+| **BCR** | Business Continuity & Operational Resilience | BCR-01 to BCR-11 | AI service availability, model failover, inference redundancy |
+| **CCC** | Change Control & Configuration Management | CCC-01 to CCC-09 | Model versioning, deployment pipeline changes, config drift |
+| **CEK** | Cryptography, Encryption & Key Management | CEK-01 to CEK-21 | Encryption for training data, model weights, inference payloads |
+| **DCS** | Datacenter Security | DCS-01 to DCS-09 | GPU cluster physical security, hardware tamper protection |
+| **DSP** | Data Security & Privacy | DSP-01 to DSP-19 | Training data protection, PII in prompts, data classification |
+| **GRC** | Governance, Risk Management & Compliance | GRC-01 to GRC-08 | AI governance policies, risk treatment, regulatory mapping |
+| **HRS** | Human Resources Security | HRS-01 to HRS-13 | AI ethics training, security awareness, role-based access |
+| **IAM** | Identity & Access Management | IAM-01 to IAM-16 | Agent identity, API auth, delegation chains, least privilege |
+| **IPY** | Interoperability & Portability | IPY-01 to IPY-04 | Model format portability, vendor lock-in prevention |
+| **IVS** | Infrastructure & Virtualization Security | IVS-01 to IVS-09 | GPU/TPU infrastructure, container isolation, network segmentation |
+| **LOG** | Logging & Monitoring | LOG-01 to LOG-13 | AI event logging, inference audit trails, anomaly detection |
+| **MDS** | Model Security | MDS-01 to MDS-05 | Model tampering, adversarial robustness, provenance, behavior monitoring |
+| **SEF** | Security Incident Management & Forensics | SEF-01 to SEF-08 | AI incident response, breach notification, forensic analysis |
+| **STA** | Supply Chain Management, Transparency & Accountability | STA-01 to STA-14 | Model provenance, AI-BOM, third-party model auditing |
+| **TVM** | Threat & Vulnerability Management | TVM-01 to TVM-10 | AI-specific threat detection, adversarial testing, red teaming |
+| **UEM** | Universal Endpoint Management | UEM-01 to UEM-15 | Edge AI device management, endpoint security |
 
 ### Logging, Monitoring, and Audit Controls
 
@@ -473,28 +496,62 @@ The Cloud Security Alliance AI Controls Matrix (AICM) provides 243 control objec
 | **LOG-07** | Transaction/Activity Logging | Log key lifecycle events |
 | **LOG-08** | Access Control Logs | Log and audit physical access |
 
+#### Model Security Domain (MDS) — AI-Specific
+
+| Control ID | Control Objective | Telemetry Requirement |
+|-----------|------------------|----------------------|
+| **MDS-01** | Model Tampering Protection | Monitor model integrity, detect unauthorized modifications |
+| **MDS-02** | Adversarial Robustness | Track adversarial inputs, prompt injection attempts, robustness testing |
+| **MDS-03** | Model Access Controls | Log model access patterns, detect extraction attempts |
+| **MDS-04** | Model Provenance Tracking | Maintain model lineage, AI-BOM, supply chain integrity |
+| **MDS-05** | Model Behavior Monitoring | Track inference patterns, detect drift, monitor agent behavior |
+
+#### AITF Event Type to AICM Domain Mapping
+
+| Event Type | Primary AICM Controls | Domain |
+|------------|----------------------|--------|
+| **Model Inference** | AIS-04, MDS-01, LOG-07 | Model Security |
+| **Agent Activity** | AIS-02, MDS-05, GRC-02 | Governance, Risk & Compliance |
+| **Tool Execution** | AIS-01, AIS-04, LOG-05 | Application & Interface Security |
+| **Data Retrieval** | DSP-01, DSP-04, CEK-03 | Data Security & Privacy |
+| **Security Finding** | SEF-03, TVM-01, LOG-04 | Security Incident Management |
+| **Supply Chain** | STA-01, STA-03, CCC-01 | Supply Chain Management |
+| **Governance** | GRC-01, A&A-01, LOG-01 | Governance, Risk & Compliance |
+| **Identity** | IAM-01, IAM-02, IAM-04 | Identity & Access Management |
+
 #### AI-Specific Security Domains
 
 | Domain | Telemetry Focus | Key Controls |
 |--------|----------------|--------------|
-| **Model Manipulation** | Model behavior monitoring | Performance drift detection |
-| **Data Poisoning** | Training data integrity | Data lineage, quality monitoring |
-| **Sensitive Data Disclosure** | Output scanning | DLP integration, redaction audit |
-| **Model Theft** | Access and query monitoring | Extraction pattern detection |
-| **Service Failures** | Availability monitoring | Error rates, SLA compliance |
-| **Insecure Supply Chains** | Component tracking | SBOM, integrity verification |
-| **Insecure Apps/Plugins** | Integration monitoring | API security, plugin audit |
-| **Denial of Service** | Resource monitoring | Rate limiting, capacity alerts |
-| **Loss of Governance/Compliance** | Audit trails | Regulatory evidence collection |
+| **Model Manipulation** | Model behavior monitoring | MDS-01, MDS-05 — Performance drift detection |
+| **Data Poisoning** | Training data integrity | DSP-01, DSP-04 — Data lineage, quality monitoring |
+| **Sensitive Data Disclosure** | Output scanning | DSP-01, CEK-03 — DLP integration, redaction audit |
+| **Model Theft** | Access and query monitoring | MDS-03, IAM-04 — Extraction pattern detection |
+| **Service Failures** | Availability monitoring | BCR-01 — Error rates, SLA compliance |
+| **Insecure Supply Chains** | Component tracking | STA-01, STA-03 — SBOM, integrity verification |
+| **Insecure Apps/Plugins** | Integration monitoring | AIS-01, AIS-04 — API security, plugin audit |
+| **Denial of Service** | Resource monitoring | IVS-01, TVM-01 — Rate limiting, capacity alerts |
+| **Loss of Governance/Compliance** | Audit trails | GRC-01, A&A-01 — Regulatory evidence collection |
 
 #### Shared Responsibility Model
 
-| Responsibility | Cloud Provider Telemetry | Customer Telemetry |
-|---------------|-------------------------|-------------------|
-| **Infrastructure** | Physical security, network logs | Application logs |
-| **Platform** | Container/serverless logs | Workload logs |
-| **AI Services** | Model hosting logs | Inference logs, fine-tuning |
-| **Data** | Storage access logs | Data classification, DLP |
+| Responsibility | Cloud Service Provider | Model Provider | Orchestrated Service Provider | Application Provider |
+|---------------|----------------------|----------------|-------------------------------|---------------------|
+| **Infrastructure** | Physical security, network logs | GPU cluster | Orchestration layer | Application logs |
+| **Model Operations** | Hosting infrastructure | Training, fine-tuning, serving | Model routing, composition | Inference integration |
+| **Data Security** | Storage encryption | Training data protection | Data pipeline security | Input/output filtering |
+| **Identity** | IAM infrastructure | Model access controls | Service-to-service auth | User/agent authentication |
+| **Logging** | Infrastructure logs | Model operation logs | Orchestration audit trails | Application telemetry |
+
+#### Five Critical Pillars
+
+Each AICM control is analyzed through five critical pillars:
+
+1. **Control Type Classification** — AI-specific, hybrid AI-cloud, or traditional cloud controls
+2. **Control Applicability and Ownership** — Shared responsibility across CSP, MP, OSP, AP
+3. **Architectural Relevance** — Physical, network, compute, storage, application, and data layers
+4. **LLM Lifecycle Relevance** — Preparation, Development, Deployment, Operation, Retirement
+5. **Threat Category** — Mapping to specific AI threat vectors (OWASP LLM, MITRE ATLAS)
 
 ### AICM Audit Guidelines
 
@@ -502,7 +559,9 @@ The framework includes implementation and auditing guidelines mapped to:
 - ISO 42001:2023
 - ISO 27001
 - NIST AI RMF 1.0
-- EU AI Act (planned)
+- EU AI Act
+- OWASP Top 10 for LLM Applications
+- MITRE ATLAS
 
 ---
 

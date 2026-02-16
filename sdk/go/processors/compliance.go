@@ -11,7 +11,7 @@ import (
 // ComplianceFrameworkMapping holds the control mapping for a single framework
 // applied to a single event type.
 type ComplianceFrameworkMapping struct {
-	Controls   []string // NIST, ISO, SOC2
+	Controls   []string // NIST, ISO, SOC2, CSA AICM
 	Techniques []string // MITRE ATLAS
 	Articles   []string // EU AI Act, GDPR
 	Sections   []string // CCPA
@@ -22,6 +22,7 @@ type ComplianceFrameworkMapping struct {
 	Criteria   string   // SOC2 criteria
 	LawfulBasis string  // GDPR lawful basis
 	Category   string   // CCPA category
+	Domain     string   // CSA AICM domain
 }
 
 // PrimaryControls returns the primary control list for this mapping.
@@ -52,6 +53,7 @@ var ComplianceMappings = map[string]map[string]ComplianceFrameworkMapping{
 		"soc2":         {Controls: []string{"CC6.1"}, Criteria: "Common Criteria"},
 		"gdpr":         {Articles: []string{"Article 5", "Article 22"}, LawfulBasis: "legitimate_interest"},
 		"ccpa":         {Sections: []string{"1798.100"}, Category: "personal_information"},
+		"csa_aicm":     {Controls: []string{"AIS-04", "MDS-01", "LOG-07"}, Domain: "Model Security"},
 	},
 	"agent_activity": {
 		"nist_ai_rmf": {Controls: []string{"GOVERN-1.2", "MANAGE-3.1"}, Function: "GOVERN"},
@@ -60,6 +62,7 @@ var ComplianceMappings = map[string]map[string]ComplianceFrameworkMapping{
 		"eu_ai_act":    {Articles: []string{"Article 14", "Article 52"}, RiskLevel: "high"},
 		"soc2":         {Controls: []string{"CC7.2"}, Criteria: "Common Criteria"},
 		"gdpr":         {Articles: []string{"Article 22"}, LawfulBasis: "legitimate_interest"},
+		"csa_aicm":     {Controls: []string{"AIS-02", "MDS-05", "GRC-02"}, Domain: "Governance, Risk & Compliance"},
 	},
 	"tool_execution": {
 		"nist_ai_rmf": {Controls: []string{"MAP-3.5", "MANAGE-4.2"}, Function: "MANAGE"},
@@ -68,6 +71,7 @@ var ComplianceMappings = map[string]map[string]ComplianceFrameworkMapping{
 		"eu_ai_act":    {Articles: []string{"Article 9"}, RiskLevel: "high"},
 		"soc2":         {Controls: []string{"CC6.3"}, Criteria: "Common Criteria"},
 		"gdpr":         {Articles: []string{"Article 25"}, LawfulBasis: "legitimate_interest"},
+		"csa_aicm":     {Controls: []string{"AIS-01", "AIS-04", "LOG-05"}, Domain: "Application & Interface Security"},
 	},
 	"data_retrieval": {
 		"nist_ai_rmf": {Controls: []string{"MAP-1.5", "MEASURE-2.7"}, Function: "MAP"},
@@ -77,6 +81,7 @@ var ComplianceMappings = map[string]map[string]ComplianceFrameworkMapping{
 		"soc2":         {Controls: []string{"CC6.1"}, Criteria: "Common Criteria"},
 		"gdpr":         {Articles: []string{"Article 5", "Article 6"}, LawfulBasis: "legitimate_interest"},
 		"ccpa":         {Sections: []string{"1798.100"}, Category: "personal_information"},
+		"csa_aicm":     {Controls: []string{"DSP-01", "DSP-04", "CEK-03"}, Domain: "Data Security & Privacy"},
 	},
 	"security_finding": {
 		"nist_ai_rmf": {Controls: []string{"MANAGE-2.4", "MANAGE-4.1"}, Function: "MANAGE"},
@@ -86,6 +91,7 @@ var ComplianceMappings = map[string]map[string]ComplianceFrameworkMapping{
 		"soc2":         {Controls: []string{"CC7.2", "CC7.3"}, Criteria: "Common Criteria"},
 		"gdpr":         {Articles: []string{"Article 32", "Article 33"}, LawfulBasis: "legal_obligation"},
 		"ccpa":         {Sections: []string{"1798.150"}, Category: "breach"},
+		"csa_aicm":     {Controls: []string{"SEF-03", "TVM-01", "LOG-04"}, Domain: "Security Incident Management"},
 	},
 	"supply_chain": {
 		"nist_ai_rmf": {Controls: []string{"MAP-5.2", "GOVERN-6.1"}, Function: "GOVERN"},
@@ -94,6 +100,7 @@ var ComplianceMappings = map[string]map[string]ComplianceFrameworkMapping{
 		"eu_ai_act":    {Articles: []string{"Article 15", "Article 28"}, RiskLevel: "high"},
 		"soc2":         {Controls: []string{"CC9.2"}, Criteria: "Common Criteria"},
 		"gdpr":         {Articles: []string{"Article 28"}, LawfulBasis: "contractual"},
+		"csa_aicm":     {Controls: []string{"STA-01", "STA-03", "CCC-01"}, Domain: "Supply Chain Management"},
 	},
 	"governance": {
 		"nist_ai_rmf": {Controls: []string{"GOVERN-1.1", "MANAGE-1.3"}, Function: "GOVERN"},
@@ -102,6 +109,7 @@ var ComplianceMappings = map[string]map[string]ComplianceFrameworkMapping{
 		"soc2":         {Controls: []string{"CC1.2"}, Criteria: "Common Criteria"},
 		"gdpr":         {Articles: []string{"Article 5"}, LawfulBasis: "legal_obligation"},
 		"ccpa":         {Sections: []string{"1798.185"}, Category: "rulemaking"},
+		"csa_aicm":     {Controls: []string{"GRC-01", "A&A-01", "LOG-01"}, Domain: "Governance, Risk & Compliance"},
 	},
 	"identity": {
 		"nist_ai_rmf": {Controls: []string{"GOVERN-1.5", "MANAGE-2.1"}, Function: "GOVERN"},
@@ -111,13 +119,14 @@ var ComplianceMappings = map[string]map[string]ComplianceFrameworkMapping{
 		"soc2":         {Controls: []string{"CC6.1", "CC6.2"}, Criteria: "Common Criteria"},
 		"gdpr":         {Articles: []string{"Article 32"}, LawfulBasis: "legal_obligation"},
 		"ccpa":         {Sections: []string{"1798.140"}, Category: "personal_information"},
+		"csa_aicm":     {Controls: []string{"IAM-01", "IAM-02", "IAM-04"}, Domain: "Identity & Access Management"},
 	},
 }
 
 // allFrameworks lists all supported compliance frameworks.
 var allFrameworks = []string{
 	"nist_ai_rmf", "mitre_atlas", "iso_42001",
-	"eu_ai_act", "soc2", "gdpr", "ccpa",
+	"eu_ai_act", "soc2", "gdpr", "ccpa", "csa_aicm",
 }
 
 // ComplianceProcessor maps AI telemetry events to compliance framework controls.
@@ -126,7 +135,7 @@ type ComplianceProcessor struct {
 }
 
 // NewComplianceProcessor creates a new compliance processor.
-// If frameworks is nil or empty, all 7 frameworks are enabled.
+// If frameworks is nil or empty, all 8 frameworks are enabled.
 func NewComplianceProcessor(frameworks []string) *ComplianceProcessor {
 	if len(frameworks) == 0 {
 		frameworks = append([]string{}, allFrameworks...)
@@ -194,6 +203,10 @@ func (c *ComplianceProcessor) GetComplianceAttributes(eventType string) []attrib
 		case "ccpa":
 			if len(m.Sections) > 0 {
 				attrs = append(attrs, semconv.ComplianceCCPASectionsKey.String(strings.Join(m.Sections, ",")))
+			}
+		case "csa_aicm":
+			if len(m.Controls) > 0 {
+				attrs = append(attrs, semconv.ComplianceCSAAICMControlsKey.String(strings.Join(m.Controls, ",")))
 			}
 		}
 	}

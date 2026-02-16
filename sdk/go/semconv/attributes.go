@@ -365,6 +365,7 @@ const (
 	ComplianceSOC2ControlsKey  = attribute.Key("aitf.compliance.soc2.controls")
 	ComplianceGDPRArticlesKey  = attribute.Key("aitf.compliance.gdpr.articles")
 	ComplianceCCPASectionsKey  = attribute.Key("aitf.compliance.ccpa.sections")
+	ComplianceCSAAICMControlsKey = attribute.Key("aitf.compliance.csa_aicm.controls")
 )
 
 // --- AITF Latency Attributes ---

@@ -2,7 +2,8 @@
  * AITF Compliance Processor.
  *
  * OTel SpanProcessor that maps AI telemetry events to compliance framework controls.
- * Supports NIST AI RMF, MITRE ATLAS, ISO 42001, EU AI Act, SOC 2, GDPR, and CCPA.
+ * Supports NIST AI RMF, MITRE ATLAS, ISO 42001, EU AI Act, SOC 2, GDPR, CCPA,
+ * and CSA AI Controls Matrix (AICM).
  *
  * Based on compliance mapping from AITelemetry project.
  */
@@ -24,6 +25,7 @@ export interface ComplianceMapping {
   criteria?: string;
   lawful_basis?: string;
   category?: string;
+  domain?: string;
 }
 
 /** Compliance mappings by AI event type. */
@@ -48,6 +50,7 @@ export const COMPLIANCE_MAPPINGS: Record<
       lawful_basis: "legitimate_interest",
     },
     ccpa: { sections: ["1798.100"], category: "personal_information" },
+    csa_aicm: { controls: ["AIS-04", "MDS-01", "LOG-07"], domain: "Model Security" },
   },
   agent_activity: {
     nist_ai_rmf: {
@@ -68,6 +71,7 @@ export const COMPLIANCE_MAPPINGS: Record<
       articles: ["Article 22"],
       lawful_basis: "legitimate_interest",
     },
+    csa_aicm: { controls: ["AIS-02", "MDS-05", "GRC-02"], domain: "Governance, Risk & Compliance" },
   },
   tool_execution: {
     nist_ai_rmf: {
@@ -85,6 +89,7 @@ export const COMPLIANCE_MAPPINGS: Record<
       articles: ["Article 25"],
       lawful_basis: "legitimate_interest",
     },
+    csa_aicm: { controls: ["AIS-01", "AIS-04", "LOG-05"], domain: "Application & Interface Security" },
   },
   data_retrieval: {
     nist_ai_rmf: {
@@ -100,6 +105,7 @@ export const COMPLIANCE_MAPPINGS: Record<
       lawful_basis: "legitimate_interest",
     },
     ccpa: { sections: ["1798.100"], category: "personal_information" },
+    csa_aicm: { controls: ["DSP-01", "DSP-04", "CEK-03"], domain: "Data Security & Privacy" },
   },
   security_finding: {
     nist_ai_rmf: {
@@ -118,6 +124,7 @@ export const COMPLIANCE_MAPPINGS: Record<
       lawful_basis: "legal_obligation",
     },
     ccpa: { sections: ["1798.150"], category: "breach" },
+    csa_aicm: { controls: ["SEF-03", "TVM-01", "LOG-04"], domain: "Security Incident Management" },
   },
   supply_chain: {
     nist_ai_rmf: {
@@ -135,6 +142,7 @@ export const COMPLIANCE_MAPPINGS: Record<
     },
     soc2: { controls: ["CC9.2"], criteria: "Common Criteria" },
     gdpr: { articles: ["Article 28"], lawful_basis: "contractual" },
+    csa_aicm: { controls: ["STA-01", "STA-03", "CCC-01"], domain: "Supply Chain Management" },
   },
   governance: {
     nist_ai_rmf: {
@@ -149,6 +157,7 @@ export const COMPLIANCE_MAPPINGS: Record<
     soc2: { controls: ["CC1.2"], criteria: "Common Criteria" },
     gdpr: { articles: ["Article 5"], lawful_basis: "legal_obligation" },
     ccpa: { sections: ["1798.185"], category: "rulemaking" },
+    csa_aicm: { controls: ["GRC-01", "A&A-01", "LOG-01"], domain: "Governance, Risk & Compliance" },
   },
   identity: {
     nist_ai_rmf: {
@@ -161,6 +170,7 @@ export const COMPLIANCE_MAPPINGS: Record<
     soc2: { controls: ["CC6.1", "CC6.2"], criteria: "Common Criteria" },
     gdpr: { articles: ["Article 32"], lawful_basis: "legal_obligation" },
     ccpa: { sections: ["1798.140"], category: "personal_information" },
+    csa_aicm: { controls: ["IAM-01", "IAM-02", "IAM-04"], domain: "Identity & Access Management" },
   },
 };
 
@@ -189,6 +199,7 @@ export class ComplianceProcessor implements SpanProcessor {
       "soc2",
       "gdpr",
       "ccpa",
+      "csa_aicm",
     ];
     this._frameworks = options.frameworks ?? allFrameworks;
   }
@@ -277,6 +288,8 @@ export class ComplianceProcessor implements SpanProcessor {
         attributes[ComplianceAttributes.GDPR_ARTICLES] = controls.articles;
       } else if (framework === "ccpa" && controls.sections) {
         attributes[ComplianceAttributes.CCPA_SECTIONS] = controls.sections;
+      } else if (framework === "csa_aicm" && controls.controls) {
+        attributes[ComplianceAttributes.CSA_AICM_CONTROLS] = controls.controls;
       }
     }
 

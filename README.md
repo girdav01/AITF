@@ -17,7 +17,7 @@ OpenTelemetry's GenAI SIG provides foundational semantic conventions for AI obse
 | Multi-Agent Orchestration | Not covered | Teams, delegation chains, consensus |
 | Security Events | Not covered | OWASP LLM Top 10, threat detection |
 | OCSF Integration | Not covered | Native OCSF Category 7 export |
-| Compliance Mapping | Not covered | 7 frameworks (NIST, MITRE, EU AI Act, ...) |
+| Compliance Mapping | Not covered | 8 frameworks (NIST, MITRE, EU AI Act, CSA AICM, ...) |
 | Cost Attribution | Not covered | Per-request, per-user, per-model |
 | Quality Metrics | Not covered | Hallucination, confidence, factuality |
 | PII Detection | Not covered | Built-in processor |
@@ -39,8 +39,8 @@ AITF follows a four-layer pipeline architecture:
 ├─────────────────────────────────────────────────────────────────────┤
 │                    Layer 3: Normalization                           │
 │   ┌─────────────────────┐  ┌────────────────────────────────────┐  │
-│   │   OCSF Mapper       │  │  Compliance Mapper (7 frameworks) │  │
-│   │   (Category 7: AI)  │  │  NIST·MITRE·ISO·EU·SOC2·GDPR·CCPA│  │
+│   │   OCSF Mapper       │  │  Compliance Mapper (8 frameworks) │  │
+│   │   (Category 7: AI)  │  │  NIST·MITRE·ISO·EU·SOC2·GDPR·CCPA·CSA│
 │   └─────────────────────┘  └────────────────────────────────────┘  │
 ├─────────────────────────────────────────────────────────────────────┤
 │                     Layer 2: Collection                            │
@@ -372,7 +372,7 @@ AITF extends OTel GenAI with additional namespaces:
 
 ## Compliance Frameworks
 
-AITF automatically maps telemetry events to seven regulatory frameworks:
+AITF automatically maps telemetry events to eight regulatory frameworks:
 
 - **NIST AI RMF** — Risk management controls
 - **MITRE ATLAS** — AI attack techniques
@@ -381,6 +381,7 @@ AITF automatically maps telemetry events to seven regulatory frameworks:
 - **SOC 2** — Service organization controls
 - **GDPR** — Data protection regulation
 - **CCPA** — California consumer privacy
+- **CSA AICM** — Cloud Security Alliance AI Controls Matrix (243 controls across 18 domains)
 
 ## Requirements Documents
 

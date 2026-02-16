@@ -168,6 +168,7 @@ export interface ComplianceMetadata {
   soc2?: Record<string, unknown>;
   gdpr?: Record<string, unknown>;
   ccpa?: Record<string, unknown>;
+  csa_aicm?: Record<string, unknown>;
 }
 
 // --- OCSF Base Event ---

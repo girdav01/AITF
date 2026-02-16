@@ -45,7 +45,7 @@ Every AI telemetry event is enriched with security context:
 ### 2.3 Compliance by Design
 
 Telemetry events are automatically mapped to compliance frameworks:
-- NIST AI RMF, MITRE ATLAS, ISO/IEC 42001, EU AI Act, SOC 2, GDPR, CCPA
+- NIST AI RMF, MITRE ATLAS, ISO/IEC 42001, EU AI Act, SOC 2, GDPR, CCPA, CSA AICM
 
 ### 2.4 Minimal Overhead
 
@@ -197,7 +197,7 @@ See [OCSF Event Classes](ocsf-mapping/event-classes.md) for detailed class defin
 
 ### 5.2 Compliance Mapping
 
-Every OCSF event is automatically enriched with compliance metadata mapping to seven regulatory frameworks.
+Every OCSF event is automatically enriched with compliance metadata mapping to eight regulatory frameworks.
 
 See [Compliance Mapping](ocsf-mapping/compliance-mapping.md) for framework details.
 
@@ -217,7 +217,7 @@ See [Compliance Mapping](ocsf-mapping/compliance-mapping.md) for framework detai
 2. **MCP Protocol Telemetry** — Native instrumentation for MCP server connections, tool discovery/invocation, resource access, and prompt management
 3. **Skills Framework** — Skill registry, discovery, version negotiation, invocation tracing, and capability reporting
 4. **Security Event Pipeline** — Real-time OWASP LLM Top 10 detection, PII detection/redaction, threat indicators, and OCSF security event export
-5. **Compliance Automation** — Automatic mapping to NIST AI RMF, MITRE ATLAS, ISO 42001, EU AI Act, SOC 2, GDPR, CCPA
+5. **Compliance Automation** — Automatic mapping to NIST AI RMF, MITRE ATLAS, ISO 42001, EU AI Act, SOC 2, GDPR, CCPA, CSA AICM
 6. **Cost Attribution** — Per-token cost tracking with model pricing tables, budget enforcement, and multi-tenant attribution
 7. **Quality Metrics** — Hallucination scoring, confidence estimation, factuality checking, and output quality tracking
 8. **Supply Chain Telemetry** — Model provenance tracking, AI Bill of Materials, integrity verification, and model signing

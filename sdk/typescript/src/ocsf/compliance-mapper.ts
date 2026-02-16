@@ -1,7 +1,7 @@
 /**
  * AITF Compliance Mapper.
  *
- * Maps AI events to seven regulatory framework controls.
+ * Maps AI events to eight regulatory framework controls.
  * Based on the compliance mapper from the AITelemetry project.
  */
 
@@ -200,6 +200,40 @@ export const FRAMEWORK_MAPPINGS: Record<
     identity: {
       sections: ["1798.140"],
       category: "personal_information",
+    },
+  },
+  csa_aicm: {
+    model_inference: {
+      controls: ["AIS-04", "MDS-01", "LOG-07"],
+      domain: "Model Security",
+    },
+    agent_activity: {
+      controls: ["AIS-02", "MDS-05", "GRC-02"],
+      domain: "Governance, Risk & Compliance",
+    },
+    tool_execution: {
+      controls: ["AIS-01", "AIS-04", "LOG-05"],
+      domain: "Application & Interface Security",
+    },
+    data_retrieval: {
+      controls: ["DSP-01", "DSP-04", "CEK-03"],
+      domain: "Data Security & Privacy",
+    },
+    security_finding: {
+      controls: ["SEF-03", "TVM-01", "LOG-04"],
+      domain: "Security Incident Management",
+    },
+    supply_chain: {
+      controls: ["STA-01", "STA-03", "CCC-01"],
+      domain: "Supply Chain Management",
+    },
+    governance: {
+      controls: ["GRC-01", "A&A-01", "LOG-01"],
+      domain: "Governance, Risk & Compliance",
+    },
+    identity: {
+      controls: ["IAM-01", "IAM-02", "IAM-04"],
+      domain: "Identity & Access Management",
     },
   },
 };

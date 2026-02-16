@@ -171,6 +171,13 @@
             "sections": { "type": "array", "items": { "type": "string" } },
             "category": { "type": "string" }
           }
+        },
+        "csa_aicm": {
+          "type": "object",
+          "properties": {
+            "controls": { "type": "array", "items": { "type": "string" } },
+            "domain": { "type": "string" }
+          }
         }
       }
     },
