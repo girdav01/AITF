@@ -116,17 +116,37 @@ class TestComplianceMapper:
         assert compliance.nist_ai_rmf is not None
         assert compliance.eu_ai_act is not None
         assert compliance.mitre_atlas is not None
+        assert compliance.csa_aicm is not None
 
     def test_map_security_finding(self):
         compliance = self.mapper.map_event("security_finding")
         assert compliance.nist_ai_rmf is not None
         assert "MANAGE-2.4" in compliance.nist_ai_rmf["controls"]
 
+    def test_map_csa_aicm(self):
+        compliance = self.mapper.map_event("model_inference")
+        assert compliance.csa_aicm is not None
+        assert "AIS-04" in compliance.csa_aicm["controls"]
+        assert compliance.csa_aicm["domain"] == "Model Security"
+
+    def test_map_csa_aicm_all_event_types(self):
+        event_types = [
+            "model_inference", "agent_activity", "tool_execution",
+            "data_retrieval", "security_finding", "supply_chain",
+            "governance", "identity",
+        ]
+        for event_type in event_types:
+            compliance = self.mapper.map_event(event_type)
+            assert compliance.csa_aicm is not None, f"CSA AICM missing for {event_type}"
+            assert "controls" in compliance.csa_aicm, f"controls missing for {event_type}"
+            assert "domain" in compliance.csa_aicm, f"domain missing for {event_type}"
+
     def test_coverage_matrix(self):
         matrix = self.mapper.get_coverage_matrix()
         assert len(matrix) == 8  # All 8 event types
         assert "model_inference" in matrix
         assert "nist_ai_rmf" in matrix["model_inference"]
+        assert "csa_aicm" in matrix["model_inference"]
 
     def test_audit_record(self):
         record = self.mapper.generate_audit_record(
@@ -143,6 +163,14 @@ class TestComplianceMapper:
         compliance = mapper.map_event("model_inference")
         assert compliance.eu_ai_act is not None
         assert compliance.nist_ai_rmf is None
+        assert compliance.csa_aicm is None
+
+    def test_filtered_csa_aicm_only(self):
+        mapper = ComplianceMapper(frameworks=["csa_aicm"])
+        compliance = mapper.map_event("model_inference")
+        assert compliance.csa_aicm is not None
+        assert compliance.nist_ai_rmf is None
+        assert "AIS-04" in compliance.csa_aicm["controls"]
 
     def test_enrich_event(self):
         event = AIModelInferenceEvent(

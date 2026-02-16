@@ -388,6 +388,7 @@ class ComplianceAttributes:
     SOC2_CONTROLS = "aitf.compliance.soc2.controls"
     GDPR_ARTICLES = "aitf.compliance.gdpr.articles"
     CCPA_SECTIONS = "aitf.compliance.ccpa.sections"
+    CSA_AICM_CONTROLS = "aitf.compliance.csa_aicm.controls"
 
 
 class CostAttributes:

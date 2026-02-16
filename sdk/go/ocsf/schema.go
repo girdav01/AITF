@@ -197,6 +197,7 @@ type ComplianceMetadata struct {
 	SOC2       map[string]interface{} `json:"soc2,omitempty"`
 	GDPR       map[string]interface{} `json:"gdpr,omitempty"`
 	CCPA       map[string]interface{} `json:"ccpa,omitempty"`
+	CSAAICM    map[string]interface{} `json:"csa_aicm,omitempty"`
 }
 
 // --- OCSF Base Event ---

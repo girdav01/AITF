@@ -1,7 +1,8 @@
 """AITF Compliance Processor.
 
 OTel SpanProcessor that maps AI telemetry events to compliance framework controls.
-Supports NIST AI RMF, MITRE ATLAS, ISO 42001, EU AI Act, SOC 2, GDPR, and CCPA.
+Supports NIST AI RMF, MITRE ATLAS, ISO 42001, EU AI Act, SOC 2, GDPR, CCPA,
+and CSA AI Controls Matrix (AICM).
 
 Based on compliance mapping from AITelemetry project.
 """
@@ -25,6 +26,7 @@ COMPLIANCE_MAPPINGS: dict[str, dict[str, Any]] = {
         "soc2": {"controls": ["CC6.1"], "criteria": "Common Criteria"},
         "gdpr": {"articles": ["Article 5", "Article 22"], "lawful_basis": "legitimate_interest"},
         "ccpa": {"sections": ["1798.100"], "category": "personal_information"},
+        "csa_aicm": {"controls": ["AIS-04", "MDS-01", "LOG-07"], "domain": "Model Security"},
     },
     "agent_activity": {
         "nist_ai_rmf": {"controls": ["GOVERN-1.2", "MANAGE-3.1"], "function": "GOVERN"},
@@ -33,6 +35,7 @@ COMPLIANCE_MAPPINGS: dict[str, dict[str, Any]] = {
         "eu_ai_act": {"articles": ["Article 14", "Article 52"], "risk_level": "high"},
         "soc2": {"controls": ["CC7.2"], "criteria": "Common Criteria"},
         "gdpr": {"articles": ["Article 22"], "lawful_basis": "legitimate_interest"},
+        "csa_aicm": {"controls": ["AIS-02", "MDS-05", "GRC-02"], "domain": "Governance, Risk & Compliance"},
     },
     "tool_execution": {
         "nist_ai_rmf": {"controls": ["MAP-3.5", "MANAGE-4.2"], "function": "MANAGE"},
@@ -41,6 +44,7 @@ COMPLIANCE_MAPPINGS: dict[str, dict[str, Any]] = {
         "eu_ai_act": {"articles": ["Article 9"], "risk_level": "high"},
         "soc2": {"controls": ["CC6.3"], "criteria": "Common Criteria"},
         "gdpr": {"articles": ["Article 25"], "lawful_basis": "legitimate_interest"},
+        "csa_aicm": {"controls": ["AIS-01", "AIS-04", "LOG-05"], "domain": "Application & Interface Security"},
     },
     "data_retrieval": {
         "nist_ai_rmf": {"controls": ["MAP-1.5", "MEASURE-2.7"], "function": "MAP"},
@@ -50,6 +54,7 @@ COMPLIANCE_MAPPINGS: dict[str, dict[str, Any]] = {
         "soc2": {"controls": ["CC6.1"], "criteria": "Common Criteria"},
         "gdpr": {"articles": ["Article 5", "Article 6"], "lawful_basis": "legitimate_interest"},
         "ccpa": {"sections": ["1798.100"], "category": "personal_information"},
+        "csa_aicm": {"controls": ["DSP-01", "DSP-04", "CEK-03"], "domain": "Data Security & Privacy"},
     },
     "security_finding": {
         "nist_ai_rmf": {"controls": ["MANAGE-2.4", "MANAGE-4.1"], "function": "MANAGE"},
@@ -59,6 +64,7 @@ COMPLIANCE_MAPPINGS: dict[str, dict[str, Any]] = {
         "soc2": {"controls": ["CC7.2", "CC7.3"], "criteria": "Common Criteria"},
         "gdpr": {"articles": ["Article 32", "Article 33"], "lawful_basis": "legal_obligation"},
         "ccpa": {"sections": ["1798.150"], "category": "breach"},
+        "csa_aicm": {"controls": ["SEF-03", "TVM-01", "LOG-04"], "domain": "Security Incident Management"},
     },
     "supply_chain": {
         "nist_ai_rmf": {"controls": ["MAP-5.2", "GOVERN-6.1"], "function": "GOVERN"},
@@ -67,6 +73,7 @@ COMPLIANCE_MAPPINGS: dict[str, dict[str, Any]] = {
         "eu_ai_act": {"articles": ["Article 15", "Article 28"], "risk_level": "high"},
         "soc2": {"controls": ["CC9.2"], "criteria": "Common Criteria"},
         "gdpr": {"articles": ["Article 28"], "lawful_basis": "contractual"},
+        "csa_aicm": {"controls": ["STA-01", "STA-03", "CCC-01"], "domain": "Supply Chain Management"},
     },
     "governance": {
         "nist_ai_rmf": {"controls": ["GOVERN-1.1", "MANAGE-1.3"], "function": "GOVERN"},
@@ -75,6 +82,7 @@ COMPLIANCE_MAPPINGS: dict[str, dict[str, Any]] = {
         "soc2": {"controls": ["CC1.2"], "criteria": "Common Criteria"},
         "gdpr": {"articles": ["Article 5"], "lawful_basis": "legal_obligation"},
         "ccpa": {"sections": ["1798.185"], "category": "rulemaking"},
+        "csa_aicm": {"controls": ["GRC-01", "A&A-01", "LOG-01"], "domain": "Governance, Risk & Compliance"},
     },
     "identity": {
         "nist_ai_rmf": {"controls": ["GOVERN-1.5", "MANAGE-2.1"], "function": "GOVERN"},
@@ -84,6 +92,7 @@ COMPLIANCE_MAPPINGS: dict[str, dict[str, Any]] = {
         "soc2": {"controls": ["CC6.1", "CC6.2"], "criteria": "Common Criteria"},
         "gdpr": {"articles": ["Article 32"], "lawful_basis": "legal_obligation"},
         "ccpa": {"sections": ["1798.140"], "category": "personal_information"},
+        "csa_aicm": {"controls": ["IAM-01", "IAM-02", "IAM-04"], "domain": "Identity & Access Management"},
     },
 }
 
@@ -103,7 +112,7 @@ class ComplianceProcessor(SpanProcessor):
     ):
         all_frameworks = [
             "nist_ai_rmf", "mitre_atlas", "iso_42001",
-            "eu_ai_act", "soc2", "gdpr", "ccpa",
+            "eu_ai_act", "soc2", "gdpr", "ccpa", "csa_aicm",
         ]
         self._frameworks = frameworks or all_frameworks
 
@@ -174,6 +183,8 @@ class ComplianceProcessor(SpanProcessor):
                 attributes[ComplianceAttributes.GDPR_ARTICLES] = controls["articles"]
             elif framework == "ccpa" and "sections" in controls:
                 attributes[ComplianceAttributes.CCPA_SECTIONS] = controls["sections"]
+            elif framework == "csa_aicm" and "controls" in controls:
+                attributes[ComplianceAttributes.CSA_AICM_CONTROLS] = controls["controls"]
 
         return attributes
 

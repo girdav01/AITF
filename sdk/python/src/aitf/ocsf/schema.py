@@ -185,6 +185,7 @@ class ComplianceMetadata(BaseModel):
     soc2: dict[str, Any] | None = None
     gdpr: dict[str, Any] | None = None
     ccpa: dict[str, Any] | None = None
+    csa_aicm: dict[str, Any] | None = None
 
 
 # --- OCSF Base Event ---
