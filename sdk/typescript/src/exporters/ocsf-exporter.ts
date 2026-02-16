@@ -141,6 +141,15 @@ export class OCSFExporter implements SpanExporter {
         this._complianceMapper.enrichEvent(ocsfEvent, eventType);
       }
 
+      // Runtime validation before type cast to Record<string, unknown>
+      if (
+        typeof ocsfEvent !== "object" ||
+        ocsfEvent === null ||
+        Array.isArray(ocsfEvent)
+      ) {
+        console.warn("OCSF: Skipping non-object event from mapper");
+        continue;
+      }
       const eventDict = stripNulls(
         ocsfEvent as unknown as Record<string, unknown>
       );
@@ -163,14 +172,14 @@ export class OCSFExporter implements SpanExporter {
             resultCallback({ code: ExportResultCode.SUCCESS });
           })
           .catch((err) => {
-            console.error("OCSF export to endpoint failed:", err);
+            console.error("OCSF export to endpoint failed:", this._sanitizeError(err));
             resultCallback({ code: ExportResultCode.FAILED });
           });
         return;
       }
       resultCallback({ code: ExportResultCode.SUCCESS });
     } catch (err) {
-      console.error("OCSF export failed:", err);
+      console.error("OCSF export failed:", this._sanitizeError(err));
       resultCallback({ code: ExportResultCode.FAILED });
     }
   }
@@ -243,6 +252,17 @@ export class OCSFExporter implements SpanExporter {
       req.write(payload);
       req.end();
     });
+  }
+
+  /**
+   * Sanitize an error before logging to ensure the API key is never leaked.
+   */
+  private _sanitizeError(err: unknown): string {
+    const message = err instanceof Error ? err.message : String(err);
+    if (this._apiKey) {
+      return message.replaceAll(this._apiKey, "[REDACTED]");
+    }
+    return message;
   }
 
   private _classifyEvent(event: AIBaseEvent): string | null {

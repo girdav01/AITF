@@ -68,7 +68,7 @@ with llm.trace_inference(
     )
     span.set_response(
         response_id="chatcmpl-abc123",
-        model="gpt-4o-2024-08-06",
+        model="gpt-4o",
         finish_reasons=["stop"],
     )
     span.set_usage(input_tokens=25, output_tokens=45)

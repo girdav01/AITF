@@ -2,6 +2,7 @@ package processors
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 )
@@ -43,7 +44,13 @@ func NewPIIProcessor(action string, types []string) *PIIProcessor {
 		}
 	}
 
-	if action == "" {
+	switch action {
+	case "flag", "redact", "hash":
+		// valid
+	case "":
+		action = "flag"
+	default:
+		log.Printf("WARNING: invalid PII action %q, defaulting to \"flag\"", action)
 		action = "flag"
 	}
 

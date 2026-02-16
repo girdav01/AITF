@@ -377,3 +377,297 @@ const (
 	QualityFeedbackRatingKey     = attribute.Key("aitf.quality.feedback.rating")
 	QualityFeedbackThumbsKey     = attribute.Key("aitf.quality.feedback.thumbs")
 )
+
+// --- AITF Model Operations Attributes ---
+
+const (
+	// Training attributes
+	ModelOpsTrainingRunIDKey          = attribute.Key("aitf.model_ops.training.run_id")
+	ModelOpsTrainingTypeKey           = attribute.Key("aitf.model_ops.training.type")
+	ModelOpsTrainingBaseModelKey      = attribute.Key("aitf.model_ops.training.base_model")
+	ModelOpsTrainingFrameworkKey      = attribute.Key("aitf.model_ops.training.framework")
+	ModelOpsTrainingDatasetIDKey      = attribute.Key("aitf.model_ops.training.dataset.id")
+	ModelOpsTrainingDatasetVersionKey = attribute.Key("aitf.model_ops.training.dataset.version")
+	ModelOpsTrainingDatasetSizeKey    = attribute.Key("aitf.model_ops.training.dataset.size")
+	ModelOpsTrainingHyperparamsKey    = attribute.Key("aitf.model_ops.training.hyperparameters")
+	ModelOpsTrainingEpochsKey         = attribute.Key("aitf.model_ops.training.epochs")
+	ModelOpsTrainingLossFinalKey      = attribute.Key("aitf.model_ops.training.loss_final")
+	ModelOpsTrainingValLossFinalKey   = attribute.Key("aitf.model_ops.training.val_loss_final")
+	ModelOpsTrainingGPUTypeKey        = attribute.Key("aitf.model_ops.training.compute.gpu_type")
+	ModelOpsTrainingGPUCountKey       = attribute.Key("aitf.model_ops.training.compute.gpu_count")
+	ModelOpsTrainingGPUHoursKey       = attribute.Key("aitf.model_ops.training.compute.gpu_hours")
+	ModelOpsTrainingOutputModelIDKey  = attribute.Key("aitf.model_ops.training.output_model.id")
+	ModelOpsTrainingOutputModelHashKey = attribute.Key("aitf.model_ops.training.output_model.hash")
+	ModelOpsTrainingCodeCommitKey     = attribute.Key("aitf.model_ops.training.code_commit")
+	ModelOpsTrainingExperimentIDKey   = attribute.Key("aitf.model_ops.training.experiment.id")
+	ModelOpsTrainingExperimentNameKey = attribute.Key("aitf.model_ops.training.experiment.name")
+	ModelOpsTrainingStatusKey         = attribute.Key("aitf.model_ops.training.status")
+
+	// Evaluation attributes
+	ModelOpsEvalRunIDKey              = attribute.Key("aitf.model_ops.evaluation.run_id")
+	ModelOpsEvalModelIDKey            = attribute.Key("aitf.model_ops.evaluation.model_id")
+	ModelOpsEvalTypeKey               = attribute.Key("aitf.model_ops.evaluation.type")
+	ModelOpsEvalDatasetIDKey          = attribute.Key("aitf.model_ops.evaluation.dataset.id")
+	ModelOpsEvalDatasetSizeKey        = attribute.Key("aitf.model_ops.evaluation.dataset.size")
+	ModelOpsEvalMetricsKey            = attribute.Key("aitf.model_ops.evaluation.metrics")
+	ModelOpsEvalJudgeModelKey         = attribute.Key("aitf.model_ops.evaluation.judge_model")
+	ModelOpsEvalBaselineModelKey      = attribute.Key("aitf.model_ops.evaluation.baseline_model")
+	ModelOpsEvalRegressionDetectedKey = attribute.Key("aitf.model_ops.evaluation.regression_detected")
+	ModelOpsEvalPassKey               = attribute.Key("aitf.model_ops.evaluation.pass")
+
+	// Registry attributes
+	ModelOpsRegistryOperationKey        = attribute.Key("aitf.model_ops.registry.operation")
+	ModelOpsRegistryModelIDKey          = attribute.Key("aitf.model_ops.registry.model_id")
+	ModelOpsRegistryModelVersionKey     = attribute.Key("aitf.model_ops.registry.model_version")
+	ModelOpsRegistryModelAliasKey       = attribute.Key("aitf.model_ops.registry.model_alias")
+	ModelOpsRegistryStageKey            = attribute.Key("aitf.model_ops.registry.stage")
+	ModelOpsRegistryOwnerKey            = attribute.Key("aitf.model_ops.registry.owner")
+	ModelOpsRegistryTrainingRunIDKey    = attribute.Key("aitf.model_ops.registry.lineage.training_run_id")
+	ModelOpsRegistryParentModelIDKey    = attribute.Key("aitf.model_ops.registry.lineage.parent_model_id")
+
+	// Deployment attributes
+	ModelOpsDeploymentIDKey            = attribute.Key("aitf.model_ops.deployment.id")
+	ModelOpsDeploymentModelIDKey       = attribute.Key("aitf.model_ops.deployment.model_id")
+	ModelOpsDeploymentStrategyKey      = attribute.Key("aitf.model_ops.deployment.strategy")
+	ModelOpsDeploymentEnvironmentKey   = attribute.Key("aitf.model_ops.deployment.environment")
+	ModelOpsDeploymentEndpointKey      = attribute.Key("aitf.model_ops.deployment.endpoint")
+	ModelOpsDeploymentInfraProviderKey = attribute.Key("aitf.model_ops.deployment.infrastructure.provider")
+	ModelOpsDeploymentInfraGPUTypeKey  = attribute.Key("aitf.model_ops.deployment.infrastructure.gpu_type")
+	ModelOpsDeploymentInfraReplicasKey = attribute.Key("aitf.model_ops.deployment.infrastructure.replicas")
+	ModelOpsDeploymentCanaryPctKey     = attribute.Key("aitf.model_ops.deployment.canary_percent")
+	ModelOpsDeploymentStatusKey        = attribute.Key("aitf.model_ops.deployment.status")
+	ModelOpsDeploymentHealthStatusKey  = attribute.Key("aitf.model_ops.deployment.health_check.status")
+	ModelOpsDeploymentHealthLatencyKey = attribute.Key("aitf.model_ops.deployment.health_check.latency_ms")
+
+	// Serving attributes
+	ModelOpsServingOperationKey         = attribute.Key("aitf.model_ops.serving.operation")
+	ModelOpsServingRouteSelectedKey     = attribute.Key("aitf.model_ops.serving.route.selected_model")
+	ModelOpsServingRouteReasonKey       = attribute.Key("aitf.model_ops.serving.route.reason")
+	ModelOpsServingRouteCandidatesKey   = attribute.Key("aitf.model_ops.serving.route.candidates")
+	ModelOpsServingFallbackChainKey     = attribute.Key("aitf.model_ops.serving.fallback.chain")
+	ModelOpsServingFallbackDepthKey     = attribute.Key("aitf.model_ops.serving.fallback.depth")
+	ModelOpsServingFallbackTriggerKey   = attribute.Key("aitf.model_ops.serving.fallback.trigger")
+	ModelOpsServingFallbackOriginalKey  = attribute.Key("aitf.model_ops.serving.fallback.original_model")
+	ModelOpsServingFallbackFinalKey     = attribute.Key("aitf.model_ops.serving.fallback.final_model")
+	ModelOpsServingCacheHitKey          = attribute.Key("aitf.model_ops.serving.cache.hit")
+	ModelOpsServingCacheTypeKey         = attribute.Key("aitf.model_ops.serving.cache.type")
+	ModelOpsServingCacheSimilarityKey   = attribute.Key("aitf.model_ops.serving.cache.similarity_score")
+	ModelOpsServingCacheCostSavedKey    = attribute.Key("aitf.model_ops.serving.cache.cost_saved_usd")
+
+	// Monitoring attributes
+	ModelOpsMonitorCheckTypeKey      = attribute.Key("aitf.model_ops.monitoring.check_type")
+	ModelOpsMonitorModelIDKey        = attribute.Key("aitf.model_ops.monitoring.model_id")
+	ModelOpsMonitorResultKey         = attribute.Key("aitf.model_ops.monitoring.result")
+	ModelOpsMonitorMetricNameKey     = attribute.Key("aitf.model_ops.monitoring.metric_name")
+	ModelOpsMonitorMetricValueKey    = attribute.Key("aitf.model_ops.monitoring.metric_value")
+	ModelOpsMonitorBaselineValueKey  = attribute.Key("aitf.model_ops.monitoring.baseline_value")
+	ModelOpsMonitorDriftScoreKey     = attribute.Key("aitf.model_ops.monitoring.drift_score")
+	ModelOpsMonitorDriftTypeKey      = attribute.Key("aitf.model_ops.monitoring.drift_type")
+	ModelOpsMonitorActionTriggeredKey = attribute.Key("aitf.model_ops.monitoring.action_triggered")
+
+	// Prompt lifecycle attributes
+	ModelOpsPromptNameKey        = attribute.Key("aitf.model_ops.prompt.name")
+	ModelOpsPromptOperationKey   = attribute.Key("aitf.model_ops.prompt.operation")
+	ModelOpsPromptVersionKey     = attribute.Key("aitf.model_ops.prompt.version")
+	ModelOpsPromptContentHashKey = attribute.Key("aitf.model_ops.prompt.content_hash")
+	ModelOpsPromptLabelKey       = attribute.Key("aitf.model_ops.prompt.label")
+	ModelOpsPromptModelTargetKey = attribute.Key("aitf.model_ops.prompt.model_target")
+	ModelOpsPromptEvalScoreKey   = attribute.Key("aitf.model_ops.prompt.evaluation.score")
+	ModelOpsPromptEvalPassKey    = attribute.Key("aitf.model_ops.prompt.evaluation.pass")
+	ModelOpsPromptABTestIDKey    = attribute.Key("aitf.model_ops.prompt.a_b_test.id")
+	ModelOpsPromptABTestVariantKey = attribute.Key("aitf.model_ops.prompt.a_b_test.variant")
+)
+
+// --- AITF Drift Detection Attributes ---
+
+const (
+	DriftModelIDKey          = attribute.Key("aitf.drift.model_id")
+	DriftTypeKey             = attribute.Key("aitf.drift.type")
+	DriftScoreKey            = attribute.Key("aitf.drift.score")
+	DriftResultKey           = attribute.Key("aitf.drift.result")
+	DriftDetectionMethodKey  = attribute.Key("aitf.drift.detection_method")
+	DriftBaselineMetricKey   = attribute.Key("aitf.drift.baseline_metric")
+	DriftCurrentMetricKey    = attribute.Key("aitf.drift.current_metric")
+	DriftMetricNameKey       = attribute.Key("aitf.drift.metric_name")
+	DriftThresholdKey        = attribute.Key("aitf.drift.threshold")
+	DriftPValueKey           = attribute.Key("aitf.drift.p_value")
+	DriftRefDatasetKey       = attribute.Key("aitf.drift.reference_dataset")
+	DriftRefPeriodKey        = attribute.Key("aitf.drift.reference_period")
+	DriftSampleSizeKey       = attribute.Key("aitf.drift.sample_size")
+	DriftAffectedSegmentsKey = attribute.Key("aitf.drift.affected_segments")
+	DriftFeatureNameKey      = attribute.Key("aitf.drift.feature_name")
+	DriftFeatureImportanceKey = attribute.Key("aitf.drift.feature_importance")
+	DriftActionTriggeredKey  = attribute.Key("aitf.drift.action_triggered")
+
+	// Baseline attributes
+	DriftBaselineOperationKey  = attribute.Key("aitf.drift.baseline.operation")
+	DriftBaselineIDKey         = attribute.Key("aitf.drift.baseline.id")
+	DriftBaselineDatasetKey    = attribute.Key("aitf.drift.baseline.dataset")
+	DriftBaselineSampleSizeKey = attribute.Key("aitf.drift.baseline.sample_size")
+	DriftBaselinePeriodKey     = attribute.Key("aitf.drift.baseline.period")
+	DriftBaselineMetricsKey    = attribute.Key("aitf.drift.baseline.metrics")
+	DriftBaselineFeaturesKey   = attribute.Key("aitf.drift.baseline.features")
+	DriftBaselinePreviousIDKey = attribute.Key("aitf.drift.baseline.previous_id")
+
+	// Investigation attributes
+	DriftInvestTriggerIDKey       = attribute.Key("aitf.drift.investigation.trigger_id")
+	DriftInvestRootCauseKey       = attribute.Key("aitf.drift.investigation.root_cause")
+	DriftInvestRootCauseCatKey    = attribute.Key("aitf.drift.investigation.root_cause_category")
+	DriftInvestAffectedSegmentsKey = attribute.Key("aitf.drift.investigation.affected_segments")
+	DriftInvestAffectedUsersKey   = attribute.Key("aitf.drift.investigation.affected_users_estimate")
+	DriftInvestBlastRadiusKey     = attribute.Key("aitf.drift.investigation.blast_radius")
+	DriftInvestSeverityKey        = attribute.Key("aitf.drift.investigation.severity")
+	DriftInvestRecommendationKey  = attribute.Key("aitf.drift.investigation.recommendation")
+
+	// Remediation attributes
+	DriftRemediationActionKey      = attribute.Key("aitf.drift.remediation.action")
+	DriftRemediationTriggerIDKey   = attribute.Key("aitf.drift.remediation.trigger_id")
+	DriftRemediationAutomatedKey   = attribute.Key("aitf.drift.remediation.automated")
+	DriftRemediationInitiatedByKey = attribute.Key("aitf.drift.remediation.initiated_by")
+	DriftRemediationStatusKey      = attribute.Key("aitf.drift.remediation.status")
+	DriftRemediationRollbackToKey  = attribute.Key("aitf.drift.remediation.rollback_to")
+	DriftRemediationRetrainKey     = attribute.Key("aitf.drift.remediation.retrain_dataset")
+	DriftRemediationValidPassedKey = attribute.Key("aitf.drift.remediation.validation_passed")
+)
+
+// --- AITF Identity Attributes ---
+
+const (
+	// Core identity attributes
+	IdentityAgentIDKey       = attribute.Key("aitf.identity.agent_id")
+	IdentityAgentNameKey     = attribute.Key("aitf.identity.agent_name")
+	IdentityTypeKey          = attribute.Key("aitf.identity.type")
+	IdentityProviderKey      = attribute.Key("aitf.identity.provider")
+	IdentityOwnerKey         = attribute.Key("aitf.identity.owner")
+	IdentityOwnerTypeKey     = attribute.Key("aitf.identity.owner_type")
+	IdentityCredentialTypeKey = attribute.Key("aitf.identity.credential_type")
+	IdentityCredentialIDKey  = attribute.Key("aitf.identity.credential_id")
+	IdentityStatusKey        = attribute.Key("aitf.identity.status")
+	IdentityPreviousStatusKey = attribute.Key("aitf.identity.previous_status")
+	IdentityScopeKey         = attribute.Key("aitf.identity.scope")
+	IdentityExpiresAtKey     = attribute.Key("aitf.identity.expires_at")
+	IdentityTTLSecondsKey    = attribute.Key("aitf.identity.ttl_seconds")
+	IdentityAutoRotateKey    = attribute.Key("aitf.identity.auto_rotate")
+	IdentityRotationIntervalKey = attribute.Key("aitf.identity.rotation_interval_seconds")
+
+	// Lifecycle
+	IdentityLifecycleOpKey = attribute.Key("aitf.identity.lifecycle.operation")
+
+	// Authentication attributes
+	IdentityAuthMethodKey         = attribute.Key("aitf.identity.auth.method")
+	IdentityAuthResultKey         = attribute.Key("aitf.identity.auth.result")
+	IdentityAuthProviderKey       = attribute.Key("aitf.identity.auth.provider")
+	IdentityAuthTargetServiceKey  = attribute.Key("aitf.identity.auth.target_service")
+	IdentityAuthFailureReasonKey  = attribute.Key("aitf.identity.auth.failure_reason")
+	IdentityAuthTokenTypeKey      = attribute.Key("aitf.identity.auth.token_type")
+	IdentityAuthScopeRequestedKey = attribute.Key("aitf.identity.auth.scope_requested")
+	IdentityAuthScopeGrantedKey   = attribute.Key("aitf.identity.auth.scope_granted")
+	IdentityAuthContinuousKey     = attribute.Key("aitf.identity.auth.continuous")
+	IdentityAuthPKCEUsedKey       = attribute.Key("aitf.identity.auth.pkce_used")
+	IdentityAuthDPoPUsedKey       = attribute.Key("aitf.identity.auth.dpop_used")
+
+	// Authorization attributes
+	IdentityAuthzDecisionKey     = attribute.Key("aitf.identity.authz.decision")
+	IdentityAuthzResourceKey     = attribute.Key("aitf.identity.authz.resource")
+	IdentityAuthzActionKey       = attribute.Key("aitf.identity.authz.action")
+	IdentityAuthzPolicyEngineKey = attribute.Key("aitf.identity.authz.policy_engine")
+	IdentityAuthzPolicyIDKey     = attribute.Key("aitf.identity.authz.policy_id")
+	IdentityAuthzDenyReasonKey   = attribute.Key("aitf.identity.authz.deny_reason")
+	IdentityAuthzRiskScoreKey    = attribute.Key("aitf.identity.authz.risk_score")
+	IdentityAuthzJEAKey          = attribute.Key("aitf.identity.authz.jea")
+	IdentityAuthzTimeLimitedKey  = attribute.Key("aitf.identity.authz.time_limited")
+	IdentityAuthzExpiresAtKey    = attribute.Key("aitf.identity.authz.expires_at")
+
+	// Delegation attributes
+	IdentityDelegDelegatorKey      = attribute.Key("aitf.identity.delegation.delegator")
+	IdentityDelegDelegatorIDKey    = attribute.Key("aitf.identity.delegation.delegator_id")
+	IdentityDelegDelegateeKey      = attribute.Key("aitf.identity.delegation.delegatee")
+	IdentityDelegDelegateeIDKey    = attribute.Key("aitf.identity.delegation.delegatee_id")
+	IdentityDelegTypeKey           = attribute.Key("aitf.identity.delegation.type")
+	IdentityDelegChainKey          = attribute.Key("aitf.identity.delegation.chain")
+	IdentityDelegChainDepthKey     = attribute.Key("aitf.identity.delegation.chain_depth")
+	IdentityDelegScopeDelegatedKey = attribute.Key("aitf.identity.delegation.scope_delegated")
+	IdentityDelegScopeAttenuatedKey = attribute.Key("aitf.identity.delegation.scope_attenuated")
+	IdentityDelegResultKey         = attribute.Key("aitf.identity.delegation.result")
+	IdentityDelegProofTypeKey      = attribute.Key("aitf.identity.delegation.proof_type")
+	IdentityDelegTTLSecondsKey     = attribute.Key("aitf.identity.delegation.ttl_seconds")
+
+	// Trust attributes
+	IdentityTrustOperationKey  = attribute.Key("aitf.identity.trust.operation")
+	IdentityTrustPeerAgentKey  = attribute.Key("aitf.identity.trust.peer_agent")
+	IdentityTrustPeerAgentIDKey = attribute.Key("aitf.identity.trust.peer_agent_id")
+	IdentityTrustResultKey     = attribute.Key("aitf.identity.trust.result")
+	IdentityTrustMethodKey     = attribute.Key("aitf.identity.trust.method")
+	IdentityTrustDomainKey     = attribute.Key("aitf.identity.trust.trust_domain")
+	IdentityTrustPeerDomainKey = attribute.Key("aitf.identity.trust.peer_trust_domain")
+	IdentityTrustCrossDomainKey = attribute.Key("aitf.identity.trust.cross_domain")
+	IdentityTrustLevelKey      = attribute.Key("aitf.identity.trust.trust_level")
+	IdentityTrustProtocolKey   = attribute.Key("aitf.identity.trust.protocol")
+
+	// Session attributes
+	IdentitySessionIDKey              = attribute.Key("aitf.identity.session.id")
+	IdentitySessionOperationKey       = attribute.Key("aitf.identity.session.operation")
+	IdentitySessionScopeKey           = attribute.Key("aitf.identity.session.scope")
+	IdentitySessionExpiresAtKey       = attribute.Key("aitf.identity.session.expires_at")
+	IdentitySessionActionsCountKey    = attribute.Key("aitf.identity.session.actions_count")
+	IdentitySessionTerminationReasonKey = attribute.Key("aitf.identity.session.termination_reason")
+)
+
+// --- AITF Asset Inventory Attributes ---
+
+const (
+	// Core asset attributes
+	AssetIDKey                = attribute.Key("aitf.asset.id")
+	AssetNameKey              = attribute.Key("aitf.asset.name")
+	AssetTypeKey              = attribute.Key("aitf.asset.type")
+	AssetVersionKey           = attribute.Key("aitf.asset.version")
+	AssetHashKey              = attribute.Key("aitf.asset.hash")
+	AssetOwnerKey             = attribute.Key("aitf.asset.owner")
+	AssetOwnerTypeKey         = attribute.Key("aitf.asset.owner_type")
+	AssetDeployEnvKey         = attribute.Key("aitf.asset.deployment_environment")
+	AssetRiskClassificationKey = attribute.Key("aitf.asset.risk_classification")
+	AssetSourceRepoKey        = attribute.Key("aitf.asset.source_repository")
+	AssetTagsKey              = attribute.Key("aitf.asset.tags")
+
+	// Discovery attributes
+	AssetDiscoveryScopeKey       = attribute.Key("aitf.asset.discovery.scope")
+	AssetDiscoveryMethodKey      = attribute.Key("aitf.asset.discovery.method")
+	AssetDiscoveryAssetsFoundKey = attribute.Key("aitf.asset.discovery.assets_found")
+	AssetDiscoveryNewAssetsKey   = attribute.Key("aitf.asset.discovery.new_assets")
+	AssetDiscoveryShadowKey      = attribute.Key("aitf.asset.discovery.shadow_assets")
+	AssetDiscoveryStatusKey      = attribute.Key("aitf.asset.discovery.status")
+
+	// Audit attributes
+	AssetAuditTypeKey            = attribute.Key("aitf.asset.audit.type")
+	AssetAuditResultKey          = attribute.Key("aitf.asset.audit.result")
+	AssetAuditAuditorKey         = attribute.Key("aitf.asset.audit.auditor")
+	AssetAuditFrameworkKey       = attribute.Key("aitf.asset.audit.framework")
+	AssetAuditFindingsKey        = attribute.Key("aitf.asset.audit.findings")
+	AssetAuditNextDueKey         = attribute.Key("aitf.asset.audit.next_audit_due")
+	AssetAuditRiskScoreKey       = attribute.Key("aitf.asset.audit.risk_score")
+	AssetAuditIntegrityKey       = attribute.Key("aitf.asset.audit.integrity_verified")
+	AssetAuditComplianceKey      = attribute.Key("aitf.asset.audit.compliance_status")
+
+	// Classification attributes
+	AssetClassFrameworkKey        = attribute.Key("aitf.asset.classification.framework")
+	AssetClassPreviousKey         = attribute.Key("aitf.asset.classification.previous")
+	AssetClassReasonKey           = attribute.Key("aitf.asset.classification.reason")
+	AssetClassAssessorKey         = attribute.Key("aitf.asset.classification.assessor")
+	AssetClassUseCaseKey          = attribute.Key("aitf.asset.classification.use_case")
+	AssetClassAutonomousDecisionKey = attribute.Key("aitf.asset.classification.autonomous_decision")
+
+	// Decommission attributes
+	AssetDecommissionReasonKey      = attribute.Key("aitf.asset.decommission.reason")
+	AssetDecommissionReplacementKey = attribute.Key("aitf.asset.decommission.replacement_id")
+	AssetDecommissionApprovedByKey  = attribute.Key("aitf.asset.decommission.approved_by")
+)
+
+// --- AITF Memory Security Attributes ---
+
+const (
+	MemorySecurityContentHashKey    = attribute.Key("aitf.memory.security.content_hash")
+	MemorySecurityContentSizeKey    = attribute.Key("aitf.memory.security.content_size")
+	MemorySecurityIntegrityHashKey  = attribute.Key("aitf.memory.security.integrity_hash")
+	MemorySecurityPoisoningScoreKey = attribute.Key("aitf.memory.security.poisoning_score")
+	MemorySecurityCrossSessionKey   = attribute.Key("aitf.memory.security.cross_session")
+)

@@ -28,7 +28,7 @@ type CostProcessor struct {
 	budgetLimit float64
 	totalCost   float64
 	currency    string
-	mu          sync.Mutex
+	mu          sync.RWMutex
 }
 
 // NewCostProcessor creates a new cost processor.
@@ -103,22 +103,22 @@ func (c *CostProcessor) CalculateCost(model string, inputTokens, outputTokens in
 
 // TotalCost returns the accumulated total cost.
 func (c *CostProcessor) TotalCost() float64 {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.totalCost
 }
 
 // BudgetExceeded returns true if budget limit has been exceeded.
 func (c *CostProcessor) BudgetExceeded() bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	return c.budgetLimit > 0 && c.totalCost > c.budgetLimit
 }
 
 // BudgetRemaining returns the remaining budget.
 func (c *CostProcessor) BudgetRemaining() float64 {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	if c.budgetLimit <= 0 {
 		return -1
 	}
@@ -130,6 +130,8 @@ func (c *CostProcessor) BudgetRemaining() float64 {
 }
 
 func (c *CostProcessor) getPricing(model string) *ModelPricing {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 	if p, ok := c.pricing[model]; ok {
 		return &p
 	}
