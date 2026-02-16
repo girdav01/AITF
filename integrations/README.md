@@ -1,5 +1,10 @@
 # AITF Third-Party Integrations
 
+> **Non-official, highly experimental.** These integrations are community proposals
+> and have **not** been endorsed, reviewed, or certified by the vendors listed below.
+> APIs, attribute mappings, and monkey-patching behaviour may break without notice.
+> Use at your own risk — test thoroughly before deploying to production.
+
 This directory contains vendor-specific instrumentation modules that wrap popular AI/ML SDKs with AITF telemetry. Each integration auto-instruments a vendor's SDK to emit OpenTelemetry spans enriched with AITF semantic conventions for observability, security, and compliance.
 
 ## Architecture
