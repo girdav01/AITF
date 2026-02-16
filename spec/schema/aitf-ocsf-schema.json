@@ -433,6 +433,96 @@
           }
         }
       ]
+    },
+    "AIAssetInventoryEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/AIBaseEvent" },
+        {
+          "type": "object",
+          "required": ["asset_info"],
+          "properties": {
+            "class_uid": { "const": 7010 },
+            "asset_info": {
+              "type": "object",
+              "required": ["asset_id", "type"],
+              "properties": {
+                "asset_id": { "type": "string" },
+                "name": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["model", "dataset", "prompt_template", "vector_db", "mcp_server", "agent", "pipeline", "guardrail", "embedding_model", "knowledge_base"]
+                },
+                "version": { "type": "string" },
+                "hash": { "type": "string" },
+                "owner": { "type": "string" },
+                "deployment_environment": {
+                  "type": "string",
+                  "enum": ["production", "staging", "development", "shadow"]
+                },
+                "risk_classification": {
+                  "type": "string",
+                  "enum": ["unacceptable", "high_risk", "limited_risk", "minimal_risk", "systemic", "not_classified"]
+                },
+                "tags": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            "audit_info": {
+              "type": "object",
+              "properties": {
+                "audit_type": { "type": "string" },
+                "result": { "type": "string" },
+                "framework": { "type": "string" },
+                "risk_score": { "type": "number", "minimum": 0, "maximum": 100 },
+                "integrity_verified": { "type": "boolean" },
+                "compliance_status": { "type": "string" }
+              }
+            },
+            "classification_info": {
+              "type": "object",
+              "properties": {
+                "framework": { "type": "string" },
+                "previous_classification": { "type": "string" },
+                "reason": { "type": "string" },
+                "use_case": { "type": "string" },
+                "autonomous_decision": { "type": "boolean" }
+              }
+            },
+            "drift_info": {
+              "type": "object",
+              "properties": {
+                "model_id": { "type": "string" },
+                "drift_type": {
+                  "type": "string",
+                  "enum": ["data_distribution", "concept", "performance", "calibration", "embedding", "feature", "prediction", "label"]
+                },
+                "score": { "type": "number", "minimum": 0, "maximum": 1 },
+                "result": { "type": "string" },
+                "detection_method": { "type": "string" },
+                "baseline_metric": { "type": "number" },
+                "current_metric": { "type": "number" },
+                "p_value": { "type": "number" },
+                "affected_segments": { "type": "array", "items": { "type": "string" } },
+                "action_triggered": { "type": "string" }
+              }
+            },
+            "memory_security_info": {
+              "type": "object",
+              "properties": {
+                "event_type": {
+                  "type": "string",
+                  "enum": ["poisoning_detected", "integrity_violation", "cross_session_access", "growth_anomaly", "untrusted_provenance"]
+                },
+                "memory_key": { "type": "string" },
+                "memory_store": { "type": "string" },
+                "session_id": { "type": "string" },
+                "poisoning_score": { "type": "number", "minimum": 0, "maximum": 1 },
+                "content_hash": { "type": "string" },
+                "integrity_hash": { "type": "string" }
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

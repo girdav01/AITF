@@ -613,3 +613,215 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 | `aitf.identity.agent_name` | string | Agent name |
 | `aitf.identity.auth.method` | string | Auth method |
 | `aitf.identity.auth.failure_reason` | string | Failure reason |
+
+---
+
+### Asset Inventory Metrics
+
+#### `aitf.asset.registered`
+
+**Type:** Counter
+**Unit:** `{asset}`
+**Description:** Total assets registered in inventory.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.asset.type` | string | Asset type |
+| `aitf.asset.deployment_environment` | string | Environment |
+| `aitf.asset.risk_classification` | string | Risk level |
+
+#### `aitf.asset.discovery.scans`
+
+**Type:** Counter
+**Unit:** `{scan}`
+**Description:** Total asset discovery scans performed.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.asset.discovery.scope` | string | Discovery scope |
+| `aitf.asset.discovery.method` | string | Discovery method |
+
+#### `aitf.asset.discovery.shadow_assets`
+
+**Type:** Counter
+**Unit:** `{asset}`
+**Description:** Cumulative shadow (unregistered) AI assets detected.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.asset.discovery.scope` | string | Discovery scope |
+
+#### `aitf.asset.audit.runs`
+
+**Type:** Counter
+**Unit:** `{audit}`
+**Description:** Total asset audits performed.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.asset.audit.type` | string | Audit type |
+| `aitf.asset.audit.result` | string | Audit result |
+| `aitf.asset.audit.framework` | string | Compliance framework |
+
+#### `aitf.asset.audit.risk_score`
+
+**Type:** Histogram
+**Unit:** `1`
+**Description:** Distribution of asset audit risk scores (0-100).
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.asset.type` | string | Asset type |
+| `aitf.asset.audit.framework` | string | Framework |
+
+#### `aitf.asset.classification.changes`
+
+**Type:** Counter
+**Unit:** `{change}`
+**Description:** Total risk classification changes.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.asset.risk_classification` | string | New classification |
+| `aitf.asset.classification.previous` | string | Previous classification |
+| `aitf.asset.classification.framework` | string | Framework |
+
+#### `aitf.asset.audit.overdue`
+
+**Type:** Gauge
+**Unit:** `{asset}`
+**Description:** Number of assets with overdue audits.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.asset.type` | string | Asset type |
+| `aitf.asset.deployment_environment` | string | Environment |
+
+---
+
+### Drift Detection Metrics
+
+#### `aitf.drift.detections`
+
+**Type:** Counter
+**Unit:** `{detection}`
+**Description:** Total drift detections performed.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.drift.type` | string | Drift type |
+| `aitf.drift.result` | string | Detection result |
+| `aitf.drift.detection_method` | string | Statistical method |
+
+#### `aitf.drift.score`
+
+**Type:** Histogram
+**Unit:** `1`
+**Description:** Distribution of drift scores (0.0–1.0).
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.drift.model_id` | string | Monitored model |
+| `aitf.drift.type` | string | Drift type |
+
+#### `aitf.drift.alerts`
+
+**Type:** Counter
+**Unit:** `{alert}`
+**Description:** Total drift alerts triggered (warning, alert, critical).
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.drift.type` | string | Drift type |
+| `aitf.drift.result` | string | Alert level |
+| `aitf.drift.action_triggered` | string | Action taken |
+
+#### `aitf.drift.remediations`
+
+**Type:** Counter
+**Unit:** `{remediation}`
+**Description:** Total drift remediation actions taken.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.drift.remediation.action` | string | Action type |
+| `aitf.drift.remediation.automated` | boolean | Was automated |
+| `aitf.drift.remediation.status` | string | Outcome |
+
+#### `aitf.drift.time_to_detect`
+
+**Type:** Histogram
+**Unit:** `s`
+**Description:** Time from drift onset to detection.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.drift.type` | string | Drift type |
+| `aitf.drift.detection_method` | string | Detection method |
+
+#### `aitf.drift.time_to_remediate`
+
+**Type:** Histogram
+**Unit:** `s`
+**Description:** Time from drift detection to completed remediation.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.drift.remediation.action` | string | Remediation action |
+| `aitf.drift.remediation.automated` | boolean | Was automated |
+
+---
+
+### Memory Security Metrics
+
+#### `aitf.memory.security.mutations`
+
+**Type:** Counter
+**Unit:** `{mutation}`
+**Description:** Total memory mutations tracked.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.memory.operation` | string | Operation type |
+| `aitf.memory.store` | string | Memory store |
+
+#### `aitf.memory.security.poisoning_detections`
+
+**Type:** Counter
+**Unit:** `{detection}`
+**Description:** Total memory poisoning detections.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.memory.store` | string | Memory store |
+| `aitf.memory.provenance` | string | Content provenance |
+
+#### `aitf.memory.security.integrity_violations`
+
+**Type:** Counter
+**Unit:** `{violation}`
+**Description:** Total memory integrity hash mismatches.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.memory.store` | string | Memory store |
+
+#### `aitf.memory.security.cross_session_accesses`
+
+**Type:** Counter
+**Unit:** `{access}`
+**Description:** Total cross-session memory access attempts.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.memory.store` | string | Memory store |
+
+#### `aitf.memory.security.session_size`
+
+**Type:** Histogram
+**Unit:** `By`
+**Description:** Memory size per session (bytes).
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.memory.store` | string | Memory store |

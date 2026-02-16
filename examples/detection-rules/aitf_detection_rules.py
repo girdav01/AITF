@@ -2169,6 +2169,440 @@ class ModelDriftAlert(DetectionRule):
 
 
 # ===================================================================
+# CoSAI Preparation: Asset Inventory, Drift, Memory Security
+# ===================================================================
+
+
+class ShadowAIAssetDetected(DetectionRule):
+    """AITF-DET-020: Unregistered (shadow) AI assets discovered.
+
+    CoSAI AI Incident Response requires complete AI asset inventories.
+    This rule detects discovery scans that find unregistered assets,
+    indicating potential governance gaps.
+    """
+
+    rule_id = "AITF-DET-020"
+    name = "ShadowAIAssetDetected"
+    description = (
+        "Detects unregistered (shadow) AI assets found during discovery "
+        "scans, indicating assets operating outside governance controls."
+    )
+    severity = Severity.HIGH
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0010",
+        technique_name="ML Supply Chain Compromise",
+        tactic="Initial Access",
+    )
+    owasp_category = "LLM03"
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        shadow_count = event.get("aitf.asset.discovery.shadow_assets")
+        if shadow_count is None:
+            return self._no_match("Not an asset discovery event")
+
+        if shadow_count > 0:
+            return self._match(
+                confidence=0.90,
+                details=(
+                    f"Discovery scan found {shadow_count} unregistered (shadow) AI "
+                    f"asset(s) in scope '{event.get('aitf.asset.discovery.scope', 'unknown')}'"
+                ),
+                evidence={
+                    "shadow_assets": shadow_count,
+                    "total_found": event.get("aitf.asset.discovery.assets_found"),
+                    "discovery_scope": event.get("aitf.asset.discovery.scope"),
+                    "discovery_method": event.get("aitf.asset.discovery.method"),
+                },
+                recommendations=[
+                    "Register all discovered shadow assets in the AI inventory",
+                    "Perform risk classification on unregistered assets",
+                    "Investigate who deployed unregistered AI assets and why",
+                    "Consider blocking unregistered AI deployments via policy",
+                ],
+            )
+
+        return self._no_match("No shadow assets detected")
+
+
+class AssetAuditFailure(DetectionRule):
+    """AITF-DET-021: AI asset fails compliance or integrity audit.
+
+    CoSAI requires regular auditing of AI assets. Failed audits
+    indicate potential compliance violations or integrity issues.
+    """
+
+    rule_id = "AITF-DET-021"
+    name = "AssetAuditFailure"
+    description = (
+        "Detects AI assets that fail compliance, integrity, or security "
+        "audits, indicating governance or safety gaps."
+    )
+    severity = Severity.HIGH
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0031",
+        technique_name="Erode ML Model Integrity",
+        tactic="ML Attack Staging",
+    )
+    owasp_category = "LLM03"
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        audit_result = event.get("aitf.asset.audit.result")
+        if audit_result is None:
+            return self._no_match("Not an audit event")
+
+        if audit_result == "fail":
+            risk_score = event.get("aitf.asset.audit.risk_score", 0)
+            asset_id = event.get("aitf.asset.id", "unknown")
+            framework = event.get("aitf.asset.audit.framework", "unknown")
+            return self._match(
+                confidence=0.95,
+                details=(
+                    f"Asset '{asset_id}' failed {framework} audit "
+                    f"(risk_score={risk_score})"
+                ),
+                evidence={
+                    "asset_id": asset_id,
+                    "audit_type": event.get("aitf.asset.audit.type"),
+                    "framework": framework,
+                    "risk_score": risk_score,
+                    "findings": event.get("aitf.asset.audit.findings"),
+                },
+                severity_override=Severity.CRITICAL if risk_score > 80 else None,
+                recommendations=[
+                    "Review audit findings and create remediation plan",
+                    "Consider quarantining asset until findings are addressed",
+                    "Update risk classification if warranted",
+                ],
+            )
+
+        return self._no_match(f"Audit result: {audit_result}")
+
+
+class HighRiskAssetWithoutAudit(DetectionRule):
+    """AITF-DET-022: High-risk AI asset with overdue audit.
+
+    EU AI Act requires regular auditing of high-risk AI systems. This
+    rule detects high-risk assets whose audits are overdue.
+    """
+
+    rule_id = "AITF-DET-022"
+    name = "HighRiskAssetWithoutAudit"
+    description = (
+        "Detects high-risk AI assets with overdue compliance audits, "
+        "which may violate EU AI Act requirements."
+    )
+    severity = Severity.MEDIUM
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0031",
+        technique_name="Erode ML Model Integrity",
+        tactic="ML Attack Staging",
+    )
+    owasp_category = "LLM03"
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        risk_class = event.get("aitf.asset.risk_classification")
+        audit_due = event.get("aitf.asset.audit.next_audit_due")
+
+        if risk_class not in ("high_risk", "unacceptable", "systemic"):
+            return self._no_match("Not a high-risk asset")
+
+        # If this is an audit_overdue event, or we can detect it
+        if event.get("aitf.asset.audit.result") is None and audit_due:
+            # Check if the event indicates overdue (event-based detection)
+            asset_id = event.get("aitf.asset.id", "unknown")
+            return self._match(
+                confidence=0.80,
+                details=(
+                    f"High-risk asset '{asset_id}' (classification: {risk_class}) "
+                    f"has audit due at {audit_due}"
+                ),
+                evidence={
+                    "asset_id": asset_id,
+                    "risk_classification": risk_class,
+                    "next_audit_due": audit_due,
+                },
+                severity_override=Severity.HIGH if risk_class in ("unacceptable", "systemic") else None,
+                recommendations=[
+                    "Schedule immediate compliance audit",
+                    "Review EU AI Act conformity assessment requirements",
+                    "Document reason for audit delay",
+                ],
+            )
+
+        return self._no_match("Asset audit is not overdue")
+
+
+class CriticalDriftWithSegmentImpact(DetectionRule):
+    """AITF-DET-023: Critical drift affecting multiple segments.
+
+    CoSAI lists model drift as a top-level incident category. This
+    rule triggers on critical drift detections that have identified
+    affected user/data segments.
+    """
+
+    rule_id = "AITF-DET-023"
+    name = "CriticalDriftWithSegmentImpact"
+    description = (
+        "Detects critical model drift with identified affected segments, "
+        "indicating potentially widespread impact requiring incident response."
+    )
+    severity = Severity.HIGH
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0031",
+        technique_name="Erode ML Model Integrity",
+        tactic="ML Attack Staging",
+    )
+    owasp_category = "LLM04"
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        drift_result = event.get("aitf.drift.result")
+        drift_score = event.get("aitf.drift.score")
+        affected = event.get("aitf.drift.affected_segments", [])
+
+        if drift_result not in ("alert", "critical") or drift_score is None:
+            return self._no_match("Not a drift alert event")
+
+        if drift_result == "critical" or (drift_score > 0.7 and len(affected) > 0):
+            model_id = event.get("aitf.drift.model_id", "unknown")
+            return self._match(
+                confidence=0.90,
+                details=(
+                    f"Critical drift on model '{model_id}' "
+                    f"(type={event.get('aitf.drift.type')}, score={drift_score:.3f}) "
+                    f"affecting {len(affected)} segment(s): {affected}"
+                ),
+                evidence={
+                    "model_id": model_id,
+                    "drift_type": event.get("aitf.drift.type"),
+                    "drift_score": drift_score,
+                    "detection_method": event.get("aitf.drift.detection_method"),
+                    "affected_segments": affected,
+                    "baseline_metric": event.get("aitf.drift.baseline_metric"),
+                    "current_metric": event.get("aitf.drift.current_metric"),
+                    "p_value": event.get("aitf.drift.p_value"),
+                    "reference_dataset": event.get("aitf.drift.reference_dataset"),
+                },
+                severity_override=Severity.CRITICAL if drift_result == "critical" else None,
+                recommendations=[
+                    "Initiate drift investigation to identify root cause",
+                    "Evaluate blast radius and affected user count",
+                    "Consider traffic shifting to stable model version",
+                    "Check for potential adversarial data poisoning",
+                ],
+            )
+
+        return self._no_match(f"Drift not critical (result={drift_result})")
+
+
+class AdversarialDriftDetected(DetectionRule):
+    """AITF-DET-024: Drift investigation identifies adversarial root cause.
+
+    When a drift investigation identifies the root cause as adversarial
+    (data poisoning, targeted manipulation), this requires immediate
+    incident response.
+    """
+
+    rule_id = "AITF-DET-024"
+    name = "AdversarialDriftDetected"
+    description = (
+        "Detects drift investigations that identify adversarial activity "
+        "as the root cause, indicating a potential data poisoning attack."
+    )
+    severity = Severity.CRITICAL
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0020",
+        technique_name="Poison Training Data",
+        tactic="ML Attack Staging",
+    )
+    owasp_category = "LLM04"
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        root_cause_cat = event.get("aitf.drift.investigation.root_cause_category")
+        if root_cause_cat != "adversarial":
+            return self._no_match("Not an adversarial drift investigation")
+
+        model_id = event.get("aitf.drift.model_id", "unknown")
+        return self._match(
+            confidence=0.95,
+            details=(
+                f"Drift investigation on model '{model_id}' identified adversarial "
+                f"root cause: {event.get('aitf.drift.investigation.root_cause', 'unknown')}"
+            ),
+            evidence={
+                "model_id": model_id,
+                "root_cause": event.get("aitf.drift.investigation.root_cause"),
+                "blast_radius": event.get("aitf.drift.investigation.blast_radius"),
+                "affected_users": event.get("aitf.drift.investigation.affected_users_estimate"),
+                "severity": event.get("aitf.drift.investigation.severity"),
+            },
+            recommendations=[
+                "Immediately quarantine affected model",
+                "Declare security incident per IR policy",
+                "Investigate data pipeline for poisoning vector",
+                "Roll back to last known-good model version",
+                "Preserve all training data and logs as forensic evidence",
+            ],
+        )
+
+
+class MemoryPoisoningDetected(DetectionRule):
+    """AITF-DET-025: Agent memory poisoning detected.
+
+    CoSAI's MINJA and AGENTPOISON case studies highlight memory
+    poisoning as a critical attack vector. This rule detects
+    poisoning score anomalies.
+    """
+
+    rule_id = "AITF-DET-025"
+    name = "MemoryPoisoningDetected"
+    description = (
+        "Detects memory poisoning attempts in agentic systems — "
+        "unexpected content injection into agent memory stores."
+    )
+    severity = Severity.CRITICAL
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0020",
+        technique_name="Poison Training Data",
+        tactic="ML Attack Staging",
+    )
+    owasp_category = "LLM04"
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        poisoning_score = event.get("aitf.memory.security.poisoning_score")
+        if poisoning_score is None:
+            return self._no_match("Not a memory security event")
+
+        if poisoning_score >= 0.7:
+            memory_key = event.get("aitf.memory.key", "unknown")
+            return self._match(
+                confidence=min(0.60 + poisoning_score * 0.35, 0.99),
+                details=(
+                    f"Memory poisoning detected for key '{memory_key}' "
+                    f"(score={poisoning_score:.2f}, provenance={event.get('aitf.memory.provenance', 'unknown')})"
+                ),
+                evidence={
+                    "memory_key": memory_key,
+                    "store": event.get("aitf.memory.store"),
+                    "poisoning_score": poisoning_score,
+                    "provenance": event.get("aitf.memory.provenance"),
+                    "session_id": event.get("aitf.agent.session.id"),
+                    "content_hash": event.get("aitf.memory.security.content_hash"),
+                },
+                recommendations=[
+                    "Purge poisoned memory entry immediately",
+                    "Isolate affected session/agent",
+                    "Investigate provenance source for compromise",
+                    "Review all memory writes from the same provenance",
+                    "Consider resetting agent memory to known-good state",
+                ],
+            )
+
+        return self._no_match(f"Poisoning score below threshold ({poisoning_score:.2f})")
+
+
+class MemoryIntegrityViolation(DetectionRule):
+    """AITF-DET-026: Agent memory integrity hash mismatch.
+
+    Detects memory content that does not match its expected integrity
+    hash, indicating potential tampering.
+    """
+
+    rule_id = "AITF-DET-026"
+    name = "MemoryIntegrityViolation"
+    description = (
+        "Detects memory integrity violations where content hash does "
+        "not match the expected integrity hash, indicating tampering."
+    )
+    severity = Severity.CRITICAL
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0031",
+        technique_name="Erode ML Model Integrity",
+        tactic="ML Attack Staging",
+    )
+    owasp_category = "LLM04"
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        integrity_hash = event.get("aitf.memory.security.integrity_hash")
+        content_hash = event.get("aitf.memory.security.content_hash")
+
+        if not integrity_hash or not content_hash:
+            return self._no_match("Missing integrity or content hash")
+
+        if integrity_hash != content_hash:
+            memory_key = event.get("aitf.memory.key", "unknown")
+            return self._match(
+                confidence=0.98,
+                details=(
+                    f"Memory integrity violation for key '{memory_key}': "
+                    f"expected hash {integrity_hash}, got {content_hash}"
+                ),
+                evidence={
+                    "memory_key": memory_key,
+                    "expected_hash": integrity_hash,
+                    "actual_hash": content_hash,
+                    "store": event.get("aitf.memory.store"),
+                    "session_id": event.get("aitf.agent.session.id"),
+                },
+                recommendations=[
+                    "Quarantine affected memory entry",
+                    "Investigate source of modification",
+                    "Restore from verified backup if available",
+                    "Audit all memory operations in affected session",
+                ],
+            )
+
+        return self._no_match("Integrity hashes match")
+
+
+class CrossSessionMemoryAccess(DetectionRule):
+    """AITF-DET-027: Cross-session memory access detected.
+
+    CoSAI requires session memory isolation in agentic systems. This
+    rule detects when one session accesses memory from another session.
+    """
+
+    rule_id = "AITF-DET-027"
+    name = "CrossSessionMemoryAccess"
+    description = (
+        "Detects cross-session memory access — when one agent session "
+        "accesses memory belonging to a different session, violating isolation."
+    )
+    severity = Severity.HIGH
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0024",
+        technique_name="Exfiltration via ML Inference API",
+        tactic="Exfiltration",
+    )
+    owasp_category = "LLM02"
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        cross_session = event.get("aitf.memory.security.cross_session")
+        if not cross_session:
+            return self._no_match("Not a cross-session access")
+
+        memory_key = event.get("aitf.memory.key", "unknown")
+        session_id = event.get("aitf.agent.session.id", "unknown")
+        return self._match(
+            confidence=0.92,
+            details=(
+                f"Cross-session memory access: session '{session_id}' "
+                f"accessed memory key '{memory_key}' from another session"
+            ),
+            evidence={
+                "memory_key": memory_key,
+                "session_id": session_id,
+                "store": event.get("aitf.memory.store"),
+                "operation": event.get("aitf.memory.operation"),
+            },
+            recommendations=[
+                "Verify memory isolation boundaries",
+                "Investigate if this is a legitimate shared memory pattern",
+                "Enforce strict session-scoped memory access controls",
+            ],
+        )
+
+
+# ===================================================================
 # Detection Engine
 # ===================================================================
 
@@ -2237,6 +2671,15 @@ class DetectionEngine:
             # Model operations anomalies
             UnauthorizedModelDeployment(),
             ModelDriftAlert(),
+            # CoSAI Preparation: Asset inventory, drift, memory security
+            ShadowAIAssetDetected(),
+            AssetAuditFailure(),
+            HighRiskAssetWithoutAudit(),
+            CriticalDriftWithSegmentImpact(),
+            AdversarialDriftDetected(),
+            MemoryPoisoningDetected(),
+            MemoryIntegrityViolation(),
+            CrossSessionMemoryAccess(),
         ]
 
     def get_rule(self, rule_id: str) -> DetectionRule | None:

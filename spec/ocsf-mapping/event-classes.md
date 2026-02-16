@@ -19,6 +19,7 @@ These event classes extend the OCSF v1.1.0 specification with a new Category 7 f
 | 7007 | AI Governance | Compliance, audit, regulatory events |
 | 7008 | AI Identity | Agent identity, authentication, authorization, delegation, trust |
 | 7009 | AI Model Operations | Model lifecycle: training, evaluation, deployment, monitoring, serving |
+| 7010 | AI Asset Inventory | Asset registration, discovery, audit, risk classification, drift detection |
 
 ---
 
@@ -561,6 +562,145 @@ Represents model lifecycle events — training, evaluation, deployment, monitori
 | `dataset_id` | string | Training dataset |
 | `code_commit` | string | Code commit SHA |
 | `experiment_id` | string | Experiment tracker ID |
+
+---
+
+## Class 7010: AI Asset Inventory
+
+Represents AI asset lifecycle events — registration, discovery, audit, risk classification, drift detection, and decommissioning. Enables organizations to maintain a complete, auditable inventory of all AI system components as required by CoSAI AI Incident Response preparation guidance.
+
+### Type UIDs
+
+| type_uid | Activity | Description |
+|----------|----------|-------------|
+| 701001 | Asset Registration | New AI asset registered in inventory |
+| 701002 | Asset Discovery | Automated asset discovery scan |
+| 701003 | Asset Audit | Periodic audit or compliance check |
+| 701004 | Risk Classification | EU AI Act or internal risk classification |
+| 701005 | Dependency Mapping | Dependency graph resolution |
+| 701006 | Decommission | Asset retirement or decommissioning |
+| 701007 | Shadow Asset Detected | Unregistered AI asset discovered |
+| 701008 | Audit Overdue | Asset audit past due date |
+| 701009 | Drift Detection | Structured model drift analysis |
+| 701010 | Drift Baseline | Drift baseline create/refresh |
+| 701011 | Drift Investigation | Root cause investigation |
+| 701012 | Drift Remediation | Remediation action for drift |
+| 701013 | Memory Security Event | Memory poisoning, integrity, or isolation event |
+| 701099 | Other | Other asset inventory events |
+
+### Fields
+
+| Field | Type | Requirement | Description |
+|-------|------|-------------|-------------|
+| `asset_info` | `AIAssetInfo` | Required | Asset information |
+| `audit_info` | `AIAuditInfo` | Conditional | Audit details (for audit events) |
+| `classification_info` | `AIClassificationInfo` | Conditional | Risk classification details |
+| `drift_info` | `AIDriftInfo` | Conditional | Drift detection details |
+| `memory_security_info` | `AIMemorySecurityInfo` | Conditional | Memory security details |
+
+### OCSF Objects
+
+#### `AIAssetInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `asset_id` | string | Unique asset identifier |
+| `name` | string | Human-readable name |
+| `type` | string | `"model"`, `"dataset"`, `"prompt_template"`, `"vector_db"`, `"mcp_server"`, `"agent"`, `"pipeline"`, `"guardrail"` |
+| `version` | string | Asset version |
+| `hash` | string | Content integrity hash |
+| `owner` | string | Asset owner |
+| `deployment_environment` | string | `"production"`, `"staging"`, `"development"`, `"shadow"` |
+| `risk_classification` | string | `"unacceptable"`, `"high_risk"`, `"limited_risk"`, `"minimal_risk"`, `"systemic"`, `"not_classified"` |
+| `source_repository` | string | Source repository URL |
+| `tags` | string[] | Searchable tags |
+| `created_at` | timestamp | Registration timestamp |
+
+#### `AIAuditInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `audit_type` | string | `"integrity"`, `"compliance"`, `"access_review"`, `"security"`, `"drift"`, `"lineage"`, `"full"` |
+| `result` | string | `"pass"`, `"fail"`, `"warning"`, `"not_applicable"` |
+| `auditor` | string | Auditor identity |
+| `framework` | string | Compliance framework |
+| `findings` | string | JSON audit findings |
+| `risk_score` | double | Calculated risk score (0-100) |
+| `integrity_verified` | boolean | Integrity hash verified |
+| `compliance_status` | string | `"compliant"`, `"non_compliant"`, `"partially_compliant"` |
+| `last_audit_time` | timestamp | Previous audit time |
+| `next_audit_due` | timestamp | Next scheduled audit |
+
+#### `AIClassificationInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `framework` | string | Classification framework (`"eu_ai_act"`, `"nist_ai_rmf"`, `"internal"`) |
+| `previous_classification` | string | Previous risk level |
+| `reason` | string | Reason for classification |
+| `assessor` | string | Assessor identity |
+| `use_case` | string | Intended use case |
+| `affected_persons` | string | Population affected |
+| `sector` | string | Deployment sector |
+| `biometric` | boolean | Uses biometric data |
+| `autonomous_decision` | boolean | Makes autonomous decisions affecting rights |
+
+#### `AIDriftInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `model_id` | string | Model being monitored |
+| `drift_type` | string | `"data_distribution"`, `"concept"`, `"performance"`, `"calibration"`, `"embedding"`, `"feature"`, `"prediction"` |
+| `score` | double | Drift magnitude (0.0–1.0) |
+| `result` | string | `"normal"`, `"warning"`, `"alert"`, `"critical"` |
+| `detection_method` | string | Statistical method used |
+| `baseline_metric` | double | Baseline metric value |
+| `current_metric` | double | Current metric value |
+| `metric_name` | string | Metric name |
+| `p_value` | double | Statistical significance |
+| `reference_dataset` | string | Reference dataset ID |
+| `reference_period` | string | Reference time period |
+| `affected_segments` | string[] | Impacted user/data segments |
+| `action_triggered` | string | Automated action taken |
+| `investigation` | `AIDriftInvestigation` | Investigation details (if applicable) |
+| `remediation` | `AIDriftRemediation` | Remediation details (if applicable) |
+
+#### `AIDriftInvestigation`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `trigger_id` | string | Detection event that triggered investigation |
+| `root_cause` | string | Identified root cause |
+| `root_cause_category` | string | `"data_quality"`, `"upstream_change"`, `"seasonal"`, `"adversarial"`, `"model_degradation"`, `"unknown"` |
+| `affected_users_estimate` | int | Estimated affected users |
+| `blast_radius` | string | `"isolated"`, `"segment"`, `"widespread"`, `"global"` |
+| `severity` | string | `"low"`, `"medium"`, `"high"`, `"critical"` |
+| `recommendation` | string | Recommended action |
+
+#### `AIDriftRemediation`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `action` | string | `"retrain"`, `"rollback"`, `"recalibrate"`, `"feature_gate"`, `"traffic_shift"`, `"quarantine"` |
+| `automated` | boolean | Whether automatically triggered |
+| `initiated_by` | string | Initiator identity |
+| `status` | string | `"pending"`, `"in_progress"`, `"completed"`, `"failed"` |
+| `rollback_to` | string | Rollback target version |
+| `validation_passed` | boolean | Post-remediation validation |
+
+#### `AIMemorySecurityInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event_type` | string | `"poisoning_detected"`, `"integrity_violation"`, `"cross_session_access"`, `"growth_anomaly"`, `"untrusted_provenance"` |
+| `memory_key` | string | Affected memory key |
+| `memory_store` | string | Memory store type |
+| `session_id` | string | Session identifier |
+| `content_hash` | string | Content hash |
+| `integrity_hash` | string | Expected integrity hash |
+| `poisoning_score` | double | Poisoning anomaly score (0–1) |
+| `provenance` | string | Content provenance source |
+| `mutation_count` | int | Total mutations in session |
 
 ---
 

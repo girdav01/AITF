@@ -46,17 +46,17 @@ AITF follows a four-layer pipeline architecture:
 │                     Layer 2: Collection                            │
 │   ┌─────────────────────────────────────────────────────────────┐  │
 │   │              OTel Collector + AITF Processors               │  │
-│   │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐  │  │
-│   │  │ Security │ │   PII    │ │   Cost   │ │  Compliance  │  │  │
-│   │  │Processor │ │Processor │ │Processor │ │  Processor   │  │  │
-│   │  └──────────┘ └──────────┘ └──────────┘ └──────────────┘  │  │
+│   │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐ ┌────────┐ │
+│   │  │ Security │ │   PII    │ │   Cost   │ │ Compliance │ │ Memory │ │
+│   │  │Processor │ │Processor │ │Processor │ │ Processor  │ │ State  │ │
+│   │  └──────────┘ └──────────┘ └──────────┘ └────────────┘ └────────┘ │
 │   └─────────────────────────────────────────────────────────────┘  │
 ├─────────────────────────────────────────────────────────────────────┤
 │                   Layer 1: Instrumentation                         │
 │   ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────┐ ┌──────────┐  │
-│   │  LLM  │ │ Agent │ │  MCP  │ │ RAG │ │Skills│ │ModelOps│ │Identity│ │
-│   │Instr. │ │Instr. │ │Instr. │ │Ins. │ │Instr.│ │Instr.  │ │Instr.  │ │
-│   └───────┘ └───────┘ └───────┘ └─────┘ └──────┘ └────────┘ └────────┘ │
+│   │ LLM │ │Agent│ │ MCP │ │RAG│ │Skil│ │MOps│ │Iden│ │Asst│ │Drft│  │
+│   │Inst.│ │Inst.│ │Inst.│ │Ins│ │Ins.│ │Ins.│ │Ins.│ │Inv.│ │Det.│  │
+│   └─────┘ └─────┘ └─────┘ └───┘ └────┘ └────┘ └────┘ └────┘ └────┘  │
 │                    OTel GenAI SDK + AITF Extensions                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -80,7 +80,7 @@ AI System → OTel SDK (traces/metrics/logs) → AITF Processors → OTel Collec
 
 ## OCSF Category 7: AI Event Classes
 
-AITF defines nine OCSF event classes for AI systems:
+AITF defines ten OCSF event classes for AI systems:
 
 | Class UID | Event Class | Description |
 |-----------|-------------|-------------|
@@ -93,6 +93,7 @@ AITF defines nine OCSF event classes for AI systems:
 | 7007 | AI Governance | Compliance, audit, regulatory events |
 | 7008 | AI Identity | Agent identity, authentication, authorization, delegation, trust |
 | 7009 | AI Model Operations | Model lifecycle: training, evaluation, deployment, monitoring, serving |
+| 7010 | AI Asset Inventory | Asset registration, discovery, audit, risk classification, drift, memory security |
 
 ## SDK Language Support
 
@@ -363,6 +364,11 @@ AITF extends OTel GenAI with additional namespaces:
 | `aitf.cost.*` | Token costs, budget, attribution | AITF |
 | `aitf.quality.*` | Hallucination, confidence, factuality | AITF |
 | `aitf.supply_chain.*` | Model provenance, AI-BOM, integrity | AITF |
+| `aitf.identity.*` | Agent identity, auth, delegation, trust | AITF |
+| `aitf.model_ops.*` | LLMOps/MLOps lifecycle | AITF |
+| `aitf.asset.*` | AI asset inventory, audit, risk classification | AITF + CoSAI |
+| `aitf.drift.*` | Structured drift detection, investigation, remediation | AITF + CoSAI |
+| `aitf.memory.security.*` | Memory poisoning, integrity, isolation | AITF + CoSAI |
 
 ## Compliance Frameworks
 

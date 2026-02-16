@@ -693,6 +693,190 @@ class IdentityAttributes:
         SCOPED_PROXY = "scoped_proxy"
 
 
+class AssetInventoryAttributes:
+    """AITF AI Asset Inventory semantic convention attributes."""
+
+    # Core asset attributes
+    ID = "aitf.asset.id"
+    NAME = "aitf.asset.name"
+    TYPE = "aitf.asset.type"
+    VERSION = "aitf.asset.version"
+    HASH = "aitf.asset.hash"
+    OWNER = "aitf.asset.owner"
+    OWNER_TYPE = "aitf.asset.owner_type"
+    DEPLOYMENT_ENVIRONMENT = "aitf.asset.deployment_environment"
+    RISK_CLASSIFICATION = "aitf.asset.risk_classification"
+    DESCRIPTION = "aitf.asset.description"
+    TAGS = "aitf.asset.tags"
+    SOURCE_REPOSITORY = "aitf.asset.source_repository"
+    CREATED_AT = "aitf.asset.created_at"
+
+    # Discovery attributes
+    DISCOVERY_SCOPE = "aitf.asset.discovery.scope"
+    DISCOVERY_METHOD = "aitf.asset.discovery.method"
+    DISCOVERY_ASSETS_FOUND = "aitf.asset.discovery.assets_found"
+    DISCOVERY_NEW_ASSETS = "aitf.asset.discovery.new_assets"
+    DISCOVERY_SHADOW_ASSETS = "aitf.asset.discovery.shadow_assets"
+    DISCOVERY_STATUS = "aitf.asset.discovery.status"
+
+    # Audit attributes
+    AUDIT_TYPE = "aitf.asset.audit.type"
+    AUDIT_RESULT = "aitf.asset.audit.result"
+    AUDIT_AUDITOR = "aitf.asset.audit.auditor"
+    AUDIT_FRAMEWORK = "aitf.asset.audit.framework"
+    AUDIT_FINDINGS = "aitf.asset.audit.findings"
+    AUDIT_LAST_AUDIT_TIME = "aitf.asset.audit.last_audit_time"
+    AUDIT_NEXT_AUDIT_DUE = "aitf.asset.audit.next_audit_due"
+    AUDIT_RISK_SCORE = "aitf.asset.audit.risk_score"
+    AUDIT_INTEGRITY_VERIFIED = "aitf.asset.audit.integrity_verified"
+    AUDIT_COMPLIANCE_STATUS = "aitf.asset.audit.compliance_status"
+
+    # Classification attributes
+    CLASSIFICATION_FRAMEWORK = "aitf.asset.classification.framework"
+    CLASSIFICATION_PREVIOUS = "aitf.asset.classification.previous"
+    CLASSIFICATION_REASON = "aitf.asset.classification.reason"
+    CLASSIFICATION_ASSESSOR = "aitf.asset.classification.assessor"
+    CLASSIFICATION_USE_CASE = "aitf.asset.classification.use_case"
+    CLASSIFICATION_AFFECTED_PERSONS = "aitf.asset.classification.affected_persons"
+    CLASSIFICATION_SECTOR = "aitf.asset.classification.sector"
+    CLASSIFICATION_BIOMETRIC = "aitf.asset.classification.biometric"
+    CLASSIFICATION_AUTONOMOUS_DECISION = "aitf.asset.classification.autonomous_decision"
+
+    # Dependency attributes
+    DEPENDENCY_OPERATION = "aitf.asset.dependency.operation"
+    DEPENDENCY_COUNT = "aitf.asset.dependency.count"
+    DEPENDENCY_VULNERABLE_COUNT = "aitf.asset.dependency.vulnerable_count"
+
+    # Decommission attributes
+    DECOMMISSION_REASON = "aitf.asset.decommission.reason"
+    DECOMMISSION_REPLACEMENT_ID = "aitf.asset.decommission.replacement_id"
+    DECOMMISSION_DATA_RETENTION = "aitf.asset.decommission.data_retention"
+    DECOMMISSION_APPROVED_BY = "aitf.asset.decommission.approved_by"
+
+    class AssetType:
+        MODEL = "model"
+        DATASET = "dataset"
+        PROMPT_TEMPLATE = "prompt_template"
+        VECTOR_DB = "vector_db"
+        MCP_SERVER = "mcp_server"
+        AGENT = "agent"
+        PIPELINE = "pipeline"
+        GUARDRAIL = "guardrail"
+        EMBEDDING_MODEL = "embedding_model"
+        KNOWLEDGE_BASE = "knowledge_base"
+
+    class RiskClassification:
+        UNACCEPTABLE = "unacceptable"
+        HIGH_RISK = "high_risk"
+        LIMITED_RISK = "limited_risk"
+        MINIMAL_RISK = "minimal_risk"
+        SYSTEMIC = "systemic"
+        NOT_CLASSIFIED = "not_classified"
+
+    class DeploymentEnvironment:
+        PRODUCTION = "production"
+        STAGING = "staging"
+        DEVELOPMENT = "development"
+        SHADOW = "shadow"
+
+
+class DriftDetectionAttributes:
+    """AITF Model Drift Detection semantic convention attributes."""
+
+    MODEL_ID = "aitf.drift.model_id"
+    TYPE = "aitf.drift.type"
+    SCORE = "aitf.drift.score"
+    RESULT = "aitf.drift.result"
+    DETECTION_METHOD = "aitf.drift.detection_method"
+    BASELINE_METRIC = "aitf.drift.baseline_metric"
+    CURRENT_METRIC = "aitf.drift.current_metric"
+    METRIC_NAME = "aitf.drift.metric_name"
+    THRESHOLD = "aitf.drift.threshold"
+    P_VALUE = "aitf.drift.p_value"
+    REFERENCE_DATASET = "aitf.drift.reference_dataset"
+    REFERENCE_PERIOD = "aitf.drift.reference_period"
+    EVALUATION_WINDOW = "aitf.drift.evaluation_window"
+    SAMPLE_SIZE = "aitf.drift.sample_size"
+    AFFECTED_SEGMENTS = "aitf.drift.affected_segments"
+    FEATURE_NAME = "aitf.drift.feature_name"
+    FEATURE_IMPORTANCE = "aitf.drift.feature_importance"
+    ACTION_TRIGGERED = "aitf.drift.action_triggered"
+
+    BASELINE_OPERATION = "aitf.drift.baseline.operation"
+    BASELINE_ID = "aitf.drift.baseline.id"
+    BASELINE_DATASET = "aitf.drift.baseline.dataset"
+    BASELINE_SAMPLE_SIZE = "aitf.drift.baseline.sample_size"
+    BASELINE_PERIOD = "aitf.drift.baseline.period"
+    BASELINE_METRICS = "aitf.drift.baseline.metrics"
+    BASELINE_FEATURES = "aitf.drift.baseline.features"
+    BASELINE_PREVIOUS_ID = "aitf.drift.baseline.previous_id"
+
+    INVESTIGATION_TRIGGER_ID = "aitf.drift.investigation.trigger_id"
+    INVESTIGATION_ROOT_CAUSE = "aitf.drift.investigation.root_cause"
+    INVESTIGATION_ROOT_CAUSE_CATEGORY = "aitf.drift.investigation.root_cause_category"
+    INVESTIGATION_AFFECTED_SEGMENTS = "aitf.drift.investigation.affected_segments"
+    INVESTIGATION_AFFECTED_USERS = "aitf.drift.investigation.affected_users_estimate"
+    INVESTIGATION_BLAST_RADIUS = "aitf.drift.investigation.blast_radius"
+    INVESTIGATION_SEVERITY = "aitf.drift.investigation.severity"
+    INVESTIGATION_RECOMMENDATION = "aitf.drift.investigation.recommendation"
+
+    REMEDIATION_ACTION = "aitf.drift.remediation.action"
+    REMEDIATION_TRIGGER_ID = "aitf.drift.remediation.trigger_id"
+    REMEDIATION_AUTOMATED = "aitf.drift.remediation.automated"
+    REMEDIATION_INITIATED_BY = "aitf.drift.remediation.initiated_by"
+    REMEDIATION_STATUS = "aitf.drift.remediation.status"
+    REMEDIATION_ROLLBACK_TO = "aitf.drift.remediation.rollback_to"
+    REMEDIATION_RETRAIN_DATASET = "aitf.drift.remediation.retrain_dataset"
+    REMEDIATION_VALIDATION_PASSED = "aitf.drift.remediation.validation_passed"
+
+    class DriftType:
+        DATA_DISTRIBUTION = "data_distribution"
+        CONCEPT = "concept"
+        PERFORMANCE = "performance"
+        CALIBRATION = "calibration"
+        EMBEDDING = "embedding"
+        FEATURE = "feature"
+        PREDICTION = "prediction"
+        LABEL = "label"
+
+    class DetectionMethod:
+        PSI = "psi"
+        KS_TEST = "ks_test"
+        CHI_SQUARED = "chi_squared"
+        JS_DIVERGENCE = "js_divergence"
+        KL_DIVERGENCE = "kl_divergence"
+        WASSERSTEIN = "wasserstein"
+        MMD = "mmd"
+        ADWIN = "adwin"
+        DDM = "ddm"
+        PAGE_HINKLEY = "page_hinkley"
+        CUSTOM = "custom"
+
+    class RemediationAction:
+        RETRAIN = "retrain"
+        ROLLBACK = "rollback"
+        RECALIBRATE = "recalibrate"
+        FEATURE_GATE = "feature_gate"
+        TRAFFIC_SHIFT = "traffic_shift"
+        ALERT_ONLY = "alert_only"
+        QUARANTINE = "quarantine"
+
+
+class MemorySecurityAttributes:
+    """AITF Memory Security semantic convention attributes (extends aitf.memory.*)."""
+
+    CONTENT_HASH = "aitf.memory.security.content_hash"
+    CONTENT_SIZE = "aitf.memory.security.content_size"
+    INTEGRITY_HASH = "aitf.memory.security.integrity_hash"
+    PROVENANCE_VERIFIED = "aitf.memory.security.provenance_verified"
+    POISONING_SCORE = "aitf.memory.security.poisoning_score"
+    CROSS_SESSION = "aitf.memory.security.cross_session"
+    ISOLATION_VERIFIED = "aitf.memory.security.isolation_verified"
+    MUTATION_COUNT = "aitf.memory.security.mutation_count"
+    SNAPSHOT_BEFORE = "aitf.memory.security.snapshot_before"
+    SNAPSHOT_AFTER = "aitf.memory.security.snapshot_after"
+
+
 # Latency attributes (used across multiple span types)
 class LatencyAttributes:
     """AITF Latency attributes for performance tracking."""
