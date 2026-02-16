@@ -211,6 +211,8 @@ const (
 	SkillDurationMsKey  = attribute.Key("aitf.skill.duration_ms")
 	SkillRetryCountKey  = attribute.Key("aitf.skill.retry_count")
 	SkillSourceKey      = attribute.Key("aitf.skill.source")
+	SkillHashKey        = attribute.Key("aitf.skill.hash")
+	SkillAuthorsKey     = attribute.Key("aitf.skill.authors")
 	SkillCountKey       = attribute.Key("aitf.skill.count")
 
 	SkillComposeNameKey    = attribute.Key("aitf.skill.compose.name")
