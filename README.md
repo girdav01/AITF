@@ -23,6 +23,8 @@ OpenTelemetry's GenAI SIG provides foundational semantic conventions for AI obse
 | PII Detection | Not covered | Built-in processor |
 | Supply Chain | Not covered | Model provenance, AI-BOM |
 | Guardrail Telemetry | Not covered | Content filtering, safety checks |
+| Agentic Identity | Not covered | Full lifecycle, OAuth 2.1, SPIFFE, delegation chains, trust |
+| LLMOps/MLOps | Not covered | Training, evaluation, registry, deployment, drift, prompts |
 
 ## Architecture
 
@@ -52,10 +54,10 @@ AITF follows a four-layer pipeline architecture:
 ├─────────────────────────────────────────────────────────────────────┤
 │                   Layer 1: Instrumentation                         │
 │   ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────┐ ┌──────────┐  │
-│   │   LLM    │ │  Agent   │ │   MCP    │ │  RAG  │ │  Skills  │  │
-│   │Instrumtn │ │Instrumtn │ │Instrumtn │ │Instr. │ │Instrumtn │  │
-│   └──────────┘ └──────────┘ └──────────┘ └───────┘ └──────────┘  │
-│                  OTel GenAI SDK + AITF Extensions                  │
+│   │  LLM  │ │ Agent │ │  MCP  │ │ RAG │ │Skills│ │ModelOps│ │Identity│ │
+│   │Instr. │ │Instr. │ │Instr. │ │Ins. │ │Instr.│ │Instr.  │ │Instr.  │ │
+│   └───────┘ └───────┘ └───────┘ └─────┘ └──────┘ └────────┘ └────────┘ │
+│                    OTel GenAI SDK + AITF Extensions                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -78,7 +80,7 @@ AI System → OTel SDK (traces/metrics/logs) → AITF Processors → OTel Collec
 
 ## OCSF Category 7: AI Event Classes
 
-AITF defines eight OCSF event classes for AI systems:
+AITF defines nine OCSF event classes for AI systems:
 
 | Class UID | Event Class | Description |
 |-----------|-------------|-------------|
@@ -89,7 +91,8 @@ AITF defines eight OCSF event classes for AI systems:
 | 7005 | AI Security Finding | Security events, guardrails, policy violations |
 | 7006 | AI Supply Chain | Model provenance, AI-BOM, integrity |
 | 7007 | AI Governance | Compliance, audit, regulatory events |
-| 7008 | AI Identity | Agent identity, credential delegation, auth |
+| 7008 | AI Identity | Agent identity, authentication, authorization, delegation, trust |
+| 7009 | AI Model Operations | Model lifecycle: training, evaluation, deployment, monitoring, serving |
 
 ## SDK Language Support
 

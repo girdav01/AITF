@@ -359,3 +359,257 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 |-----------|------|-------|
 | `gen_ai.request.model` | string | Model ID |
 | `aitf.agent.name` | string | Agent name (if applicable) |
+
+---
+
+### Model Operations (LLMOps/MLOps) Metrics
+
+#### `aitf.model_ops.training.runs`
+
+**Type:** Counter
+**Unit:** `{run}`
+**Description:** Total training/fine-tuning runs.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.training.type` | string | Training type |
+| `aitf.model_ops.training.status` | string | Run status |
+| `aitf.model_ops.training.base_model` | string | Base model |
+
+#### `aitf.model_ops.training.duration`
+
+**Type:** Histogram
+**Unit:** `s`
+**Description:** Training run duration.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.training.type` | string | Training type |
+| `aitf.model_ops.training.base_model` | string | Base model |
+
+#### `aitf.model_ops.training.gpu_hours`
+
+**Type:** Counter
+**Unit:** `h`
+**Description:** Cumulative GPU hours consumed by training.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.training.compute.gpu_type` | string | GPU type |
+| `aitf.model_ops.training.type` | string | Training type |
+
+#### `aitf.model_ops.evaluation.runs`
+
+**Type:** Counter
+**Unit:** `{run}`
+**Description:** Total evaluation runs.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.evaluation.type` | string | Evaluation type |
+| `aitf.model_ops.evaluation.pass` | boolean | Pass/fail |
+
+#### `aitf.model_ops.evaluation.score`
+
+**Type:** Histogram
+**Unit:** `1`
+**Description:** Evaluation metric scores (0-1 normalized).
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.evaluation.model_id` | string | Model evaluated |
+| `aitf.model_ops.evaluation.type` | string | Evaluation type |
+| `aitf.model_ops.monitoring.metric_name` | string | Metric name |
+
+#### `aitf.model_ops.registry.operations`
+
+**Type:** Counter
+**Unit:** `{operation}`
+**Description:** Total model registry operations.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.registry.operation` | string | Operation type |
+| `aitf.model_ops.registry.stage` | string | Target stage |
+
+#### `aitf.model_ops.deployment.count`
+
+**Type:** Counter
+**Unit:** `{deployment}`
+**Description:** Total model deployments.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.deployment.strategy` | string | Deployment strategy |
+| `aitf.model_ops.deployment.environment` | string | Target environment |
+| `aitf.model_ops.deployment.status` | string | Deployment status |
+
+#### `aitf.model_ops.serving.cache_hit_rate`
+
+**Type:** Gauge
+**Unit:** `%`
+**Description:** Serving cache hit rate.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.serving.cache.type` | string | Cache type |
+
+#### `aitf.model_ops.serving.fallback.count`
+
+**Type:** Counter
+**Unit:** `{fallback}`
+**Description:** Total fallback events.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.serving.fallback.trigger` | string | Trigger reason |
+
+#### `aitf.model_ops.serving.circuit_breaker.transitions`
+
+**Type:** Counter
+**Unit:** `{transition}`
+**Description:** Circuit breaker state transitions.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.serving.circuit_breaker.state` | string | New state |
+| `aitf.model_ops.serving.circuit_breaker.model` | string | Affected model |
+
+#### `aitf.model_ops.monitoring.drift_score`
+
+**Type:** Histogram
+**Unit:** `1`
+**Description:** Drift detection scores (0-1).
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.monitoring.model_id` | string | Monitored model |
+| `aitf.model_ops.monitoring.drift_type` | string | Drift type |
+
+#### `aitf.model_ops.monitoring.alerts`
+
+**Type:** Counter
+**Unit:** `{alert}`
+**Description:** Total monitoring alerts triggered.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.monitoring.check_type` | string | Check type |
+| `aitf.model_ops.monitoring.result` | string | Alert level |
+| `aitf.model_ops.monitoring.action_triggered` | string | Action taken |
+
+#### `aitf.model_ops.prompt.versions`
+
+**Type:** Counter
+**Unit:** `{version}`
+**Description:** Total prompt versions created.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.model_ops.prompt.name` | string | Prompt name |
+| `aitf.model_ops.prompt.operation` | string | Operation type |
+
+---
+
+### Identity Metrics
+
+#### `aitf.identity.authentications`
+
+**Type:** Counter
+**Unit:** `{authentication}`
+**Description:** Total agent authentication attempts.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.identity.auth.method` | string | Auth method |
+| `aitf.identity.auth.result` | string | Auth result |
+| `aitf.identity.provider` | string | Identity provider |
+
+#### `aitf.identity.authentication.duration`
+
+**Type:** Histogram
+**Unit:** `ms`
+**Description:** Authentication operation duration.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.identity.auth.method` | string | Auth method |
+| `aitf.identity.provider` | string | Identity provider |
+
+#### `aitf.identity.authorizations`
+
+**Type:** Counter
+**Unit:** `{authorization}`
+**Description:** Total authorization decisions.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.identity.authz.decision` | string | Decision |
+| `aitf.identity.authz.policy_engine` | string | Policy engine |
+
+#### `aitf.identity.delegations`
+
+**Type:** Counter
+**Unit:** `{delegation}`
+**Description:** Total credential delegations.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.identity.delegation.type` | string | Delegation type |
+| `aitf.identity.delegation.result` | string | Delegation result |
+
+#### `aitf.identity.delegation.chain_depth`
+
+**Type:** Histogram
+**Unit:** `{depth}`
+**Description:** Delegation chain depth distribution.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.identity.delegation.type` | string | Delegation type |
+
+#### `aitf.identity.active_sessions`
+
+**Type:** UpDownCounter
+**Unit:** `{session}`
+**Description:** Active identity sessions.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.identity.type` | string | Identity type |
+| `aitf.identity.provider` | string | Provider |
+
+#### `aitf.identity.lifecycle.events`
+
+**Type:** Counter
+**Unit:** `{event}`
+**Description:** Total identity lifecycle events.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.identity.lifecycle.operation` | string | Lifecycle operation |
+| `aitf.identity.type` | string | Identity type |
+
+#### `aitf.identity.trust.establishments`
+
+**Type:** Counter
+**Unit:** `{trust}`
+**Description:** Total trust establishment attempts.
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.identity.trust.method` | string | Trust method |
+| `aitf.identity.trust.result` | string | Trust result |
+| `aitf.identity.trust.cross_domain` | boolean | Cross-domain |
+
+#### `aitf.identity.auth_failures`
+
+**Type:** Counter
+**Unit:** `{failure}`
+**Description:** Total authentication and authorization failures (security signal).
+
+| Attribute | Type | Notes |
+|-----------|------|-------|
+| `aitf.identity.agent_name` | string | Agent name |
+| `aitf.identity.auth.method` | string | Auth method |
+| `aitf.identity.auth.failure_reason` | string | Failure reason |

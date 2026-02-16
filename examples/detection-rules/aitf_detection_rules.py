@@ -1811,6 +1811,364 @@ class SupplyChainCompromise(DetectionRule):
 
 
 # ===================================================================
+# Identity Anomaly Rules
+# ===================================================================
+
+
+class DelegationChainDepthExceeded(DetectionRule):
+    """AITF-DET-015: Delegation Chain Depth Exceeded.
+
+    Detects when an agent delegation chain exceeds a safe depth threshold,
+    which may indicate a confused-deputy attack or uncontrolled delegation
+    propagation in multi-agent systems.
+    """
+
+    rule_id = "AITF-DET-015"
+    name = "Delegation Chain Depth Exceeded"
+    description = (
+        "Alerts when the delegation chain depth exceeds the configured "
+        "threshold, indicating potential confused-deputy attacks or "
+        "uncontrolled delegation propagation."
+    )
+    severity = Severity.HIGH
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0048.003",
+        technique_name="Abuse of Delegated Authority",
+        tactic="Privilege Escalation",
+    )
+    owasp_category = "LLM06"
+
+    def __init__(self, max_depth: int = 4) -> None:
+        self._max_depth = max_depth
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        chain = event.get("aitf.identity.delegation.chain", [])
+        chain_depth = event.get("aitf.identity.delegation.chain_depth", len(chain) - 1 if chain else 0)
+
+        if not chain and chain_depth == 0:
+            return self._no_match("No delegation chain present")
+
+        if chain_depth > self._max_depth:
+            return self._match(
+                confidence=0.85,
+                details=(
+                    f"Delegation chain depth {chain_depth} exceeds threshold "
+                    f"of {self._max_depth}: {' -> '.join(chain)}"
+                ),
+                evidence={
+                    "chain": chain,
+                    "chain_depth": chain_depth,
+                    "threshold": self._max_depth,
+                },
+                recommendations=[
+                    "Review the delegation chain for unnecessary hops",
+                    "Ensure each delegation attenuates (never expands) scope",
+                    "Consider flattening the agent topology",
+                ],
+            )
+
+        return self._no_match(f"Chain depth {chain_depth} within threshold")
+
+
+class IdentityAuthFailureSpike(DetectionRule):
+    """AITF-DET-016: Identity Authentication Failure Spike.
+
+    Detects rapid authentication failures for agent identities,
+    which may indicate credential stuffing, brute-force, or a
+    compromised agent attempting to escalate access.
+    """
+
+    rule_id = "AITF-DET-016"
+    name = "Identity Auth Failure Spike"
+    description = (
+        "Alerts when an agent identity experiences repeated authentication "
+        "failures in a short window, indicating potential credential attacks."
+    )
+    severity = Severity.HIGH
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0040",
+        technique_name="Credential Access",
+        tactic="Credential Access",
+    )
+    owasp_category = "LLM06"
+
+    def __init__(self, threshold: int = 5, window_seconds: float = 60.0) -> None:
+        self._threshold = threshold
+        self._window = window_seconds
+        self._failures: dict[str, list[float]] = defaultdict(list)
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        auth_result = event.get("aitf.identity.auth.result", "")
+        agent_id = event.get("aitf.identity.agent_id", "")
+        ts = event.get("timestamp", time.time())
+
+        if auth_result not in ("failure", "denied", "expired", "revoked"):
+            return self._no_match("Not an auth failure event")
+
+        if not agent_id:
+            return self._no_match("No agent ID present")
+
+        self._failures[agent_id].append(ts)
+        cutoff = ts - self._window
+        self._failures[agent_id] = [t for t in self._failures[agent_id] if t > cutoff]
+
+        count = len(self._failures[agent_id])
+        if count >= self._threshold:
+            return self._match(
+                confidence=0.90,
+                details=(
+                    f"Agent '{agent_id}' had {count} auth failures in "
+                    f"{self._window}s (threshold: {self._threshold})"
+                ),
+                evidence={
+                    "agent_id": agent_id,
+                    "failure_count": count,
+                    "window_seconds": self._window,
+                    "auth_result": auth_result,
+                    "failure_reason": event.get("aitf.identity.auth.failure_reason", ""),
+                },
+                recommendations=[
+                    "Investigate whether the agent's credentials have been compromised",
+                    "Temporarily suspend the agent identity",
+                    "Check for credential rotation failures",
+                ],
+            )
+
+        return self._no_match(f"Auth failures ({count}) below threshold")
+
+
+class ScopeEscalationAttempt(DetectionRule):
+    """AITF-DET-017: Scope Escalation Attempt.
+
+    Detects when a delegated agent attempts to access resources or
+    scopes beyond what was delegated, indicating privilege escalation.
+    """
+
+    rule_id = "AITF-DET-017"
+    name = "Scope Escalation Attempt"
+    description = (
+        "Alerts when an agent's authorization check is denied because "
+        "the requested scope exceeds the delegated scope, indicating "
+        "a potential privilege escalation attempt."
+    )
+    severity = Severity.CRITICAL
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0048",
+        technique_name="Privilege Escalation",
+        tactic="Privilege Escalation",
+    )
+    owasp_category = "LLM06"
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        decision = event.get("aitf.identity.authz.decision", "")
+        deny_reason = event.get("aitf.identity.authz.deny_reason", "")
+
+        if decision != "deny":
+            return self._no_match("Authorization was not denied")
+
+        scope_required = event.get("aitf.identity.authz.scope_required", [])
+        scope_present = event.get("aitf.identity.authz.scope_present", [])
+
+        if scope_required and scope_present:
+            excess = set(scope_required) - set(scope_present)
+            if excess:
+                return self._match(
+                    confidence=0.92,
+                    details=(
+                        f"Agent '{event.get('aitf.identity.agent_name', 'unknown')}' "
+                        f"attempted to access scopes beyond delegation: {excess}"
+                    ),
+                    evidence={
+                        "agent_id": event.get("aitf.identity.agent_id", ""),
+                        "resource": event.get("aitf.identity.authz.resource", ""),
+                        "action": event.get("aitf.identity.authz.action", ""),
+                        "scope_required": scope_required,
+                        "scope_present": scope_present,
+                        "excess_scopes": list(excess),
+                        "delegation_chain": event.get("aitf.identity.delegation.chain", []),
+                    },
+                    recommendations=[
+                        "Investigate the agent's delegation chain for scope leakage",
+                        "Verify the agent's policy configuration",
+                        "Consider revoking the agent's delegation",
+                    ],
+                )
+
+        if "insufficient_scope" in deny_reason.lower() or "escalat" in deny_reason.lower():
+            return self._match(
+                confidence=0.80,
+                details=(
+                    f"Authorization denied with escalation indicator: {deny_reason}"
+                ),
+                evidence={
+                    "agent_id": event.get("aitf.identity.agent_id", ""),
+                    "deny_reason": deny_reason,
+                    "resource": event.get("aitf.identity.authz.resource", ""),
+                },
+                recommendations=[
+                    "Review the agent's permission boundaries",
+                    "Audit the delegation chain for scope inflation",
+                ],
+            )
+
+        return self._no_match("Denial not related to scope escalation")
+
+
+# ===================================================================
+# Model Operations Anomaly Rules
+# ===================================================================
+
+
+class UnauthorizedModelDeployment(DetectionRule):
+    """AITF-DET-018: Unauthorized Model Deployment.
+
+    Detects model deployments that skip required stages (e.g., deploying
+    directly to production without staging) or deploy unevaluated models.
+    """
+
+    rule_id = "AITF-DET-018"
+    name = "Unauthorized Model Deployment"
+    description = (
+        "Alerts when a model deployment skips required lifecycle stages "
+        "or deploys to production without passing evaluation gates."
+    )
+    severity = Severity.HIGH
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0010",
+        technique_name="ML Supply Chain Compromise",
+        tactic="Initial Access",
+    )
+    owasp_category = "LLM03"
+
+    def __init__(self, require_staging: bool = True) -> None:
+        self._require_staging = require_staging
+        self._staged_models: set[str] = set()
+        self._evaluated_models: set[str] = set()
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        # Track evaluations
+        eval_pass = event.get("aitf.model_ops.evaluation.pass")
+        eval_model = event.get("aitf.model_ops.evaluation.model_id", "")
+        if eval_pass is True and eval_model:
+            self._evaluated_models.add(eval_model)
+
+        # Track staging deployments
+        deploy_env = event.get("aitf.model_ops.deployment.environment", "")
+        deploy_model = event.get("aitf.model_ops.deployment.model_id", "")
+        deploy_status = event.get("aitf.model_ops.deployment.status", "")
+
+        if deploy_env == "staging" and deploy_status == "completed" and deploy_model:
+            self._staged_models.add(deploy_model)
+
+        if deploy_env != "production" or not deploy_model:
+            return self._no_match("Not a production deployment")
+
+        issues: list[str] = []
+
+        if deploy_model not in self._evaluated_models:
+            issues.append("Model was not evaluated before production deployment")
+
+        if self._require_staging and deploy_model not in self._staged_models:
+            issues.append("Model skipped staging environment")
+
+        if issues:
+            return self._match(
+                confidence=0.88,
+                details=(
+                    f"Production deployment of '{deploy_model}' has issues: "
+                    f"{'; '.join(issues)}"
+                ),
+                evidence={
+                    "model_id": deploy_model,
+                    "environment": deploy_env,
+                    "strategy": event.get("aitf.model_ops.deployment.strategy", ""),
+                    "issues": issues,
+                    "was_evaluated": deploy_model in self._evaluated_models,
+                    "was_staged": deploy_model in self._staged_models,
+                },
+                recommendations=[
+                    "Ensure all models pass evaluation gates before production",
+                    "Deploy to staging first for validation",
+                    "Implement deployment approval workflows",
+                ],
+            )
+
+        return self._no_match("Model passed all deployment checks")
+
+
+class ModelDriftAlert(DetectionRule):
+    """AITF-DET-019: Sustained Model Drift.
+
+    Detects sustained model drift that exceeds threshold, indicating
+    the model may need retraining or rollback.
+    """
+
+    rule_id = "AITF-DET-019"
+    name = "Sustained Model Drift"
+    description = (
+        "Alerts when model monitoring consistently detects drift above "
+        "threshold, suggesting degradation that requires action."
+    )
+    severity = Severity.MEDIUM
+    mitre_atlas = MitreAtlasMapping(
+        technique_id="AML.T0031",
+        technique_name="Erode ML Model Integrity",
+        tactic="ML Attack Staging",
+    )
+    owasp_category = "LLM04"
+
+    def __init__(self, drift_threshold: float = 0.3, consecutive_alerts: int = 3) -> None:
+        self._drift_threshold = drift_threshold
+        self._consecutive_required = consecutive_alerts
+        self._consecutive_count: dict[str, int] = defaultdict(int)
+
+    def evaluate(self, event: dict[str, Any]) -> DetectionResult:
+        drift_score = event.get("aitf.model_ops.monitoring.drift_score")
+        model_id = event.get("aitf.model_ops.monitoring.model_id", "")
+        check_type = event.get("aitf.model_ops.monitoring.check_type", "")
+
+        if drift_score is None or not model_id:
+            return self._no_match("Not a monitoring drift event")
+
+        key = f"{model_id}:{check_type}"
+
+        if drift_score > self._drift_threshold:
+            self._consecutive_count[key] += 1
+        else:
+            self._consecutive_count[key] = 0
+            return self._no_match("Drift within normal range")
+
+        if self._consecutive_count[key] >= self._consecutive_required:
+            return self._match(
+                confidence=0.85,
+                details=(
+                    f"Model '{model_id}' shows sustained {check_type} drift "
+                    f"(score: {drift_score:.3f}) for {self._consecutive_count[key]} "
+                    f"consecutive checks (threshold: {self._drift_threshold})"
+                ),
+                evidence={
+                    "model_id": model_id,
+                    "drift_type": event.get("aitf.model_ops.monitoring.drift_type", check_type),
+                    "drift_score": drift_score,
+                    "consecutive_count": self._consecutive_count[key],
+                    "threshold": self._drift_threshold,
+                    "baseline_value": event.get("aitf.model_ops.monitoring.baseline_value"),
+                    "current_value": event.get("aitf.model_ops.monitoring.metric_value"),
+                },
+                severity_override=Severity.HIGH if self._consecutive_count[key] >= 5 else None,
+                recommendations=[
+                    "Investigate root cause of drift (data distribution change, concept shift)",
+                    "Consider triggering model retraining",
+                    "Evaluate whether rollback to previous model version is needed",
+                ],
+            )
+
+        return self._no_match(
+            f"Drift elevated but not sustained ({self._consecutive_count[key]}/{self._consecutive_required})"
+        )
+
+
+# ===================================================================
 # Detection Engine
 # ===================================================================
 
@@ -1872,6 +2230,13 @@ class DetectionEngine:
             PIIExfiltrationChain(),
             JailbreakEscalation(),
             SupplyChainCompromise(known_models=known_models),
+            # Identity anomalies
+            DelegationChainDepthExceeded(),
+            IdentityAuthFailureSpike(),
+            ScopeEscalationAttempt(),
+            # Model operations anomalies
+            UnauthorizedModelDeployment(),
+            ModelDriftAlert(),
         ]
 
     def get_rule(self, rule_id: str) -> DetectionRule | None:

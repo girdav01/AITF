@@ -17,7 +17,8 @@ These event classes extend the OCSF v1.1.0 specification with a new Category 7 f
 | 7005 | AI Security Finding | Security events, guardrails, policy violations |
 | 7006 | AI Supply Chain | Model provenance, AI-BOM, integrity |
 | 7007 | AI Governance | Compliance, audit, regulatory events |
-| 7008 | AI Identity | Agent identity, credential delegation, auth |
+| 7008 | AI Identity | Agent identity, authentication, authorization, delegation, trust |
+| 7009 | AI Model Operations | Model lifecycle: training, evaluation, deployment, monitoring, serving |
 
 ---
 
@@ -306,16 +307,20 @@ Represents compliance and governance events.
 
 ## Class 7008: AI Identity
 
-Represents agent identity and authentication events.
+Represents agent identity, authentication, authorization, delegation, and trust events.
 
 ### Type UIDs
 
 | type_uid | Activity | Description |
 |----------|----------|-------------|
-| 700801 | Agent Authentication | Agent authenticates |
-| 700802 | Credential Delegation | Credentials delegated |
-| 700803 | Permission Check | Permission verified |
-| 700804 | Token Issuance | Auth token issued |
+| 700801 | Agent Authentication | Agent authenticates to a service |
+| 700802 | Credential Delegation | Credentials delegated between agents |
+| 700803 | Permission Check | Authorization decision evaluated |
+| 700804 | Token Issuance | Auth token issued or exchanged |
+| 700805 | Identity Lifecycle | Identity created, rotated, suspended, revoked |
+| 700806 | Trust Establishment | Agent-to-agent trust established or revoked |
+| 700807 | Session Management | Identity session created, refreshed, terminated |
+| 700808 | Privilege Escalation | Potential privilege escalation detected |
 | 700899 | Other | Other identity event |
 
 ### Fields
@@ -323,13 +328,239 @@ Represents agent identity and authentication events.
 | Field | Type | Requirement | Description |
 |-------|------|-------------|-------------|
 | `agent_name` | string | Required | Agent name |
-| `agent_id` | string | Required | Agent ID |
-| `auth_method` | string | Required | `"api_key"`, `"oauth"`, `"mtls"`, `"jwt"` |
-| `auth_result` | string | Required | `"success"`, `"failure"`, `"denied"` |
-| `permissions` | string[] | Recommended | Granted permissions |
-| `credential_type` | string | Conditional | Delegated credential type |
-| `delegation_chain` | string[] | Conditional | Chain of delegation |
-| `scope` | string | Optional | Auth scope |
+| `agent_id` | string | Required | Agent identity ID |
+| `identity_type` | string | Required | `"persistent"`, `"ephemeral"`, `"delegated"`, `"federated"`, `"workload"` |
+| `auth_method` | string | Required | `"api_key"`, `"oauth2"`, `"oauth2_pkce"`, `"mtls"`, `"spiffe_svid"`, `"jwt_bearer"`, `"did_vc"`, `"http_signature"` |
+| `auth_result` | string | Required | `"success"`, `"failure"`, `"denied"`, `"expired"`, `"revoked"` |
+| `identity_provider` | string | Recommended | Identity provider name |
+| `credential_type` | string | Recommended | Credential type issued or used |
+| `permissions` | string[] | Recommended | Granted/checked permissions |
+| `scope_requested` | string[] | Conditional | Scopes requested |
+| `scope_granted` | string[] | Conditional | Scopes actually granted |
+| `delegation_info` | `AIDelegationInfo` | Conditional | Delegation details (for delegation events) |
+| `trust_info` | `AITrustInfo` | Conditional | Trust details (for trust events) |
+| `session_info` | `AIIdentitySessionInfo` | Conditional | Session details |
+| `policy_engine` | string | Conditional | `"opa"`, `"cedar"`, `"casbin"`, `"custom"` |
+| `policy_id` | string | Conditional | Matched policy ID |
+| `risk_score` | double | Optional | Risk-based authorization score (0-100) |
+| `identity_status` | string | Conditional | `"active"`, `"suspended"`, `"revoked"`, `"expired"` |
+| `owner` | string | Optional | Identity owner |
+| `failure_reason` | string | Conditional | Authentication/authorization failure reason |
+
+### Objects
+
+#### `AIDelegationInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `delegator` | string | Agent/user delegating authority |
+| `delegator_id` | string | Delegator identity ID |
+| `delegatee` | string | Agent receiving authority |
+| `delegatee_id` | string | Delegatee identity ID |
+| `delegation_type` | string | `"on_behalf_of"`, `"token_exchange"`, `"capability_grant"`, `"impersonation"` |
+| `delegation_chain` | string[] | Full delegation chain from origin |
+| `chain_depth` | int | Depth of delegation chain |
+| `scope_delegated` | string[] | Scopes being delegated |
+| `scope_attenuated` | boolean | Whether scope was reduced |
+| `proof_type` | string | `"dpop"`, `"mtls_binding"`, `"signed_assertion"` |
+| `ttl_seconds` | int | Delegation time to live |
+
+#### `AITrustInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `peer_agent` | string | Peer agent name |
+| `peer_agent_id` | string | Peer agent identity ID |
+| `trust_method` | string | `"mtls"`, `"spiffe"`, `"did_vc"`, `"http_signature"`, `"pki"` |
+| `trust_result` | string | `"established"`, `"failed"`, `"rejected"`, `"revoked"` |
+| `trust_domain` | string | Trust domain |
+| `peer_trust_domain` | string | Peer's trust domain |
+| `cross_domain` | boolean | Whether cross-domain |
+| `trust_level` | string | `"none"`, `"basic"`, `"verified"`, `"high"`, `"full"` |
+| `protocol` | string | `"mcp"`, `"a2a"`, `"custom"` |
+
+#### `AIIdentitySessionInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `session_id` | string | Identity session ID |
+| `operation` | string | `"create"`, `"refresh"`, `"validate"`, `"terminate"`, `"hijack_detected"` |
+| `scope` | string[] | Active session scopes |
+| `expires_at` | string | Session expiration timestamp |
+| `actions_count` | int | Actions performed in session |
+| `termination_reason` | string | `"completed"`, `"timeout"`, `"revoked"`, `"error"` |
+
+---
+
+## Class 7009: AI Model Operations
+
+Represents model lifecycle events — training, evaluation, deployment, monitoring, and serving operations.
+
+### Type UIDs
+
+| type_uid | Activity | Description |
+|----------|----------|-------------|
+| 700901 | Training Run | Model training or fine-tuning run |
+| 700902 | Evaluation Run | Model evaluation or benchmarking |
+| 700903 | Model Registration | Model registered in registry |
+| 700904 | Model Promotion | Model promoted through lifecycle stages |
+| 700905 | Model Deployment | Model deployed to environment |
+| 700906 | Model Rollback | Model rolled back to previous version |
+| 700907 | Drift Detection | Model drift detected |
+| 700908 | Serving Fallback | Model serving fallback triggered |
+| 700909 | Prompt Version | Prompt version lifecycle event |
+| 700999 | Other | Other model operations event |
+
+### Fields
+
+| Field | Type | Requirement | Description |
+|-------|------|-------------|-------------|
+| `model_id` | string | Required | Model identifier |
+| `model_version` | string | Recommended | Model version |
+| `operation_type` | string | Required | Operation category (see below) |
+| `training_info` | `AITrainingInfo` | Conditional | Training details (for training events) |
+| `evaluation_info` | `AIEvaluationInfo` | Conditional | Evaluation details |
+| `registry_info` | `AIRegistryInfo` | Conditional | Registry operation details |
+| `deployment_info` | `AIDeploymentInfo` | Conditional | Deployment details |
+| `monitoring_info` | `AIMonitoringInfo` | Conditional | Monitoring/drift details |
+| `serving_info` | `AIServingInfo` | Conditional | Serving/routing details |
+| `prompt_info` | `AIPromptInfo` | Conditional | Prompt lifecycle details |
+| `lineage` | `AIModelLineage` | Recommended | Model lineage/provenance |
+
+### Operation Categories
+
+| Value | Description |
+|-------|-------------|
+| `training` | Training or fine-tuning operation |
+| `evaluation` | Model evaluation or benchmarking |
+| `registry` | Model registry operation |
+| `deployment` | Model deployment operation |
+| `monitoring` | Model monitoring event |
+| `serving` | Model serving operation |
+| `prompt` | Prompt lifecycle operation |
+
+### Objects
+
+#### `AITrainingInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `run_id` | string | Training run identifier |
+| `training_type` | string | `"fine_tuning"`, `"lora"`, `"rlhf"`, `"dpo"`, `"distillation"` |
+| `base_model` | string | Foundation model ID |
+| `framework` | string | Training framework |
+| `dataset_id` | string | Training dataset identifier |
+| `dataset_version` | string | Dataset version |
+| `dataset_size` | int | Number of training examples |
+| `hyperparameters` | string | JSON-encoded hyperparameters |
+| `epochs` | int | Training epochs |
+| `loss_final` | double | Final training loss |
+| `val_loss_final` | double | Final validation loss |
+| `gpu_type` | string | GPU type |
+| `gpu_count` | int | Number of GPUs |
+| `gpu_hours` | double | GPU hours consumed |
+| `output_model_id` | string | Output model artifact ID |
+| `output_model_hash` | string | Output model hash |
+| `code_commit` | string | Code commit SHA |
+| `status` | string | `"running"`, `"completed"`, `"failed"`, `"cancelled"` |
+
+#### `AIEvaluationInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `run_id` | string | Evaluation run identifier |
+| `eval_type` | string | `"benchmark"`, `"llm_judge"`, `"safety"`, `"regression"`, `"red_team"` |
+| `dataset_id` | string | Evaluation dataset ID |
+| `dataset_size` | int | Evaluation examples count |
+| `metrics` | string | JSON-encoded metric results |
+| `judge_model` | string | LLM-as-judge model |
+| `baseline_model` | string | Baseline model for comparison |
+| `regression_detected` | boolean | Whether regression detected |
+| `pass` | boolean | Passed quality gates |
+| `gate_criteria` | string | JSON quality gate criteria |
+
+#### `AIRegistryInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `operation` | string | `"register"`, `"promote"`, `"demote"`, `"archive"`, `"rollback"` |
+| `model_alias` | string | Model alias (e.g., `"@champion"`) |
+| `stage` | string | `"experimental"`, `"staging"`, `"production"`, `"archived"` |
+| `previous_stage` | string | Previous lifecycle stage |
+| `owner` | string | Model owner |
+| `approval_required` | boolean | Whether approval was needed |
+| `approver` | string | Approver identity |
+
+#### `AIDeploymentInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `deployment_id` | string | Deployment identifier |
+| `strategy` | string | `"rolling"`, `"canary"`, `"blue_green"`, `"shadow"`, `"a_b_test"` |
+| `environment` | string | `"development"`, `"staging"`, `"production"` |
+| `endpoint` | string | Serving endpoint |
+| `infrastructure_provider` | string | Cloud/infra provider |
+| `gpu_type` | string | GPU type |
+| `replicas` | int | Number of replicas |
+| `canary_percent` | double | Canary traffic percentage |
+| `previous_model_id` | string | Model being replaced |
+| `status` | string | `"pending"`, `"in_progress"`, `"completed"`, `"failed"`, `"rolled_back"` |
+| `health_check_status` | string | `"healthy"`, `"degraded"`, `"unhealthy"` |
+
+#### `AIMonitoringInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `check_type` | string | `"data_drift"`, `"embedding_drift"`, `"performance_degradation"`, `"cost_anomaly"` |
+| `result` | string | `"normal"`, `"warning"`, `"alert"`, `"critical"` |
+| `metric_name` | string | Metric being checked |
+| `metric_value` | double | Current metric value |
+| `baseline_value` | double | Baseline/expected value |
+| `threshold` | double | Alert threshold |
+| `drift_score` | double | Drift magnitude (0-1) |
+| `drift_type` | string | `"data"`, `"prediction"`, `"concept"`, `"embedding"` |
+| `action_triggered` | string | `"none"`, `"alert"`, `"retrain"`, `"rollback"` |
+
+#### `AIServingInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `operation` | string | `"route"`, `"fallback"`, `"cache_lookup"`, `"circuit_breaker"` |
+| `selected_model` | string | Model selected by router |
+| `route_reason` | string | Routing reason |
+| `fallback_chain` | string[] | Ordered fallback chain |
+| `fallback_depth` | int | Fallback chain depth used |
+| `fallback_trigger` | string | `"error"`, `"timeout"`, `"rate_limit"`, `"circuit_breaker"` |
+| `cache_hit` | boolean | Whether cache was hit |
+| `cache_type` | string | `"exact"`, `"semantic"`, `"hybrid"` |
+| `cost_saved_usd` | double | Cost saved by cache hit |
+| `circuit_breaker_state` | string | `"closed"`, `"open"`, `"half_open"` |
+
+#### `AIPromptInfo`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `prompt_name` | string | Prompt template name |
+| `operation` | string | `"create"`, `"promote"`, `"rollback"`, `"evaluate"`, `"a_b_test_start"` |
+| `version` | string | Prompt version (SemVer) |
+| `previous_version` | string | Previous version |
+| `content_hash` | string | Template content hash |
+| `label` | string | Deployment label |
+| `model_target` | string | Target model |
+| `eval_score` | double | Evaluation score (0-1) |
+| `eval_pass` | boolean | Passed quality gate |
+| `ab_test_id` | string | A/B experiment ID |
+| `ab_test_variant` | string | Variant name |
+
+#### `AIModelLineage`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `training_run_id` | string | Training run that produced this model |
+| `parent_model_id` | string | Parent model (for fine-tuned models) |
+| `dataset_id` | string | Training dataset |
+| `code_commit` | string | Code commit SHA |
+| `experiment_id` | string | Experiment tracker ID |
 
 ---
 
