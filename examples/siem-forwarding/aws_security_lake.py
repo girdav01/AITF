@@ -750,6 +750,18 @@ def main():
     config = SECURITY_LAKE_CONFIG
     approach = os.getenv("SECURITY_LAKE_APPROACH", "s3")  # "s3" or "firehose"
 
+    if config["aws_account_id"] == "123456789012":
+        print("WARNING: AWS_ACCOUNT_ID is using the default placeholder value.")
+        print("Set AWS_ACCOUNT_ID to your real AWS account ID.\n")
+
+    if config["aws_region"] == "us-east-1" and not os.getenv("AWS_REGION"):
+        print("WARNING: AWS_REGION environment variable not set.")
+        print("Defaulting to 'us-east-1'. Set AWS_REGION for your deployment region.\n")
+
+    if config["s3_bucket"] == "aws-security-data-lake-us-east-1-abcdef123456":
+        print("WARNING: SECURITY_LAKE_BUCKET is using the default placeholder value.")
+        print("Set SECURITY_LAKE_BUCKET to your Security Lake S3 bucket name.\n")
+
     # ---------------------------------------------------------------
     # Step 1: Register custom source (one-time setup)
     # ---------------------------------------------------------------

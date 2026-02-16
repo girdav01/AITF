@@ -9,6 +9,8 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"os"
 	"time"
 )
 
@@ -247,8 +249,9 @@ func (e *AIBaseEvent) ToJSON() ([]byte, error) {
 func generateUID() string {
 	b := make([]byte, 16)
 	if _, err := rand.Read(b); err != nil {
-		// Fallback to timestamp-based UID if crypto/rand fails
-		return time.Now().UTC().Format("20060102150405.000000000")
+		// crypto/rand failure is a critical system-level issue;
+		// use a less predictable fallback combining timestamp and PID.
+		return fmt.Sprintf("%d-%d", time.Now().UnixNano(), os.Getpid())
 	}
 	return hex.EncodeToString(b)
 }

@@ -67,17 +67,27 @@ def _validate_output_path(output_file: str) -> Path:
     """Validate output file path to prevent path traversal.
 
     Resolves the path and ensures it doesn't traverse outside
-    its parent directory unexpectedly.
+    the expected parent directory (the original path's parent or CWD).
     """
-    path = Path(output_file).resolve()
+    raw_path = Path(output_file)
+    resolved = raw_path.resolve()
 
-    # Check for path traversal attempts
-    if ".." in Path(output_file).parts:
+    # Determine the expected parent: the raw path's parent resolved, or CWD
+    if raw_path.is_absolute():
+        expected_parent = raw_path.parent.resolve()
+    else:
+        expected_parent = Path.cwd().resolve()
+
+    # Verify the resolved path is under the expected parent directory
+    try:
+        resolved.relative_to(expected_parent)
+    except ValueError:
         raise ValueError(
-            f"Path traversal detected in output path: {output_file}"
+            f"Path traversal detected in output path: {output_file!r} "
+            f"resolves to {resolved} which is outside {expected_parent}"
         )
 
-    return path
+    return resolved
 
 
 class OCSFExporter(SpanExporter):
@@ -195,8 +205,10 @@ class OCSFExporter(SpanExporter):
                 method="POST",
             )
 
-            # Create SSL context for HTTPS connections
+            # Create SSL context for HTTPS connections with strict verification
             ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = True
+            ssl_context.verify_mode = ssl.CERT_REQUIRED
 
             with urllib.request.urlopen(req, timeout=30, context=ssl_context) as resp:
                 if resp.status >= 400:

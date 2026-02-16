@@ -199,12 +199,17 @@ export class SecurityProcessor implements SpanProcessor {
       findings.push(...this._analyzeContent(content));
     }
 
-    // Log findings since ReadableSpan attributes are immutable
+    // Log findings since ReadableSpan attributes are immutable.
+    // SECURITY: Only log threat types and risk levels -- never log analyzed content.
     if (findings.length > 0) {
       const maxRisk = Math.max(...findings.map((f) => f.riskScore));
-      const threats = findings.map((f) => f.threatType);
+      const threats = [...new Set(findings.map((f) => f.threatType))];
+      const riskLevels = [...new Set(findings.map((f) => f.riskLevel))];
       console.warn(
-        `AITF Security: findings detected - risk_score=${maxRisk} threats=${threats.join(",")}`
+        `AITF Security: ${findings.length} finding(s) detected - ` +
+          `risk_score=${maxRisk} threats=[${threats.join(",")}] ` +
+          `risk_levels=[${riskLevels.join(",")}]. ` +
+          `Detailed findings are available in span attributes.`
       );
     }
   }

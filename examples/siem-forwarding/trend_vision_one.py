@@ -841,6 +841,10 @@ def main():
         print("Set it to run against a live Trend Vision One instance.")
         print("Continuing in demo mode (no API calls will be made).\n")
 
+    if config["api_base_url"] == "https://api.xdr.trendmicro.com":
+        print("WARNING: TV1_API_BASE_URL is using the default value.")
+        print("Set TV1_API_BASE_URL to your region-specific API URL.\n")
+
     # ---------------------------------------------------------------
     # Step 1: Initialize TV1 client and register detection models
     # ---------------------------------------------------------------

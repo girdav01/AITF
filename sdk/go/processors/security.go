@@ -2,6 +2,7 @@
 package processors
 
 import (
+	"log"
 	"regexp"
 
 	"github.com/girdav01/AITF/sdk/go/semconv"
@@ -146,9 +147,11 @@ func compilePatterns(patterns []string) []*regexp.Regexp {
 	result := make([]*regexp.Regexp, 0, len(patterns))
 	for _, p := range patterns {
 		re, err := regexp.Compile(p)
-		if err == nil {
-			result = append(result, re)
+		if err != nil {
+			log.Printf("WARNING: dropping invalid security pattern %q: %v", p, err)
+			continue
 		}
+		result = append(result, re)
 	}
 	return result
 }

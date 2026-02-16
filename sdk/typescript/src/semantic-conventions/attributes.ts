@@ -457,3 +457,449 @@ export const LatencyAttributes = {
   QUEUE_TIME_MS: "aitf.latency.queue_time_ms",
   INFERENCE_TIME_MS: "aitf.latency.inference_time_ms",
 } as const;
+
+/** AITF Model Operations (LLMOps/MLOps) semantic convention attributes. */
+export const ModelOpsAttributes = {
+  // Training attributes
+  TRAINING_RUN_ID: "aitf.model_ops.training.run_id",
+  TRAINING_TYPE: "aitf.model_ops.training.type",
+  TRAINING_BASE_MODEL: "aitf.model_ops.training.base_model",
+  TRAINING_FRAMEWORK: "aitf.model_ops.training.framework",
+  TRAINING_DATASET_ID: "aitf.model_ops.training.dataset.id",
+  TRAINING_DATASET_VERSION: "aitf.model_ops.training.dataset.version",
+  TRAINING_DATASET_SIZE: "aitf.model_ops.training.dataset.size",
+  TRAINING_HYPERPARAMETERS: "aitf.model_ops.training.hyperparameters",
+  TRAINING_EPOCHS: "aitf.model_ops.training.epochs",
+  TRAINING_BATCH_SIZE: "aitf.model_ops.training.batch_size",
+  TRAINING_LEARNING_RATE: "aitf.model_ops.training.learning_rate",
+  TRAINING_LOSS_FINAL: "aitf.model_ops.training.loss_final",
+  TRAINING_VAL_LOSS_FINAL: "aitf.model_ops.training.val_loss_final",
+  TRAINING_COMPUTE_GPU_TYPE: "aitf.model_ops.training.compute.gpu_type",
+  TRAINING_COMPUTE_GPU_COUNT: "aitf.model_ops.training.compute.gpu_count",
+  TRAINING_COMPUTE_GPU_HOURS: "aitf.model_ops.training.compute.gpu_hours",
+  TRAINING_OUTPUT_MODEL_ID: "aitf.model_ops.training.output_model.id",
+  TRAINING_OUTPUT_MODEL_HASH: "aitf.model_ops.training.output_model.hash",
+  TRAINING_CODE_COMMIT: "aitf.model_ops.training.code_commit",
+  TRAINING_EXPERIMENT_ID: "aitf.model_ops.training.experiment.id",
+  TRAINING_EXPERIMENT_NAME: "aitf.model_ops.training.experiment.name",
+  TRAINING_STATUS: "aitf.model_ops.training.status",
+
+  // Evaluation attributes
+  EVALUATION_RUN_ID: "aitf.model_ops.evaluation.run_id",
+  EVALUATION_MODEL_ID: "aitf.model_ops.evaluation.model_id",
+  EVALUATION_TYPE: "aitf.model_ops.evaluation.type",
+  EVALUATION_DATASET_ID: "aitf.model_ops.evaluation.dataset.id",
+  EVALUATION_DATASET_VERSION: "aitf.model_ops.evaluation.dataset.version",
+  EVALUATION_DATASET_SIZE: "aitf.model_ops.evaluation.dataset.size",
+  EVALUATION_METRICS: "aitf.model_ops.evaluation.metrics",
+  EVALUATION_JUDGE_MODEL: "aitf.model_ops.evaluation.judge_model",
+  EVALUATION_BASELINE_MODEL: "aitf.model_ops.evaluation.baseline_model",
+  EVALUATION_REGRESSION_DETECTED: "aitf.model_ops.evaluation.regression_detected",
+  EVALUATION_PASS: "aitf.model_ops.evaluation.pass",
+
+  // Registry attributes
+  REGISTRY_OPERATION: "aitf.model_ops.registry.operation",
+  REGISTRY_MODEL_ID: "aitf.model_ops.registry.model_id",
+  REGISTRY_MODEL_VERSION: "aitf.model_ops.registry.model_version",
+  REGISTRY_MODEL_ALIAS: "aitf.model_ops.registry.model_alias",
+  REGISTRY_STAGE: "aitf.model_ops.registry.stage",
+  REGISTRY_PREVIOUS_STAGE: "aitf.model_ops.registry.previous_stage",
+  REGISTRY_OWNER: "aitf.model_ops.registry.owner",
+  REGISTRY_LINEAGE_TRAINING_RUN_ID: "aitf.model_ops.registry.lineage.training_run_id",
+  REGISTRY_LINEAGE_PARENT_MODEL_ID: "aitf.model_ops.registry.lineage.parent_model_id",
+
+  // Deployment attributes
+  DEPLOYMENT_ID: "aitf.model_ops.deployment.id",
+  DEPLOYMENT_MODEL_ID: "aitf.model_ops.deployment.model_id",
+  DEPLOYMENT_STRATEGY: "aitf.model_ops.deployment.strategy",
+  DEPLOYMENT_MODEL_VERSION: "aitf.model_ops.deployment.model_version",
+  DEPLOYMENT_ENVIRONMENT: "aitf.model_ops.deployment.environment",
+  DEPLOYMENT_ENDPOINT: "aitf.model_ops.deployment.endpoint",
+  DEPLOYMENT_INFRA_PROVIDER: "aitf.model_ops.deployment.infrastructure.provider",
+  DEPLOYMENT_INFRA_GPU_TYPE: "aitf.model_ops.deployment.infrastructure.gpu_type",
+  DEPLOYMENT_INFRA_REPLICAS: "aitf.model_ops.deployment.infrastructure.replicas",
+  DEPLOYMENT_CANARY_PERCENT: "aitf.model_ops.deployment.canary_percent",
+  DEPLOYMENT_STATUS: "aitf.model_ops.deployment.status",
+  DEPLOYMENT_HEALTH_STATUS: "aitf.model_ops.deployment.health_check.status",
+  DEPLOYMENT_HEALTH_LATENCY: "aitf.model_ops.deployment.health_check.latency_ms",
+
+  // Serving attributes
+  SERVING_OPERATION: "aitf.model_ops.serving.operation",
+  SERVING_ROUTE_SELECTED_MODEL: "aitf.model_ops.serving.route.selected_model",
+  SERVING_ROUTE_REASON: "aitf.model_ops.serving.route.reason",
+  SERVING_ROUTE_CANDIDATES: "aitf.model_ops.serving.route.candidates",
+  SERVING_FALLBACK_CHAIN: "aitf.model_ops.serving.fallback.chain",
+  SERVING_FALLBACK_DEPTH: "aitf.model_ops.serving.fallback.depth",
+  SERVING_FALLBACK_TRIGGER: "aitf.model_ops.serving.fallback.trigger",
+  SERVING_FALLBACK_ORIGINAL_MODEL: "aitf.model_ops.serving.fallback.original_model",
+  SERVING_FALLBACK_FINAL_MODEL: "aitf.model_ops.serving.fallback.final_model",
+  SERVING_CACHE_HIT: "aitf.model_ops.serving.cache.hit",
+  SERVING_CACHE_TYPE: "aitf.model_ops.serving.cache.type",
+  SERVING_CACHE_SIMILARITY_SCORE: "aitf.model_ops.serving.cache.similarity_score",
+  SERVING_CACHE_COST_SAVED: "aitf.model_ops.serving.cache.cost_saved_usd",
+  SERVING_CIRCUIT_BREAKER_STATE: "aitf.model_ops.serving.circuit_breaker.state",
+  SERVING_CIRCUIT_BREAKER_MODEL: "aitf.model_ops.serving.circuit_breaker.model",
+
+  // Monitoring attributes
+  MONITORING_CHECK_TYPE: "aitf.model_ops.monitoring.check_type",
+  MONITORING_MODEL_ID: "aitf.model_ops.monitoring.model_id",
+  MONITORING_RESULT: "aitf.model_ops.monitoring.result",
+  MONITORING_METRIC_NAME: "aitf.model_ops.monitoring.metric_name",
+  MONITORING_METRIC_VALUE: "aitf.model_ops.monitoring.metric_value",
+  MONITORING_BASELINE_VALUE: "aitf.model_ops.monitoring.baseline_value",
+  MONITORING_DRIFT_SCORE: "aitf.model_ops.monitoring.drift_score",
+  MONITORING_DRIFT_TYPE: "aitf.model_ops.monitoring.drift_type",
+  MONITORING_ACTION_TRIGGERED: "aitf.model_ops.monitoring.action_triggered",
+
+  // Prompt attributes
+  PROMPT_NAME: "aitf.model_ops.prompt.name",
+  PROMPT_OPERATION: "aitf.model_ops.prompt.operation",
+  PROMPT_VERSION: "aitf.model_ops.prompt.version",
+  PROMPT_CONTENT_HASH: "aitf.model_ops.prompt.content_hash",
+  PROMPT_LABEL: "aitf.model_ops.prompt.label",
+  PROMPT_MODEL_TARGET: "aitf.model_ops.prompt.model_target",
+  PROMPT_EVAL_SCORE: "aitf.model_ops.prompt.evaluation.score",
+  PROMPT_EVAL_PASS: "aitf.model_ops.prompt.evaluation.pass",
+  PROMPT_AB_TEST_ID: "aitf.model_ops.prompt.a_b_test.id",
+  PROMPT_AB_TEST_VARIANT: "aitf.model_ops.prompt.a_b_test.variant",
+
+  /** Training type values */
+  TrainingType: {
+    PRE_TRAINING: "pre_training",
+    FINE_TUNING: "fine_tuning",
+    RLHF: "rlhf",
+    DPO: "dpo",
+    LORA: "lora",
+    QLORA: "qlora",
+    DISTILLATION: "distillation",
+    CONTINUED_PRE_TRAINING: "continued_pre_training",
+  },
+
+  /** Deployment strategy values */
+  DeploymentStrategy: {
+    ROLLING: "rolling",
+    CANARY: "canary",
+    BLUE_GREEN: "blue_green",
+    SHADOW: "shadow",
+    AB_TEST: "a_b_test",
+    IMMEDIATE: "immediate",
+  },
+
+  /** Drift type values */
+  DriftType: {
+    DATA: "data",
+    PREDICTION: "prediction",
+    CONCEPT: "concept",
+    EMBEDDING: "embedding",
+    FEATURE: "feature",
+  },
+} as const;
+
+/** AITF Agentic Identity semantic convention attributes. */
+export const IdentityAttributes = {
+  // Core identity attributes
+  AGENT_ID: "aitf.identity.agent_id",
+  AGENT_NAME: "aitf.identity.agent_name",
+  TYPE: "aitf.identity.type",
+  PROVIDER: "aitf.identity.provider",
+  OWNER: "aitf.identity.owner",
+  OWNER_TYPE: "aitf.identity.owner_type",
+  CREDENTIAL_TYPE: "aitf.identity.credential_type",
+  CREDENTIAL_ID: "aitf.identity.credential_id",
+  STATUS: "aitf.identity.status",
+  PREVIOUS_STATUS: "aitf.identity.previous_status",
+  SCOPE: "aitf.identity.scope",
+  EXPIRES_AT: "aitf.identity.expires_at",
+  TTL_SECONDS: "aitf.identity.ttl_seconds",
+  AUTO_ROTATE: "aitf.identity.auto_rotate",
+  ROTATION_INTERVAL: "aitf.identity.rotation_interval_seconds",
+
+  // Lifecycle attributes
+  LIFECYCLE_OPERATION: "aitf.identity.lifecycle.operation",
+
+  // Authentication attributes
+  AUTH_METHOD: "aitf.identity.auth.method",
+  AUTH_RESULT: "aitf.identity.auth.result",
+  AUTH_PROVIDER: "aitf.identity.auth.provider",
+  AUTH_TARGET_SERVICE: "aitf.identity.auth.target_service",
+  AUTH_FAILURE_REASON: "aitf.identity.auth.failure_reason",
+  AUTH_TOKEN_TYPE: "aitf.identity.auth.token_type",
+  AUTH_SCOPE_REQUESTED: "aitf.identity.auth.scope_requested",
+  AUTH_SCOPE_GRANTED: "aitf.identity.auth.scope_granted",
+  AUTH_CONTINUOUS: "aitf.identity.auth.continuous",
+  AUTH_PKCE_USED: "aitf.identity.auth.pkce_used",
+  AUTH_DPOP_USED: "aitf.identity.auth.dpop_used",
+
+  // Authorization attributes
+  AUTHZ_DECISION: "aitf.identity.authz.decision",
+  AUTHZ_RESOURCE: "aitf.identity.authz.resource",
+  AUTHZ_ACTION: "aitf.identity.authz.action",
+  AUTHZ_POLICY_ENGINE: "aitf.identity.authz.policy_engine",
+  AUTHZ_POLICY_ID: "aitf.identity.authz.policy_id",
+  AUTHZ_DENY_REASON: "aitf.identity.authz.deny_reason",
+  AUTHZ_RISK_SCORE: "aitf.identity.authz.risk_score",
+  AUTHZ_PRIVILEGE_LEVEL: "aitf.identity.authz.privilege_level",
+  AUTHZ_JEA: "aitf.identity.authz.jea",
+  AUTHZ_TIME_LIMITED: "aitf.identity.authz.time_limited",
+  AUTHZ_EXPIRES_AT: "aitf.identity.authz.expires_at",
+
+  // Delegation attributes
+  DELEGATION_DELEGATOR: "aitf.identity.delegation.delegator",
+  DELEGATION_DELEGATOR_ID: "aitf.identity.delegation.delegator_id",
+  DELEGATION_DELEGATEE: "aitf.identity.delegation.delegatee",
+  DELEGATION_DELEGATEE_ID: "aitf.identity.delegation.delegatee_id",
+  DELEGATION_TYPE: "aitf.identity.delegation.type",
+  DELEGATION_CHAIN: "aitf.identity.delegation.chain",
+  DELEGATION_CHAIN_DEPTH: "aitf.identity.delegation.chain_depth",
+  DELEGATION_SCOPE_DELEGATED: "aitf.identity.delegation.scope_delegated",
+  DELEGATION_SCOPE_ATTENUATED: "aitf.identity.delegation.scope_attenuated",
+  DELEGATION_RESULT: "aitf.identity.delegation.result",
+  DELEGATION_PROOF_TYPE: "aitf.identity.delegation.proof_type",
+  DELEGATION_TTL_SECONDS: "aitf.identity.delegation.ttl_seconds",
+
+  // Trust attributes
+  TRUST_OPERATION: "aitf.identity.trust.operation",
+  TRUST_PEER_AGENT: "aitf.identity.trust.peer_agent",
+  TRUST_PEER_AGENT_ID: "aitf.identity.trust.peer_agent_id",
+  TRUST_RESULT: "aitf.identity.trust.result",
+  TRUST_METHOD: "aitf.identity.trust.method",
+  TRUST_DOMAIN: "aitf.identity.trust.trust_domain",
+  TRUST_PEER_DOMAIN: "aitf.identity.trust.peer_trust_domain",
+  TRUST_CROSS_DOMAIN: "aitf.identity.trust.cross_domain",
+  TRUST_LEVEL: "aitf.identity.trust.trust_level",
+  TRUST_PROTOCOL: "aitf.identity.trust.protocol",
+
+  // Session attributes
+  SESSION_ID: "aitf.identity.session.id",
+  SESSION_OPERATION: "aitf.identity.session.operation",
+  SESSION_SCOPE: "aitf.identity.session.scope",
+  SESSION_EXPIRES_AT: "aitf.identity.session.expires_at",
+  SESSION_ACTIONS_COUNT: "aitf.identity.session.actions_count",
+  SESSION_DELEGATIONS_COUNT: "aitf.identity.session.delegations_count",
+  SESSION_TERMINATION_REASON: "aitf.identity.session.termination_reason",
+
+  /** Identity type values */
+  IdentityType: {
+    PERSISTENT: "persistent",
+    EPHEMERAL: "ephemeral",
+    DELEGATED: "delegated",
+    FEDERATED: "federated",
+    WORKLOAD: "workload",
+  },
+
+  /** Auth method values */
+  AuthMethod: {
+    API_KEY: "api_key",
+    OAUTH2: "oauth2",
+    OAUTH2_PKCE: "oauth2_pkce",
+    JWT_BEARER: "jwt_bearer",
+    MTLS: "mtls",
+    SPIFFE_SVID: "spiffe_svid",
+    DID_VC: "did_vc",
+    HTTP_SIGNATURE: "http_signature",
+    TOKEN_EXCHANGE: "token_exchange",
+  },
+
+  /** Delegation type values */
+  DelegationType: {
+    ON_BEHALF_OF: "on_behalf_of",
+    TOKEN_EXCHANGE: "token_exchange",
+    CREDENTIAL_FORWARDING: "credential_forwarding",
+    IMPERSONATION: "impersonation",
+    CAPABILITY_GRANT: "capability_grant",
+    SCOPED_PROXY: "scoped_proxy",
+  },
+} as const;
+
+/** AITF AI Asset Inventory semantic convention attributes. */
+export const AssetInventoryAttributes = {
+  // Core asset attributes
+  ID: "aitf.asset.id",
+  NAME: "aitf.asset.name",
+  TYPE: "aitf.asset.type",
+  VERSION: "aitf.asset.version",
+  HASH: "aitf.asset.hash",
+  OWNER: "aitf.asset.owner",
+  OWNER_TYPE: "aitf.asset.owner_type",
+  DEPLOYMENT_ENVIRONMENT: "aitf.asset.deployment_environment",
+  RISK_CLASSIFICATION: "aitf.asset.risk_classification",
+  DESCRIPTION: "aitf.asset.description",
+  TAGS: "aitf.asset.tags",
+  SOURCE_REPOSITORY: "aitf.asset.source_repository",
+  CREATED_AT: "aitf.asset.created_at",
+
+  // Discovery attributes
+  DISCOVERY_SCOPE: "aitf.asset.discovery.scope",
+  DISCOVERY_METHOD: "aitf.asset.discovery.method",
+  DISCOVERY_ASSETS_FOUND: "aitf.asset.discovery.assets_found",
+  DISCOVERY_NEW_ASSETS: "aitf.asset.discovery.new_assets",
+  DISCOVERY_SHADOW_ASSETS: "aitf.asset.discovery.shadow_assets",
+  DISCOVERY_STATUS: "aitf.asset.discovery.status",
+
+  // Audit attributes
+  AUDIT_TYPE: "aitf.asset.audit.type",
+  AUDIT_RESULT: "aitf.asset.audit.result",
+  AUDIT_AUDITOR: "aitf.asset.audit.auditor",
+  AUDIT_FRAMEWORK: "aitf.asset.audit.framework",
+  AUDIT_FINDINGS: "aitf.asset.audit.findings",
+  AUDIT_LAST_AUDIT_TIME: "aitf.asset.audit.last_audit_time",
+  AUDIT_NEXT_AUDIT_DUE: "aitf.asset.audit.next_audit_due",
+  AUDIT_RISK_SCORE: "aitf.asset.audit.risk_score",
+  AUDIT_INTEGRITY_VERIFIED: "aitf.asset.audit.integrity_verified",
+  AUDIT_COMPLIANCE_STATUS: "aitf.asset.audit.compliance_status",
+
+  // Classification attributes
+  CLASSIFICATION_FRAMEWORK: "aitf.asset.classification.framework",
+  CLASSIFICATION_PREVIOUS: "aitf.asset.classification.previous",
+  CLASSIFICATION_REASON: "aitf.asset.classification.reason",
+  CLASSIFICATION_ASSESSOR: "aitf.asset.classification.assessor",
+  CLASSIFICATION_USE_CASE: "aitf.asset.classification.use_case",
+  CLASSIFICATION_AFFECTED_PERSONS: "aitf.asset.classification.affected_persons",
+  CLASSIFICATION_SECTOR: "aitf.asset.classification.sector",
+  CLASSIFICATION_BIOMETRIC: "aitf.asset.classification.biometric",
+  CLASSIFICATION_AUTONOMOUS_DECISION: "aitf.asset.classification.autonomous_decision",
+
+  // Dependency attributes
+  DEPENDENCY_OPERATION: "aitf.asset.dependency.operation",
+  DEPENDENCY_COUNT: "aitf.asset.dependency.count",
+  DEPENDENCY_VULNERABLE_COUNT: "aitf.asset.dependency.vulnerable_count",
+
+  // Decommission attributes
+  DECOMMISSION_REASON: "aitf.asset.decommission.reason",
+  DECOMMISSION_REPLACEMENT_ID: "aitf.asset.decommission.replacement_id",
+  DECOMMISSION_DATA_RETENTION: "aitf.asset.decommission.data_retention",
+  DECOMMISSION_APPROVED_BY: "aitf.asset.decommission.approved_by",
+
+  /** Asset type values */
+  AssetType: {
+    MODEL: "model",
+    DATASET: "dataset",
+    PROMPT_TEMPLATE: "prompt_template",
+    VECTOR_DB: "vector_db",
+    MCP_SERVER: "mcp_server",
+    AGENT: "agent",
+    PIPELINE: "pipeline",
+    GUARDRAIL: "guardrail",
+    EMBEDDING_MODEL: "embedding_model",
+    KNOWLEDGE_BASE: "knowledge_base",
+  },
+
+  /** Risk classification values */
+  RiskClassification: {
+    UNACCEPTABLE: "unacceptable",
+    HIGH_RISK: "high_risk",
+    LIMITED_RISK: "limited_risk",
+    MINIMAL_RISK: "minimal_risk",
+    SYSTEMIC: "systemic",
+    NOT_CLASSIFIED: "not_classified",
+  },
+
+  /** Deployment environment values */
+  DeploymentEnvironment: {
+    PRODUCTION: "production",
+    STAGING: "staging",
+    DEVELOPMENT: "development",
+    SHADOW: "shadow",
+  },
+} as const;
+
+/** AITF Model Drift Detection semantic convention attributes. */
+export const DriftDetectionAttributes = {
+  MODEL_ID: "aitf.drift.model_id",
+  TYPE: "aitf.drift.type",
+  SCORE: "aitf.drift.score",
+  RESULT: "aitf.drift.result",
+  DETECTION_METHOD: "aitf.drift.detection_method",
+  BASELINE_METRIC: "aitf.drift.baseline_metric",
+  CURRENT_METRIC: "aitf.drift.current_metric",
+  METRIC_NAME: "aitf.drift.metric_name",
+  THRESHOLD: "aitf.drift.threshold",
+  P_VALUE: "aitf.drift.p_value",
+  REFERENCE_DATASET: "aitf.drift.reference_dataset",
+  REFERENCE_PERIOD: "aitf.drift.reference_period",
+  EVALUATION_WINDOW: "aitf.drift.evaluation_window",
+  SAMPLE_SIZE: "aitf.drift.sample_size",
+  AFFECTED_SEGMENTS: "aitf.drift.affected_segments",
+  FEATURE_NAME: "aitf.drift.feature_name",
+  FEATURE_IMPORTANCE: "aitf.drift.feature_importance",
+  ACTION_TRIGGERED: "aitf.drift.action_triggered",
+
+  BASELINE_OPERATION: "aitf.drift.baseline.operation",
+  BASELINE_ID: "aitf.drift.baseline.id",
+  BASELINE_DATASET: "aitf.drift.baseline.dataset",
+  BASELINE_SAMPLE_SIZE: "aitf.drift.baseline.sample_size",
+  BASELINE_PERIOD: "aitf.drift.baseline.period",
+  BASELINE_METRICS: "aitf.drift.baseline.metrics",
+  BASELINE_FEATURES: "aitf.drift.baseline.features",
+  BASELINE_PREVIOUS_ID: "aitf.drift.baseline.previous_id",
+
+  INVESTIGATION_TRIGGER_ID: "aitf.drift.investigation.trigger_id",
+  INVESTIGATION_ROOT_CAUSE: "aitf.drift.investigation.root_cause",
+  INVESTIGATION_ROOT_CAUSE_CATEGORY: "aitf.drift.investigation.root_cause_category",
+  INVESTIGATION_AFFECTED_SEGMENTS: "aitf.drift.investigation.affected_segments",
+  INVESTIGATION_AFFECTED_USERS: "aitf.drift.investigation.affected_users_estimate",
+  INVESTIGATION_BLAST_RADIUS: "aitf.drift.investigation.blast_radius",
+  INVESTIGATION_SEVERITY: "aitf.drift.investigation.severity",
+  INVESTIGATION_RECOMMENDATION: "aitf.drift.investigation.recommendation",
+
+  REMEDIATION_ACTION: "aitf.drift.remediation.action",
+  REMEDIATION_TRIGGER_ID: "aitf.drift.remediation.trigger_id",
+  REMEDIATION_AUTOMATED: "aitf.drift.remediation.automated",
+  REMEDIATION_INITIATED_BY: "aitf.drift.remediation.initiated_by",
+  REMEDIATION_STATUS: "aitf.drift.remediation.status",
+  REMEDIATION_ROLLBACK_TO: "aitf.drift.remediation.rollback_to",
+  REMEDIATION_RETRAIN_DATASET: "aitf.drift.remediation.retrain_dataset",
+  REMEDIATION_VALIDATION_PASSED: "aitf.drift.remediation.validation_passed",
+
+  /** Drift type values */
+  DriftType: {
+    DATA_DISTRIBUTION: "data_distribution",
+    CONCEPT: "concept",
+    PERFORMANCE: "performance",
+    CALIBRATION: "calibration",
+    EMBEDDING: "embedding",
+    FEATURE: "feature",
+    PREDICTION: "prediction",
+    LABEL: "label",
+  },
+
+  /** Detection method values */
+  DetectionMethod: {
+    PSI: "psi",
+    KS_TEST: "ks_test",
+    CHI_SQUARED: "chi_squared",
+    JS_DIVERGENCE: "js_divergence",
+    KL_DIVERGENCE: "kl_divergence",
+    WASSERSTEIN: "wasserstein",
+    MMD: "mmd",
+    ADWIN: "adwin",
+    DDM: "ddm",
+    PAGE_HINKLEY: "page_hinkley",
+    CUSTOM: "custom",
+  },
+
+  /** Remediation action values */
+  RemediationAction: {
+    RETRAIN: "retrain",
+    ROLLBACK: "rollback",
+    RECALIBRATE: "recalibrate",
+    FEATURE_GATE: "feature_gate",
+    TRAFFIC_SHIFT: "traffic_shift",
+    ALERT_ONLY: "alert_only",
+    QUARANTINE: "quarantine",
+  },
+} as const;
+
+/** AITF Memory Security semantic convention attributes (extends aitf.memory.*). */
+export const MemorySecurityAttributes = {
+  CONTENT_HASH: "aitf.memory.security.content_hash",
+  CONTENT_SIZE: "aitf.memory.security.content_size",
+  INTEGRITY_HASH: "aitf.memory.security.integrity_hash",
+  PROVENANCE_VERIFIED: "aitf.memory.security.provenance_verified",
+  POISONING_SCORE: "aitf.memory.security.poisoning_score",
+  CROSS_SESSION: "aitf.memory.security.cross_session",
+  ISOLATION_VERIFIED: "aitf.memory.security.isolation_verified",
+  MUTATION_COUNT: "aitf.memory.security.mutation_count",
+  SNAPSHOT_BEFORE: "aitf.memory.security.snapshot_before",
+  SNAPSHOT_AFTER: "aitf.memory.security.snapshot_after",
+} as const;

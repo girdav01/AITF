@@ -123,6 +123,57 @@ export interface AIIdentityEvent extends AIBaseEvent {
   scope?: string;
 }
 
+// --- Validation Helpers ---
+
+/** Valid OCSF Category 7 class UIDs. */
+const VALID_CLASS_UIDS = new Set([
+  AIClassUID.MODEL_INFERENCE,
+  AIClassUID.AGENT_ACTIVITY,
+  AIClassUID.TOOL_EXECUTION,
+  AIClassUID.DATA_RETRIEVAL,
+  AIClassUID.SECURITY_FINDING,
+  AIClassUID.SUPPLY_CHAIN,
+  AIClassUID.GOVERNANCE,
+  AIClassUID.IDENTITY,
+]);
+
+/** The fixed category_uid for all AITF AI events. */
+const AI_CATEGORY_UID = 7;
+
+/**
+ * Validate that the class_uid and category_uid are present and valid.
+ * Called internally by factory functions after creating the base event.
+ */
+function validateBaseFields(event: AIBaseEvent, factoryName: string): void {
+  if (!VALID_CLASS_UIDS.has(event.class_uid)) {
+    throw new Error(
+      `${factoryName}: invalid class_uid ${event.class_uid}. ` +
+        `Expected one of: ${[...VALID_CLASS_UIDS].join(", ")}`
+    );
+  }
+  if (event.category_uid !== AI_CATEGORY_UID) {
+    throw new Error(
+      `${factoryName}: invalid category_uid ${event.category_uid}. ` +
+        `Expected ${AI_CATEGORY_UID} (AI System Activity).`
+    );
+  }
+}
+
+/**
+ * Validate that a required string field is present and non-empty.
+ */
+function requireString(
+  value: unknown,
+  fieldName: string,
+  factoryName: string
+): void {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(
+      `${factoryName}: required field '${fieldName}' must be a non-empty string.`
+    );
+  }
+}
+
 // --- Factory Functions ---
 
 /** Create a Model Inference event. */
@@ -142,11 +193,15 @@ export function createModelInferenceEvent(
     time?: string;
   }
 ): AIModelInferenceEvent {
+  if (!options.model || typeof options.model.model_id !== "string" || options.model.model_id.length === 0) {
+    throw new Error("createModelInferenceEvent: required field 'model.model_id' must be a non-empty string.");
+  }
   const base = createBaseEvent(AIClassUID.MODEL_INFERENCE, {
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
   });
+  validateBaseFields(base, "createModelInferenceEvent");
 
   return {
     ...base,
@@ -182,11 +237,15 @@ export function createAgentActivityEvent(
     time?: string;
   }
 ): AIAgentActivityEvent {
+  requireString(options.agentName, "agentName", "createAgentActivityEvent");
+  requireString(options.agentId, "agentId", "createAgentActivityEvent");
+  requireString(options.sessionId, "sessionId", "createAgentActivityEvent");
   const base = createBaseEvent(AIClassUID.AGENT_ACTIVITY, {
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
   });
+  validateBaseFields(base, "createAgentActivityEvent");
 
   return {
     ...base,
@@ -225,11 +284,14 @@ export function createToolExecutionEvent(
     time?: string;
   }
 ): AIToolExecutionEvent {
+  requireString(options.toolName, "toolName", "createToolExecutionEvent");
+  requireString(options.toolType, "toolType", "createToolExecutionEvent");
   const base = createBaseEvent(AIClassUID.TOOL_EXECUTION, {
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
   });
+  validateBaseFields(base, "createToolExecutionEvent");
 
   return {
     ...base,
@@ -269,11 +331,14 @@ export function createDataRetrievalEvent(
     time?: string;
   }
 ): AIDataRetrievalEvent {
+  requireString(options.databaseName, "databaseName", "createDataRetrievalEvent");
+  requireString(options.databaseType, "databaseType", "createDataRetrievalEvent");
   const base = createBaseEvent(AIClassUID.DATA_RETRIEVAL, {
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
   });
+  validateBaseFields(base, "createDataRetrievalEvent");
 
   return {
     ...base,
@@ -303,12 +368,18 @@ export function createSecurityFindingEvent(
     time?: string;
   }
 ): AISecurityFindingEvent {
+  if (!options.finding || typeof options.finding !== "object") {
+    throw new Error("createSecurityFindingEvent: required field 'finding' must be a valid AISecurityFinding object.");
+  }
+  requireString(options.finding.finding_type, "finding.finding_type", "createSecurityFindingEvent");
+  requireString(options.finding.risk_level, "finding.risk_level", "createSecurityFindingEvent");
   const base = createBaseEvent(AIClassUID.SECURITY_FINDING, {
     activity_id: options.activityId ?? 1,
     severity_id: options.severityId,
     message: options.message,
     time: options.time,
   });
+  validateBaseFields(base, "createSecurityFindingEvent");
 
   return {
     ...base,
@@ -332,11 +403,13 @@ export function createSupplyChainEvent(
     time?: string;
   }
 ): AISupplyChainEvent {
+  requireString(options.modelSource, "modelSource", "createSupplyChainEvent");
   const base = createBaseEvent(AIClassUID.SUPPLY_CHAIN, {
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
   });
+  validateBaseFields(base, "createSupplyChainEvent");
 
   return {
     ...base,
@@ -371,6 +444,7 @@ export function createGovernanceEvent(
     message: options.message,
     time: options.time,
   });
+  validateBaseFields(base, "createGovernanceEvent");
 
   return {
     ...base,
@@ -400,11 +474,16 @@ export function createIdentityEvent(
     time?: string;
   }
 ): AIIdentityEvent {
+  requireString(options.agentName, "agentName", "createIdentityEvent");
+  requireString(options.agentId, "agentId", "createIdentityEvent");
+  requireString(options.authMethod, "authMethod", "createIdentityEvent");
+  requireString(options.authResult, "authResult", "createIdentityEvent");
   const base = createBaseEvent(AIClassUID.IDENTITY, {
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
   });
+  validateBaseFields(base, "createIdentityEvent");
 
   return {
     ...base,

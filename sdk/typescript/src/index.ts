@@ -21,6 +21,11 @@ export {
   SupplyChainAttributes,
   MemoryAttributes,
   LatencyAttributes,
+  ModelOpsAttributes,
+  IdentityAttributes,
+  AssetInventoryAttributes,
+  DriftDetectionAttributes,
+  MemorySecurityAttributes,
 } from "./semantic-conventions/attributes";
 
 export { AITFMetrics } from "./semantic-conventions/metrics";
@@ -70,6 +75,66 @@ export {
   type TraceDiscoverOptions,
 } from "./instrumentation/skills";
 
+export {
+  ModelOpsInstrumentor,
+  TrainingRun,
+  EvaluationRun,
+  DeploymentOperation,
+  CacheLookup,
+  MonitoringCheck,
+  PromptOperation,
+  type TraceTrainingOptions,
+  type TraceEvaluationOptions,
+  type TraceRegistryOptions,
+  type TraceDeploymentOptions,
+  type TraceRouteOptions,
+  type TraceFallbackOptions,
+  type TraceCacheLookupOptions,
+  type TraceMonitoringCheckOptions,
+  type TracePromptOptions,
+} from "./instrumentation/model-ops";
+
+export {
+  DriftDetectionInstrumentor,
+  DriftDetection,
+  DriftBaseline,
+  DriftInvestigation,
+  DriftRemediation,
+  type TraceDetectOptions,
+  type TraceBaselineOptions,
+  type TraceInvestigateOptions,
+  type TraceRemediateOptions,
+} from "./instrumentation/drift-detection";
+
+export {
+  IdentityInstrumentor,
+  IdentityLifecycle,
+  AuthenticationAttempt,
+  AuthorizationCheck,
+  DelegationOperation as IdentityDelegationOperation,
+  TrustOperation,
+  IdentitySession,
+  type TraceLifecycleOptions,
+  type TraceAuthenticationOptions,
+  type TraceAuthorizationOptions,
+  type TraceDelegationOptions,
+  type TraceTrustOptions,
+  type TraceSessionOptions as TraceIdentitySessionOptions,
+} from "./instrumentation/identity";
+
+export {
+  AssetInventoryInstrumentor,
+  AssetRegistration,
+  AssetDiscovery,
+  AssetAudit,
+  AssetClassification,
+  type TraceRegisterOptions,
+  type TraceDiscoverOptions as TraceAssetDiscoverOptions,
+  type TraceAuditOptions,
+  type TraceClassifyOptions,
+  type TraceDecommissionOptions,
+} from "./instrumentation/asset-inventory";
+
 // Processors
 export {
   SecurityProcessor,
@@ -96,6 +161,14 @@ export {
   type CostResult,
   type CostProcessorOptions,
 } from "./processors/cost-processor";
+
+export {
+  MemoryStateProcessor,
+  type MemorySnapshot,
+  type MemorySecurityEvent,
+  type MemoryStateProcessorOptions,
+  type SessionStats,
+} from "./processors/memory-state-processor";
 
 // OCSF Schema
 export {
