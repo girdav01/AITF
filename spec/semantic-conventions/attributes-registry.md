@@ -589,3 +589,158 @@ Additional attributes for enhanced LLM observability.
 | `aitf.identity.session.actions_count` | int | Actions in session | `42` | Stable |
 | `aitf.identity.session.delegations_count` | int | Delegations from session | `3` | Stable |
 | `aitf.identity.session.termination_reason` | string | Termination reason | `"completed"`, `"timeout"`, `"revoked"` | Stable |
+
+---
+
+## AITF Asset Inventory Attributes
+
+### `aitf.asset.*` (Core)
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.asset.id` | string | Unique asset identifier | `"model-cs-llama70b-v3"` | Stable |
+| `aitf.asset.name` | string | Human-readable asset name | `"customer-support-llama-70b"` | Stable |
+| `aitf.asset.type` | string | Asset type | `"model"`, `"dataset"`, `"prompt_template"`, `"vector_db"`, `"mcp_server"`, `"agent"`, `"pipeline"`, `"guardrail"` | Stable |
+| `aitf.asset.version` | string | Asset version | `"3.1.0"` | Stable |
+| `aitf.asset.hash` | string | Content hash for integrity | `"sha256:abc123def456"` | Stable |
+| `aitf.asset.owner` | string | Asset owner | `"ml-platform-team"` | Stable |
+| `aitf.asset.owner_type` | string | Owner type | `"team"`, `"individual"`, `"organization"` | Stable |
+| `aitf.asset.deployment_environment` | string | Deployment environment | `"production"`, `"staging"`, `"development"`, `"shadow"` | Stable |
+| `aitf.asset.risk_classification` | string | EU AI Act risk level | `"high_risk"`, `"limited_risk"`, `"minimal_risk"`, `"systemic"` | Stable |
+| `aitf.asset.description` | string | Asset description | `"Customer support fine-tuned LLM"` | Stable |
+| `aitf.asset.tags` | string[] | Searchable tags | `["customer-support", "fine-tuned"]` | Stable |
+| `aitf.asset.source_repository` | string | Source repository URL | `"https://registry.internal/models/cs-llama70b"` | Stable |
+| `aitf.asset.created_at` | string | Creation timestamp (ISO 8601) | `"2026-01-15T10:00:00Z"` | Stable |
+
+### `aitf.asset.discovery.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.asset.discovery.scope` | string | Discovery scope | `"cluster"`, `"namespace"`, `"environment"`, `"organization"` | Stable |
+| `aitf.asset.discovery.method` | string | Discovery method | `"api_scan"`, `"network_scan"`, `"registry_sync"`, `"log_analysis"` | Stable |
+| `aitf.asset.discovery.assets_found` | int | Total assets discovered | `47` | Stable |
+| `aitf.asset.discovery.new_assets` | int | Previously unknown assets | `3` | Stable |
+| `aitf.asset.discovery.shadow_assets` | int | Unregistered shadow AI assets | `2` | Stable |
+| `aitf.asset.discovery.status` | string | Discovery status | `"completed"`, `"partial"`, `"failed"` | Stable |
+
+### `aitf.asset.audit.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.asset.audit.type` | string | Audit type | `"integrity"`, `"compliance"`, `"access_review"`, `"security"`, `"full"` | Stable |
+| `aitf.asset.audit.result` | string | Audit result | `"pass"`, `"fail"`, `"warning"`, `"not_applicable"` | Stable |
+| `aitf.asset.audit.auditor` | string | Auditor identity | `"compliance-bot"` | Stable |
+| `aitf.asset.audit.framework` | string | Compliance framework | `"eu_ai_act"`, `"nist_ai_rmf"`, `"iso_42001"`, `"soc2"` | Stable |
+| `aitf.asset.audit.findings` | string | JSON array of findings | `"[{\"finding\":\"...\"}]"` | Stable |
+| `aitf.asset.audit.last_audit_time` | string | Previous audit timestamp | `"2026-01-15T10:00:00Z"` | Stable |
+| `aitf.asset.audit.next_audit_due` | string | Next scheduled audit | `"2026-04-15T10:00:00Z"` | Stable |
+| `aitf.asset.audit.risk_score` | double | Calculated risk score (0-100) | `72.5` | Stable |
+| `aitf.asset.audit.integrity_verified` | boolean | Integrity hash matches | `true` | Stable |
+| `aitf.asset.audit.compliance_status` | string | Compliance status | `"compliant"`, `"non_compliant"`, `"partially_compliant"` | Stable |
+
+### `aitf.asset.classification.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.asset.classification.framework` | string | Classification framework | `"eu_ai_act"`, `"nist_ai_rmf"`, `"internal"` | Stable |
+| `aitf.asset.classification.previous` | string | Previous risk classification | `"limited_risk"` | Stable |
+| `aitf.asset.classification.reason` | string | Classification reason | `"Employment context — CV screening"` | Stable |
+| `aitf.asset.classification.assessor` | string | Assessor identity | `"ai-governance-team"` | Stable |
+| `aitf.asset.classification.use_case` | string | Intended use case | `"automated resume screening"` | Stable |
+| `aitf.asset.classification.affected_persons` | string | Affected persons | `"employees"`, `"consumers"`, `"public"`, `"children"` | Stable |
+| `aitf.asset.classification.sector` | string | Deployment sector | `"healthcare"`, `"finance"`, `"hr_recruitment"` | Stable |
+| `aitf.asset.classification.biometric` | boolean | Uses biometric data | `false` | Stable |
+| `aitf.asset.classification.autonomous_decision` | boolean | Autonomous decisions affecting rights | `true` | Stable |
+
+### `aitf.asset.decommission.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.asset.decommission.reason` | string | Decommission reason | `"replaced"`, `"deprecated"`, `"security_risk"`, `"compliance"` | Stable |
+| `aitf.asset.decommission.replacement_id` | string | Replacement asset ID | `"model-cs-llama70b-v4"` | Stable |
+| `aitf.asset.decommission.data_retention` | string | Data retention policy | `"purge"`, `"archive"`, `"retain"` | Stable |
+| `aitf.asset.decommission.approved_by` | string | Approver identity | `"ml-lead"` | Stable |
+
+---
+
+## AITF Drift Detection Attributes
+
+### `aitf.drift.*` (Detection)
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.drift.model_id` | string | Model being monitored | `"customer-support-llama-70b"` | Stable |
+| `aitf.drift.type` | string | Drift type | `"data_distribution"`, `"concept"`, `"performance"`, `"calibration"`, `"embedding"`, `"feature"` | Stable |
+| `aitf.drift.score` | double | Drift magnitude (0.0–1.0) | `0.73` | Stable |
+| `aitf.drift.result` | string | Detection result | `"normal"`, `"warning"`, `"alert"`, `"critical"` | Stable |
+| `aitf.drift.detection_method` | string | Statistical method | `"psi"`, `"ks_test"`, `"js_divergence"`, `"wasserstein"`, `"adwin"` | Stable |
+| `aitf.drift.baseline_metric` | double | Baseline metric value | `0.12` | Stable |
+| `aitf.drift.current_metric` | double | Current metric value | `0.73` | Stable |
+| `aitf.drift.metric_name` | string | Metric being tracked | `"psi_score"`, `"accuracy"`, `"precision"` | Stable |
+| `aitf.drift.threshold` | double | Alert threshold | `0.25` | Stable |
+| `aitf.drift.p_value` | double | Statistical significance | `0.001` | Stable |
+| `aitf.drift.reference_dataset` | string | Reference dataset ID | `"prod-baseline-jan-2026"` | Stable |
+| `aitf.drift.reference_period` | string | Reference time period | `"2026-01-01/2026-01-31"` | Stable |
+| `aitf.drift.evaluation_window` | string | Current evaluation window | `"2026-02-10/2026-02-16"` | Stable |
+| `aitf.drift.sample_size` | int | Evaluation sample size | `50000` | Stable |
+| `aitf.drift.affected_segments` | string[] | Impacted segments | `["enterprise_customers", "apac_region"]` | Stable |
+| `aitf.drift.feature_name` | string | Feature exhibiting drift | `"user_tenure_days"` | Stable |
+| `aitf.drift.feature_importance` | double | Feature importance (0–1) | `0.85` | Stable |
+| `aitf.drift.action_triggered` | string | Automated action | `"none"`, `"alert"`, `"retrain"`, `"rollback"`, `"quarantine"` | Stable |
+
+### `aitf.drift.baseline.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.drift.baseline.operation` | string | Baseline operation | `"create"`, `"refresh"`, `"validate"` | Stable |
+| `aitf.drift.baseline.id` | string | Baseline identifier | `"baseline-jan-2026"` | Stable |
+| `aitf.drift.baseline.dataset` | string | Baseline dataset | `"prod-data-jan-2026"` | Stable |
+| `aitf.drift.baseline.sample_size` | int | Baseline sample count | `100000` | Stable |
+| `aitf.drift.baseline.period` | string | Time period covered | `"2026-01-01/2026-01-31"` | Stable |
+| `aitf.drift.baseline.metrics` | string | JSON of baseline metrics | `"{\"accuracy\": 0.94}"` | Stable |
+| `aitf.drift.baseline.features` | string[] | Features tracked | `["user_tenure", "session_count"]` | Stable |
+
+### `aitf.drift.investigation.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.drift.investigation.trigger_id` | string | Detection span that triggered | `"span-drift-001"` | Stable |
+| `aitf.drift.investigation.root_cause` | string | Identified root cause | `"Upstream pipeline changed encoding"` | Stable |
+| `aitf.drift.investigation.root_cause_category` | string | Root cause category | `"data_quality"`, `"upstream_change"`, `"seasonal"`, `"adversarial"` | Stable |
+| `aitf.drift.investigation.affected_segments` | string[] | Impacted segments | `["premium_tier"]` | Stable |
+| `aitf.drift.investigation.affected_users_estimate` | int | Estimated affected users | `12500` | Stable |
+| `aitf.drift.investigation.blast_radius` | string | Impact scope | `"isolated"`, `"segment"`, `"widespread"`, `"global"` | Stable |
+| `aitf.drift.investigation.severity` | string | Investigation severity | `"low"`, `"medium"`, `"high"`, `"critical"` | Stable |
+| `aitf.drift.investigation.recommendation` | string | Remediation recommendation | `"Rollback and fix upstream pipeline"` | Stable |
+
+### `aitf.drift.remediation.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.drift.remediation.action` | string | Remediation action | `"retrain"`, `"rollback"`, `"recalibrate"`, `"quarantine"` | Stable |
+| `aitf.drift.remediation.trigger_id` | string | Trigger span ID | `"span-drift-001"` | Stable |
+| `aitf.drift.remediation.automated` | boolean | Automatically triggered | `true` | Stable |
+| `aitf.drift.remediation.initiated_by` | string | Initiator identity | `"drift-monitor"` | Stable |
+| `aitf.drift.remediation.status` | string | Remediation status | `"pending"`, `"in_progress"`, `"completed"`, `"failed"` | Stable |
+| `aitf.drift.remediation.rollback_to` | string | Rollback target version | `"model-v2.3.1"` | Stable |
+| `aitf.drift.remediation.retrain_dataset` | string | Retraining dataset | `"fraud-data-feb-2026"` | Stable |
+| `aitf.drift.remediation.validation_passed` | boolean | Post-remediation validation | `true` | Stable |
+
+---
+
+## AITF Memory Security Attributes
+
+### `aitf.memory.security.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.memory.security.content_hash` | string | Content hash for tamper detection | `"sha256:abc123"` | Stable |
+| `aitf.memory.security.content_size` | int | Content size in bytes | `4096` | Stable |
+| `aitf.memory.security.integrity_hash` | string | Expected integrity hash | `"sha256:abc123"` | Stable |
+| `aitf.memory.security.provenance_verified` | boolean | Provenance was verified | `true` | Stable |
+| `aitf.memory.security.poisoning_score` | double | Poisoning anomaly score (0-1) | `0.15` | Stable |
+| `aitf.memory.security.cross_session` | boolean | Cross-session memory access | `false` | Stable |
+| `aitf.memory.security.isolation_verified` | boolean | Session isolation verified | `true` | Stable |
+| `aitf.memory.security.mutation_count` | int | Total mutations in session | `42` | Stable |
+| `aitf.memory.security.snapshot_before` | string | Content hash before mutation | `"sha256:prev123"` | Stable |
+| `aitf.memory.security.snapshot_after` | string | Content hash after mutation | `"sha256:curr456"` | Stable |

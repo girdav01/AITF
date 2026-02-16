@@ -408,3 +408,197 @@ Emitted when potential session hijacking is detected.
 | `aitf.identity.session.id` | string | Session ID | Yes |
 | `aitf.identity.session.ip_address` | string | Anomalous source IP | Recommended |
 | `aitf.identity.session.user_agent` | string | Anomalous user agent | Recommended |
+
+---
+
+## Asset Inventory Events
+
+### `aitf.asset.registered`
+
+Emitted when a new AI asset is registered in the inventory.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.asset.id` | string | Asset identifier | Yes |
+| `aitf.asset.name` | string | Asset name | Yes |
+| `aitf.asset.type` | string | Asset type | Yes |
+| `aitf.asset.owner` | string | Asset owner | Yes |
+| `aitf.asset.deployment_environment` | string | Environment | Recommended |
+| `aitf.asset.risk_classification` | string | Risk classification | Recommended |
+
+### `aitf.asset.shadow_detected`
+
+Emitted when a shadow (unregistered) AI asset is discovered during a scan.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.asset.type` | string | Discovered asset type | Yes |
+| `aitf.asset.discovery.scope` | string | Discovery scope | Yes |
+| `aitf.asset.discovery.method` | string | Discovery method | Yes |
+| `aitf.asset.name` | string | Discovered asset name | Recommended |
+| `aitf.asset.deployment_environment` | string | Where found | Recommended |
+
+### `aitf.asset.audit_failed`
+
+Emitted when an AI asset fails a compliance or integrity audit.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.asset.id` | string | Asset identifier | Yes |
+| `aitf.asset.audit.type` | string | Audit type | Yes |
+| `aitf.asset.audit.result` | string | `"fail"` | Yes |
+| `aitf.asset.audit.framework` | string | Framework | Recommended |
+| `aitf.asset.audit.findings` | string | JSON findings | Recommended |
+| `aitf.asset.audit.risk_score` | double | Risk score | Recommended |
+
+### `aitf.asset.risk_reclassified`
+
+Emitted when an asset's risk classification changes.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.asset.id` | string | Asset identifier | Yes |
+| `aitf.asset.risk_classification` | string | New classification | Yes |
+| `aitf.asset.classification.previous` | string | Previous classification | Yes |
+| `aitf.asset.classification.framework` | string | Framework | Yes |
+| `aitf.asset.classification.reason` | string | Reason for change | Recommended |
+
+### `aitf.asset.decommissioned`
+
+Emitted when an AI asset is decommissioned.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.asset.id` | string | Asset identifier | Yes |
+| `aitf.asset.type` | string | Asset type | Yes |
+| `aitf.asset.decommission.reason` | string | Decommission reason | Yes |
+| `aitf.asset.decommission.replacement_id` | string | Replacement asset | Recommended |
+
+### `aitf.asset.audit_overdue`
+
+Emitted when an asset's audit is overdue.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.asset.id` | string | Asset identifier | Yes |
+| `aitf.asset.audit.next_audit_due` | string | Overdue audit date | Yes |
+| `aitf.asset.risk_classification` | string | Risk level | Recommended |
+| `aitf.asset.deployment_environment` | string | Environment | Recommended |
+
+---
+
+## Drift Detection Events
+
+### `aitf.drift.detected`
+
+Emitted when model drift is detected above threshold. Provides structured forensic-quality drift analysis beyond the basic `aitf.model_ops.drift_detected`.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.drift.model_id` | string | Monitored model | Yes |
+| `aitf.drift.type` | string | Drift type | Yes |
+| `aitf.drift.score` | double | Drift magnitude (0–1) | Yes |
+| `aitf.drift.result` | string | Alert level | Yes |
+| `aitf.drift.detection_method` | string | Statistical method | Yes |
+| `aitf.drift.baseline_metric` | double | Baseline value | Recommended |
+| `aitf.drift.current_metric` | double | Current value | Recommended |
+| `aitf.drift.p_value` | double | Statistical significance | Recommended |
+| `aitf.drift.affected_segments` | string[] | Impacted segments | Recommended |
+| `aitf.drift.reference_dataset` | string | Reference dataset | Recommended |
+| `aitf.drift.action_triggered` | string | Automated action | Recommended |
+
+### `aitf.drift.baseline_updated`
+
+Emitted when a drift baseline is created or refreshed.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.drift.model_id` | string | Model | Yes |
+| `aitf.drift.baseline.operation` | string | `"create"` or `"refresh"` | Yes |
+| `aitf.drift.baseline.id` | string | Baseline identifier | Yes |
+| `aitf.drift.baseline.dataset` | string | Baseline dataset | Recommended |
+| `aitf.drift.baseline.sample_size` | int | Sample size | Recommended |
+
+### `aitf.drift.investigation_completed`
+
+Emitted when a drift investigation completes with root cause analysis.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.drift.model_id` | string | Model investigated | Yes |
+| `aitf.drift.investigation.root_cause_category` | string | Root cause category | Yes |
+| `aitf.drift.investigation.severity` | string | Severity | Yes |
+| `aitf.drift.investigation.blast_radius` | string | Impact scope | Yes |
+| `aitf.drift.investigation.affected_users_estimate` | int | Affected users | Recommended |
+| `aitf.drift.investigation.recommendation` | string | Recommendation | Recommended |
+
+### `aitf.drift.remediation_completed`
+
+Emitted when a drift remediation action completes.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.drift.model_id` | string | Model remediated | Yes |
+| `aitf.drift.remediation.action` | string | Action taken | Yes |
+| `aitf.drift.remediation.status` | string | Outcome status | Yes |
+| `aitf.drift.remediation.automated` | boolean | Was automated | Yes |
+| `aitf.drift.remediation.validation_passed` | boolean | Post-validation passed | Recommended |
+
+---
+
+## Memory Security Events
+
+### `aitf.memory.poisoning_detected`
+
+Emitted when memory poisoning is detected (unexpected content injection).
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.memory.key` | string | Affected memory key | Yes |
+| `aitf.memory.store` | string | Memory store | Yes |
+| `aitf.memory.security.poisoning_score` | double | Poisoning score (0-1) | Yes |
+| `aitf.memory.provenance` | string | Content provenance | Yes |
+| `aitf.agent.session.id` | string | Session ID | Recommended |
+
+### `aitf.memory.integrity_violation`
+
+Emitted when memory content hash does not match expected integrity hash.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.memory.key` | string | Affected memory key | Yes |
+| `aitf.memory.store` | string | Memory store | Yes |
+| `aitf.memory.security.integrity_hash` | string | Expected hash | Yes |
+| `aitf.memory.security.content_hash` | string | Actual hash | Yes |
+| `aitf.agent.session.id` | string | Session ID | Recommended |
+
+### `aitf.memory.cross_session_access`
+
+Emitted when a session accesses memory belonging to another session.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.memory.key` | string | Accessed memory key | Yes |
+| `aitf.memory.store` | string | Memory store | Yes |
+| `aitf.agent.session.id` | string | Accessing session | Yes |
+
+### `aitf.memory.growth_anomaly`
+
+Emitted when session memory growth exceeds configured thresholds.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.agent.session.id` | string | Session ID | Yes |
+| `aitf.memory.security.mutation_count` | int | Current entry count | Yes |
+| `aitf.memory.security.content_size` | int | Current total size | Recommended |
+
+### `aitf.memory.untrusted_provenance`
+
+Emitted when memory is written from an untrusted provenance source.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.memory.key` | string | Memory key | Yes |
+| `aitf.memory.store` | string | Memory store | Yes |
+| `aitf.memory.provenance` | string | Untrusted provenance | Yes |
+| `aitf.agent.session.id` | string | Session ID | Recommended |

@@ -138,6 +138,19 @@ AITF defines a clear span hierarchy for AI operations:
   ├─[Cache Lookup]                    aitf.model_ops.serving (cache_lookup)
   ├─[LLM Inference]                   gen_ai.inference
   └─[Fallback]                        aitf.model_ops.serving (fallback)
+
+[Asset Inventory]                       aitf.asset.*
+  ├─[Register]                        aitf.asset.register
+  ├─[Discover]                        aitf.asset.discover
+  ├─[Audit]                           aitf.asset.audit
+  ├─[Classify]                        aitf.asset.classify
+  └─[Decommission]                    aitf.asset.decommission
+
+[Drift Detection]                       aitf.drift.*
+  ├─[Detect]                          aitf.drift.detect
+  ├─[Baseline]                        aitf.drift.baseline
+  ├─[Investigate]                     aitf.drift.investigate
+  └─[Remediate]                       aitf.drift.remediate
 ```
 
 ## 4. Namespace Registry
@@ -168,8 +181,11 @@ AITF defines a clear span hierarchy for AI operations:
 | `aitf.supply_chain.*` | Model provenance, AI-BOM, integrity |
 | `aitf.identity.*` | Agent identity lifecycle, authentication, authorization, delegation, trust |
 | `aitf.model_ops.*` | LLMOps/MLOps lifecycle (training, evaluation, registry, deployment, serving, monitoring, prompts) |
+| `aitf.asset.*` | AI asset inventory (registration, discovery, audit, risk classification) |
+| `aitf.drift.*` | Structured model drift detection (baseline, investigation, remediation) |
 | `aitf.guardrail.*` | Content filtering, safety checks, policies |
 | `aitf.memory.*` | Agent memory operations (store, retrieve) |
+| `aitf.memory.security.*` | Memory security (poisoning detection, integrity, isolation) |
 
 ## 5. OCSF Integration
 
@@ -209,6 +225,9 @@ See [Compliance Mapping](ocsf-mapping/compliance-mapping.md) for framework detai
 10. **Agent Memory** — Memory operation tracing (store, retrieve, update, delete) with provenance and TTL tracking
 11. **Agentic Identity** — Full agent identity lifecycle (creation, rotation, revocation), authentication (OAuth 2.1, SPIFFE, mTLS, DID/VC), authorization with policy-as-code, delegation chains with scope attenuation, agent-to-agent trust establishment, and identity session management
 12. **Model Operations (LLMOps/MLOps)** — Training/fine-tuning runs, model evaluation and benchmarking, model registry with lineage tracking, deployment strategies (canary, blue-green, A/B), serving infrastructure (routing, fallback chains, caching, circuit breakers), drift detection and monitoring, and prompt versioning lifecycle
+13. **AI Asset Inventory (CoSAI IR Preparation)** — Complete AI asset registration and discovery (models, datasets, prompts, vector DBs, MCP servers, agents), EU AI Act risk classification, periodic compliance auditing with configurable frameworks, dependency mapping, shadow AI detection, and asset decommissioning
+14. **Structured Drift Detection** — Forensic-quality drift analysis with statistical test results (PSI, KS, Jensen-Shannon, Wasserstein, ADWIN), segment-level impact assessment, reference dataset comparisons, root cause investigation with blast radius estimation, and automated remediation tracking
+15. **Memory Security (CoSAI IR Preparation)** — Memory state tracking processor with before/after mutation snapshots, memory poisoning detection (aligned with CoSAI MINJA/AGENTPOISON case studies), content integrity verification, session memory isolation enforcement, untrusted provenance alerting, and memory growth anomaly detection
 
 ## 7. Versioning and Stability
 
@@ -230,7 +249,10 @@ Current status:
 - `aitf.supply_chain.*` — Experimental
 - `aitf.identity.*` — Stable
 - `aitf.model_ops.*` — Stable
+- `aitf.asset.*` — Stable
+- `aitf.drift.*` — Stable
 - `aitf.memory.*` — Experimental
+- `aitf.memory.security.*` — Stable
 
 ## 8. Related Documents
 
@@ -241,6 +263,8 @@ Current status:
 - [Skills](semantic-conventions/skills.md)
 - [Model Operations Spans](semantic-conventions/model-ops-spans.md)
 - [Identity Spans](semantic-conventions/identity-spans.md)
+- [Asset Inventory Spans](semantic-conventions/asset-inventory-spans.md)
+- [Drift Detection Spans](semantic-conventions/drift-detection-spans.md)
 - [Metrics](semantic-conventions/metrics.md)
 - [Events](semantic-conventions/events.md)
 - [OCSF Event Classes](ocsf-mapping/event-classes.md)

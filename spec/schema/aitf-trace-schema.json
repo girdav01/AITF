@@ -367,6 +367,128 @@
           "enum": ["create", "refresh", "validate", "terminate", "timeout", "hijack_detected"]
         }
       }
+    },
+    "asset_inventory_attributes": {
+      "type": "object",
+      "properties": {
+        "aitf.asset.id": { "type": "string" },
+        "aitf.asset.name": { "type": "string" },
+        "aitf.asset.type": {
+          "type": "string",
+          "enum": ["model", "dataset", "prompt_template", "vector_db", "mcp_server", "agent", "pipeline", "guardrail", "embedding_model", "knowledge_base"]
+        },
+        "aitf.asset.version": { "type": "string" },
+        "aitf.asset.hash": { "type": "string" },
+        "aitf.asset.owner": { "type": "string" },
+        "aitf.asset.deployment_environment": {
+          "type": "string",
+          "enum": ["production", "staging", "development", "shadow"]
+        },
+        "aitf.asset.risk_classification": {
+          "type": "string",
+          "enum": ["unacceptable", "high_risk", "limited_risk", "minimal_risk", "systemic", "not_classified"]
+        },
+        "aitf.asset.tags": { "type": "array", "items": { "type": "string" } },
+        "aitf.asset.discovery.scope": {
+          "type": "string",
+          "enum": ["cluster", "namespace", "environment", "organization"]
+        },
+        "aitf.asset.discovery.method": {
+          "type": "string",
+          "enum": ["api_scan", "network_scan", "registry_sync", "log_analysis", "manual"]
+        },
+        "aitf.asset.discovery.assets_found": { "type": "integer", "minimum": 0 },
+        "aitf.asset.discovery.shadow_assets": { "type": "integer", "minimum": 0 },
+        "aitf.asset.audit.type": {
+          "type": "string",
+          "enum": ["integrity", "compliance", "access_review", "drift", "security", "lineage", "full"]
+        },
+        "aitf.asset.audit.result": {
+          "type": "string",
+          "enum": ["pass", "fail", "warning", "not_applicable"]
+        },
+        "aitf.asset.audit.framework": {
+          "type": "string",
+          "enum": ["eu_ai_act", "nist_ai_rmf", "iso_42001", "soc2", "internal"]
+        },
+        "aitf.asset.audit.risk_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "aitf.asset.audit.compliance_status": {
+          "type": "string",
+          "enum": ["compliant", "non_compliant", "partially_compliant"]
+        },
+        "aitf.asset.classification.framework": { "type": "string" },
+        "aitf.asset.classification.autonomous_decision": { "type": "boolean" },
+        "aitf.asset.decommission.reason": {
+          "type": "string",
+          "enum": ["replaced", "deprecated", "security_risk", "compliance", "end_of_life"]
+        }
+      }
+    },
+    "drift_detection_attributes": {
+      "type": "object",
+      "properties": {
+        "aitf.drift.model_id": { "type": "string" },
+        "aitf.drift.type": {
+          "type": "string",
+          "enum": ["data_distribution", "concept", "performance", "calibration", "embedding", "feature", "prediction", "label"]
+        },
+        "aitf.drift.score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "aitf.drift.result": {
+          "type": "string",
+          "enum": ["normal", "warning", "alert", "critical"]
+        },
+        "aitf.drift.detection_method": {
+          "type": "string",
+          "enum": ["psi", "ks_test", "chi_squared", "js_divergence", "kl_divergence", "wasserstein", "mmd", "adwin", "ddm", "page_hinkley", "custom"]
+        },
+        "aitf.drift.baseline_metric": { "type": "number" },
+        "aitf.drift.current_metric": { "type": "number" },
+        "aitf.drift.metric_name": { "type": "string" },
+        "aitf.drift.threshold": { "type": "number" },
+        "aitf.drift.p_value": { "type": "number", "minimum": 0, "maximum": 1 },
+        "aitf.drift.reference_dataset": { "type": "string" },
+        "aitf.drift.reference_period": { "type": "string" },
+        "aitf.drift.affected_segments": { "type": "array", "items": { "type": "string" } },
+        "aitf.drift.action_triggered": {
+          "type": "string",
+          "enum": ["none", "alert", "retrain", "rollback", "quarantine"]
+        },
+        "aitf.drift.baseline.operation": {
+          "type": "string",
+          "enum": ["create", "refresh", "validate"]
+        },
+        "aitf.drift.investigation.root_cause_category": {
+          "type": "string",
+          "enum": ["data_quality", "upstream_change", "seasonal", "adversarial", "model_degradation", "unknown"]
+        },
+        "aitf.drift.investigation.blast_radius": {
+          "type": "string",
+          "enum": ["isolated", "segment", "widespread", "global"]
+        },
+        "aitf.drift.remediation.action": {
+          "type": "string",
+          "enum": ["retrain", "rollback", "recalibrate", "feature_gate", "traffic_shift", "alert_only", "quarantine"]
+        },
+        "aitf.drift.remediation.automated": { "type": "boolean" },
+        "aitf.drift.remediation.status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "completed", "failed"]
+        },
+        "aitf.drift.remediation.validation_passed": { "type": "boolean" }
+      }
+    },
+    "memory_security_attributes": {
+      "type": "object",
+      "properties": {
+        "aitf.memory.security.content_hash": { "type": "string" },
+        "aitf.memory.security.content_size": { "type": "integer", "minimum": 0 },
+        "aitf.memory.security.integrity_hash": { "type": "string" },
+        "aitf.memory.security.provenance_verified": { "type": "boolean" },
+        "aitf.memory.security.poisoning_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "aitf.memory.security.cross_session": { "type": "boolean" },
+        "aitf.memory.security.isolation_verified": { "type": "boolean" },
+        "aitf.memory.security.mutation_count": { "type": "integer", "minimum": 0 }
+      }
     }
   }
 }

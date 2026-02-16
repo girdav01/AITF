@@ -2,7 +2,8 @@
 
 Provides auto-instrumentation for LLM inference, agent execution,
 MCP protocol, RAG pipelines, skill invocations, model operations
-(LLMOps/MLOps), and agentic identity management.
+(LLMOps/MLOps), agentic identity management, AI asset inventory,
+and model drift detection.
 """
 
 from __future__ import annotations
@@ -11,6 +12,8 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 
 from aitf.instrumentation.agent import AgentInstrumentor
+from aitf.instrumentation.asset_inventory import AssetInventoryInstrumentor
+from aitf.instrumentation.drift_detection import DriftDetectionInstrumentor
 from aitf.instrumentation.identity import IdentityInstrumentor
 from aitf.instrumentation.llm import LLMInstrumentor
 from aitf.instrumentation.mcp import MCPInstrumentor
@@ -39,6 +42,8 @@ class AITFInstrumentor:
         self._skills = SkillInstrumentor(tracer_provider=tracer_provider)
         self._model_ops = ModelOpsInstrumentor(tracer_provider=tracer_provider)
         self._identity = IdentityInstrumentor(tracer_provider=tracer_provider)
+        self._asset_inventory = AssetInventoryInstrumentor(tracer_provider=tracer_provider)
+        self._drift_detection = DriftDetectionInstrumentor(tracer_provider=tracer_provider)
         self._instrumented = False
 
     def instrument_all(self) -> None:
@@ -50,6 +55,8 @@ class AITFInstrumentor:
         self._skills.instrument()
         self._model_ops.instrument()
         self._identity.instrument()
+        self._asset_inventory.instrument()
+        self._drift_detection.instrument()
         self._instrumented = True
 
     def instrument(
@@ -61,6 +68,8 @@ class AITFInstrumentor:
         skills: bool = False,
         model_ops: bool = False,
         identity: bool = False,
+        asset_inventory: bool = False,
+        drift_detection: bool = False,
     ) -> None:
         """Selectively instrument AI components."""
         if llm:
@@ -77,6 +86,10 @@ class AITFInstrumentor:
             self._model_ops.instrument()
         if identity:
             self._identity.instrument()
+        if asset_inventory:
+            self._asset_inventory.instrument()
+        if drift_detection:
+            self._drift_detection.instrument()
         self._instrumented = True
 
     def uninstrument_all(self) -> None:
@@ -88,6 +101,8 @@ class AITFInstrumentor:
         self._skills.uninstrument()
         self._model_ops.uninstrument()
         self._identity.uninstrument()
+        self._asset_inventory.uninstrument()
+        self._drift_detection.uninstrument()
         self._instrumented = False
 
     @property
@@ -122,6 +137,14 @@ class AITFInstrumentor:
     def identity(self) -> IdentityInstrumentor:
         return self._identity
 
+    @property
+    def asset_inventory(self) -> AssetInventoryInstrumentor:
+        return self._asset_inventory
+
+    @property
+    def drift_detection(self) -> DriftDetectionInstrumentor:
+        return self._drift_detection
+
 
 __all__ = [
     "AITFInstrumentor",
@@ -132,4 +155,6 @@ __all__ = [
     "SkillInstrumentor",
     "ModelOpsInstrumentor",
     "IdentityInstrumentor",
+    "AssetInventoryInstrumentor",
+    "DriftDetectionInstrumentor",
 ]
