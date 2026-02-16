@@ -250,17 +250,17 @@ const exporter = new OCSFExporter({
 
 ## SIEM & XDR Integrations
 
-AITF ships with production-ready forwarding examples for major security platforms:
+AITF includes proposed forwarding examples for major security platforms (experimental — not production-ready):
 
 | Platform | Ingestion Method | OCSF Native | Example |
 |----------|-----------------|-------------|---------|
 | **AWS Security Lake** | S3 (Parquet) / Kinesis Firehose | Yes | `examples/siem-forwarding/aws_security_lake.py` |
-| **Trend Vision One** | REST API + Workbench | Yes | `examples/siem-forwarding/trend_vision_one.py` |
+| **Trend Vision One** | CEF | Yes | `examples/siem-forwarding/trend_vision_one.py` |
 | **Splunk** | HTTP Event Collector (HEC) | CIM mapping | `examples/siem-forwarding/splunk_forwarding.py` |
 
 ```
 AI App → AITF SDK → OCSF Mapper → ┬─ AWS Security Lake (S3/Parquet)
-                                    ├─ Trend Vision One XDR (REST API)
+                                    ├─ Trend Vision One XDR (CEF)
                                     └─ Splunk (HEC → CIM)
 ```
 
