@@ -38,6 +38,9 @@ const (
 	GenAIUsageCachedTokensKey    = attribute.Key("gen_ai.usage.cached_tokens")
 	GenAIUsageReasoningTokensKey = attribute.Key("gen_ai.usage.reasoning_tokens")
 
+	// System prompt hash (CoSAI WS2: AI_INTERACTION)
+	GenAISystemPromptHashKey = attribute.Key("gen_ai.system_prompt.hash")
+
 	// Events
 	GenAIPromptKey        = attribute.Key("gen_ai.prompt")
 	GenAICompletionKey    = attribute.Key("gen_ai.completion")
@@ -81,6 +84,12 @@ const (
 
 	AgentSessionIDKey        = attribute.Key("aitf.agent.session.id")
 	AgentSessionTurnCountKey = attribute.Key("aitf.agent.session.turn_count")
+
+	// CoSAI WS2: AGENT_TRACE fields
+	AgentWorkflowIDKey = attribute.Key("aitf.agent.workflow_id")
+	AgentStateKey      = attribute.Key("aitf.agent.state")
+	AgentScratchpadKey = attribute.Key("aitf.agent.scratchpad")
+	AgentNextActionKey = attribute.Key("aitf.agent.next_action")
 
 	AgentStepTypeKey        = attribute.Key("aitf.agent.step.type")
 	AgentStepIndexKey       = attribute.Key("aitf.agent.step.index")
@@ -163,6 +172,10 @@ const (
 	MCPToolApprovedKey         = attribute.Key("aitf.mcp.tool.approved")
 	MCPToolCountKey            = attribute.Key("aitf.mcp.tool.count")
 
+	// CoSAI WS2: MCP_ACTIVITY fields
+	MCPToolResponseErrorKey = attribute.Key("aitf.mcp.tool.response_error")
+	MCPConnectionIDKey      = attribute.Key("aitf.mcp.connection.id")
+
 	MCPResourceURIKey      = attribute.Key("aitf.mcp.resource.uri")
 	MCPResourceNameKey     = attribute.Key("aitf.mcp.resource.name")
 	MCPResourceMimeTypeKey = attribute.Key("aitf.mcp.resource.mime_type")
@@ -242,6 +255,12 @@ const (
 	RAGRetrieveMinScoreKey     = attribute.Key("aitf.rag.retrieve.min_score")
 	RAGRetrieveMaxScoreKey     = attribute.Key("aitf.rag.retrieve.max_score")
 	RAGRetrieveFilterKey       = attribute.Key("aitf.rag.retrieve.filter")
+
+	// CoSAI WS2: RAG_CONTEXT document-level fields
+	RAGDocIDKey         = attribute.Key("aitf.rag.doc.id")
+	RAGDocScoreKey      = attribute.Key("aitf.rag.doc.score")
+	RAGDocProvenanceKey = attribute.Key("aitf.rag.doc.provenance")
+	RAGRetrievalDocsKey = attribute.Key("aitf.rag.retrieval.docs")
 
 	RAGRerankModelKey       = attribute.Key("aitf.rag.rerank.model")
 	RAGRerankInputCountKey  = attribute.Key("aitf.rag.rerank.input_count")
@@ -670,4 +689,128 @@ const (
 	MemorySecurityIntegrityHashKey  = attribute.Key("aitf.memory.security.integrity_hash")
 	MemorySecurityPoisoningScoreKey = attribute.Key("aitf.memory.security.poisoning_score")
 	MemorySecurityCrossSessionKey   = attribute.Key("aitf.memory.security.cross_session")
+)
+
+// --- AITF A2A (Agent-to-Agent Protocol) Attributes ---
+
+const (
+	A2AAgentNameKey            = attribute.Key("aitf.a2a.agent.name")
+	A2AAgentURLKey             = attribute.Key("aitf.a2a.agent.url")
+	A2AAgentVersionKey         = attribute.Key("aitf.a2a.agent.version")
+	A2AAgentProviderOrgKey     = attribute.Key("aitf.a2a.agent.provider.organization")
+	A2AAgentSkillsKey          = attribute.Key("aitf.a2a.agent.skills")
+	A2AAgentCapStreamingKey    = attribute.Key("aitf.a2a.agent.capabilities.streaming")
+	A2AAgentCapPushKey         = attribute.Key("aitf.a2a.agent.capabilities.push_notifications")
+	A2AProtocolVersionKey      = attribute.Key("aitf.a2a.protocol.version")
+	A2ATransportKey            = attribute.Key("aitf.a2a.transport")
+
+	A2ATaskIDKey               = attribute.Key("aitf.a2a.task.id")
+	A2ATaskContextIDKey        = attribute.Key("aitf.a2a.task.context_id")
+	A2ATaskStateKey            = attribute.Key("aitf.a2a.task.state")
+	A2ATaskPreviousStateKey    = attribute.Key("aitf.a2a.task.previous_state")
+	A2ATaskArtifactsCountKey   = attribute.Key("aitf.a2a.task.artifacts_count")
+	A2ATaskHistoryLengthKey    = attribute.Key("aitf.a2a.task.history_length")
+
+	A2AMessageIDKey            = attribute.Key("aitf.a2a.message.id")
+	A2AMessageRoleKey          = attribute.Key("aitf.a2a.message.role")
+	A2AMessagePartsCountKey    = attribute.Key("aitf.a2a.message.parts_count")
+	A2AMessagePartTypesKey     = attribute.Key("aitf.a2a.message.part_types")
+
+	A2AMethodKey               = attribute.Key("aitf.a2a.method")
+	A2AInteractionModeKey      = attribute.Key("aitf.a2a.interaction_mode")
+	A2AJSONRPCRequestIDKey     = attribute.Key("aitf.a2a.jsonrpc.request_id")
+	A2AJSONRPCErrorCodeKey     = attribute.Key("aitf.a2a.jsonrpc.error_code")
+	A2AJSONRPCErrorMessageKey  = attribute.Key("aitf.a2a.jsonrpc.error_message")
+
+	A2AArtifactIDKey           = attribute.Key("aitf.a2a.artifact.id")
+	A2AArtifactNameKey         = attribute.Key("aitf.a2a.artifact.name")
+	A2AArtifactPartsCountKey   = attribute.Key("aitf.a2a.artifact.parts_count")
+
+	A2AStreamEventTypeKey      = attribute.Key("aitf.a2a.stream.event_type")
+	A2AStreamIsFinalKey        = attribute.Key("aitf.a2a.stream.is_final")
+	A2AStreamEventsCountKey    = attribute.Key("aitf.a2a.stream.events_count")
+
+	A2APushURLKey              = attribute.Key("aitf.a2a.push.url")
+)
+
+// A2A task state values.
+const (
+	A2ATaskStateSubmitted     = "submitted"
+	A2ATaskStateWorking       = "working"
+	A2ATaskStateInputRequired = "input-required"
+	A2ATaskStateCompleted     = "completed"
+	A2ATaskStateCanceled      = "canceled"
+	A2ATaskStateFailed        = "failed"
+	A2ATaskStateRejected      = "rejected"
+	A2ATaskStateAuthRequired  = "auth-required"
+)
+
+// A2A transport values.
+const (
+	A2ATransportJSONRPC  = "jsonrpc"
+	A2ATransportGRPC     = "grpc"
+	A2ATransportHTTPJSON = "http_json"
+)
+
+// --- AITF ACP (Agent Communication Protocol) Attributes ---
+
+const (
+	ACPAgentNameKey              = attribute.Key("aitf.acp.agent.name")
+	ACPAgentDescriptionKey       = attribute.Key("aitf.acp.agent.description")
+	ACPAgentInputContentTypesKey = attribute.Key("aitf.acp.agent.input_content_types")
+	ACPAgentOutputContentTypesKey = attribute.Key("aitf.acp.agent.output_content_types")
+	ACPAgentFrameworkKey         = attribute.Key("aitf.acp.agent.framework")
+	ACPAgentSuccessRateKey       = attribute.Key("aitf.acp.agent.status.success_rate")
+	ACPAgentAvgRunTimeKey        = attribute.Key("aitf.acp.agent.status.avg_run_time_seconds")
+
+	ACPRunIDKey                  = attribute.Key("aitf.acp.run.id")
+	ACPRunAgentNameKey           = attribute.Key("aitf.acp.run.agent_name")
+	ACPRunSessionIDKey           = attribute.Key("aitf.acp.run.session_id")
+	ACPRunModeKey                = attribute.Key("aitf.acp.run.mode")
+	ACPRunStatusKey              = attribute.Key("aitf.acp.run.status")
+	ACPRunPreviousStatusKey      = attribute.Key("aitf.acp.run.previous_status")
+	ACPRunErrorCodeKey           = attribute.Key("aitf.acp.run.error.code")
+	ACPRunErrorMessageKey        = attribute.Key("aitf.acp.run.error.message")
+	ACPRunCreatedAtKey           = attribute.Key("aitf.acp.run.created_at")
+	ACPRunFinishedAtKey          = attribute.Key("aitf.acp.run.finished_at")
+	ACPRunDurationMsKey          = attribute.Key("aitf.acp.run.duration_ms")
+
+	ACPMessageRoleKey            = attribute.Key("aitf.acp.message.role")
+	ACPMessagePartsCountKey      = attribute.Key("aitf.acp.message.parts_count")
+	ACPMessageContentTypesKey    = attribute.Key("aitf.acp.message.content_types")
+	ACPMessageHasCitationsKey    = attribute.Key("aitf.acp.message.has_citations")
+	ACPMessageHasTrajectoryKey   = attribute.Key("aitf.acp.message.has_trajectory")
+
+	ACPAwaitActiveKey            = attribute.Key("aitf.acp.await.active")
+	ACPAwaitCountKey             = attribute.Key("aitf.acp.await.count")
+	ACPAwaitDurationMsKey        = attribute.Key("aitf.acp.await.duration_ms")
+
+	ACPInputMessageCountKey      = attribute.Key("aitf.acp.input.message_count")
+	ACPOutputMessageCountKey     = attribute.Key("aitf.acp.output.message_count")
+
+	ACPOperationKey              = attribute.Key("aitf.acp.operation")
+	ACPHTTPMethodKey             = attribute.Key("aitf.acp.http.method")
+	ACPHTTPStatusCodeKey         = attribute.Key("aitf.acp.http.status_code")
+	ACPHTTPURLKey                = attribute.Key("aitf.acp.http.url")
+
+	ACPTrajectoryToolNameKey     = attribute.Key("aitf.acp.trajectory.tool_name")
+	ACPTrajectoryMessageKey      = attribute.Key("aitf.acp.trajectory.message")
+)
+
+// ACP run status values.
+const (
+	ACPRunStatusCreated    = "created"
+	ACPRunStatusInProgress = "in-progress"
+	ACPRunStatusAwaiting   = "awaiting"
+	ACPRunStatusCancelling = "cancelling"
+	ACPRunStatusCancelled  = "cancelled"
+	ACPRunStatusCompleted  = "completed"
+	ACPRunStatusFailed     = "failed"
+)
+
+// ACP run mode values.
+const (
+	ACPRunModeSync  = "sync"
+	ACPRunModeAsync = "async"
+	ACPRunModeStream = "stream"
 )

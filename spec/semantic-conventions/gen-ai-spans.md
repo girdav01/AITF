@@ -1,6 +1,12 @@
-# GenAI Span Conventions
+# GenAI Span Conventions (AI_INTERACTION)
 
-AITF preserves and extends OpenTelemetry GenAI span conventions for LLM inference operations.
+Status: **Normative** | CoSAI WS2 Alignment: **AI_INTERACTION** | OCSF Class: **7001 Model Inference**
+
+AITF preserves and extends OpenTelemetry GenAI span conventions for LLM inference operations. This specification defines the normative field requirements for AI interaction telemetry, aligned with CoSAI Working Stream 2 (Telemetry for AI) and mapped to applicable compliance and threat frameworks.
+
+Key words "MUST", "SHOULD", "MAY" follow [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
+
+---
 
 ## Span: `gen_ai.inference`
 
@@ -19,89 +25,144 @@ Examples:
 
 `CLIENT`
 
-### Required Attributes
+---
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `gen_ai.system` | string | Provider identifier |
-| `gen_ai.operation.name` | string | `"chat"`, `"text_completion"`, `"embeddings"` |
-| `gen_ai.request.model` | string | Requested model ID |
+## Normative Field Table
 
-### Recommended Attributes
+Instrumentors MUST emit all Required fields. Instrumentors SHOULD emit Recommended fields when the data is available. Optional fields MAY be emitted for enhanced observability.
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `gen_ai.request.max_tokens` | int | Max tokens to generate |
-| `gen_ai.request.temperature` | double | Sampling temperature |
-| `gen_ai.request.top_p` | double | Nucleus sampling |
-| `gen_ai.response.id` | string | Provider response ID |
-| `gen_ai.response.model` | string | Actual model used |
-| `gen_ai.response.finish_reasons` | string[] | Finish reasons |
-| `gen_ai.usage.input_tokens` | int | Input tokens used |
-| `gen_ai.usage.output_tokens` | int | Output tokens used |
-| `server.address` | string | API endpoint host |
-| `server.port` | int | API endpoint port |
+### Core Identification
 
-### AITF Extended Attributes
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `gen_ai.system` | string | **Required** | AI system provider identifier (e.g. `"openai"`, `"anthropic"`, `"bedrock"`) | MITRE ATLAS [AML.T0044](https://atlas.mitre.org/techniques/AML.T0044), NIST AI RMF MAP-1.1 |
+| `gen_ai.operation.name` | string | **Required** | Operation type: `"chat"`, `"text_completion"`, `"embeddings"` | NIST AI RMF MAP-1.1 |
+| `gen_ai.request.model` | string | **Required** | Requested model identifier (e.g. `"gpt-4o"`, `"claude-sonnet-4-5-20250929"`) | MITRE ATLAS [AML.T0044](https://atlas.mitre.org/techniques/AML.T0044), EU AI Act Art.13 |
+| `server.address` | string | **Recommended** | API endpoint hostname | MITRE ATLAS [AML.T0044](https://atlas.mitre.org/techniques/AML.T0044), NIST AI RMF MAP-1.5 |
+| `server.port` | int | **Optional** | API endpoint port | NIST AI RMF MAP-1.5 |
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `gen_ai.request.stream` | boolean | Streaming mode |
-| `gen_ai.request.tools` | string | Tool definitions (JSON) |
-| `gen_ai.request.tool_choice` | string | Tool selection mode |
-| `gen_ai.request.response_format` | string | Expected format |
-| `gen_ai.usage.cached_tokens` | int | Cached/prefix tokens |
-| `gen_ai.usage.reasoning_tokens` | int | Reasoning tokens |
-| `aitf.cost.total_cost` | double | Total request cost (USD) |
-| `aitf.cost.input_cost` | double | Input cost (USD) |
-| `aitf.cost.output_cost` | double | Output cost (USD) |
-| `aitf.quality.confidence` | double | Response confidence |
-| `aitf.security.risk_score` | double | Security risk score |
+### Request Configuration
 
-### Events
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `gen_ai.request.max_tokens` | int | **Recommended** | Maximum tokens to generate | OWASP LLM10 (Unbounded Consumption) |
+| `gen_ai.request.temperature` | double | **Recommended** | Sampling temperature (0.0–2.0) | NIST AI RMF MEASURE-2.5 |
+| `gen_ai.request.top_p` | double | **Recommended** | Nucleus sampling parameter (0.0–1.0) | NIST AI RMF MEASURE-2.5 |
+| `gen_ai.request.top_k` | int | **Optional** | Top-k sampling parameter | NIST AI RMF MEASURE-2.5 |
+| `gen_ai.request.stop_sequences` | string[] | **Optional** | Stop sequences | — |
+| `gen_ai.request.frequency_penalty` | double | **Optional** | Frequency penalty | NIST AI RMF MEASURE-2.5 |
+| `gen_ai.request.presence_penalty` | double | **Optional** | Presence penalty | NIST AI RMF MEASURE-2.5 |
+| `gen_ai.request.seed` | int | **Optional** | Random seed for reproducibility | NIST AI RMF MEASURE-2.5, EU AI Act Art.12 |
+| `gen_ai.request.stream` | boolean | **Recommended** | Whether streaming is enabled | — |
+| `gen_ai.request.tools` | string | **Recommended** | Tool/function definitions (JSON) | OWASP LLM06 (Excessive Agency) |
+| `gen_ai.request.tool_choice` | string | **Optional** | Tool selection mode (`"auto"`, `"required"`, `"none"`) | OWASP LLM06 (Excessive Agency) |
+| `gen_ai.request.response_format` | string | **Optional** | Expected response format (`"json_object"`, `"text"`) | — |
 
-#### `gen_ai.content.prompt`
+### Prompt & Completion Content
 
-Emitted for each message in the prompt.
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `gen_ai.prompt` | string | **Recommended** | Input prompt content (emitted as event `gen_ai.content.prompt`) | OWASP LLM01 (Prompt Injection), MITRE ATLAS [AML.T0051](https://atlas.mitre.org/techniques/AML.T0051) |
+| `gen_ai.system_prompt.hash` | string | **Recommended** | SHA-256 hash of system prompt (enables leak detection without storing content) | OWASP LLM07 (System Prompt Leakage), MITRE ATLAS [AML.T0051.001](https://atlas.mitre.org/techniques/AML.T0051) |
+| `gen_ai.completion` | string | **Recommended** | Output completion content (emitted as event `gen_ai.content.completion`) | OWASP LLM05 (Improper Output), OWASP LLM02 (Sensitive Info Disclosure) |
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `gen_ai.prompt` | string | The prompt content |
+### Response Metadata
 
-#### `gen_ai.content.completion`
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `gen_ai.response.id` | string | **Recommended** | Provider-assigned response identifier | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
+| `gen_ai.response.model` | string | **Recommended** | Actual model used (may differ from requested) | MITRE ATLAS [AML.T0044](https://atlas.mitre.org/techniques/AML.T0044), EU AI Act Art.13 |
+| `gen_ai.response.finish_reasons` | string[] | **Recommended** | Finish reasons (`"stop"`, `"length"`, `"tool_calls"`, `"content_filter"`) | NIST AI RMF MEASURE-2.5 |
 
-Emitted for each message in the completion.
+### Token Usage
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `gen_ai.completion` | string | The completion content |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `gen_ai.usage.input_tokens` | int | **Required** | Input/prompt token count | OWASP LLM10 (Unbounded Consumption), NIST AI RMF MEASURE-2.5 |
+| `gen_ai.usage.output_tokens` | int | **Required** | Output/completion token count | OWASP LLM10 (Unbounded Consumption), NIST AI RMF MEASURE-2.5 |
+| `gen_ai.usage.cached_tokens` | int | **Optional** | Cached/prefix tokens used | — |
+| `gen_ai.usage.reasoning_tokens` | int | **Optional** | Reasoning/thinking tokens (chain-of-thought models) | — |
 
-#### `gen_ai.tool.call` (AITF extension)
+### Latency & Performance
 
-Emitted when the model makes a tool/function call.
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.latency.total_ms` | double | **Required** | Total request latency in milliseconds | NIST AI RMF MEASURE-2.5, OWASP LLM10 |
+| `aitf.latency.time_to_first_token_ms` | double | **Recommended** | Time to first token (streaming) in milliseconds | NIST AI RMF MEASURE-2.5 |
+| `aitf.latency.tokens_per_second` | double | **Optional** | Token generation throughput | NIST AI RMF MEASURE-2.5 |
+| `aitf.latency.queue_time_ms` | double | **Optional** | Time spent in request queue | — |
+| `aitf.latency.inference_time_ms` | double | **Optional** | Pure inference time (excluding queue) | — |
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `gen_ai.tool.name` | string | Tool/function name |
-| `gen_ai.tool.call_id` | string | Tool call ID |
-| `gen_ai.tool.arguments` | string | Tool arguments (JSON) |
+### Cost Attribution
 
-#### `gen_ai.tool.result` (AITF extension)
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.cost.total_cost` | double | **Recommended** | Total request cost in USD | OWASP LLM10 (Unbounded Consumption), NIST AI RMF GOVERN-1.5 |
+| `aitf.cost.input_cost` | double | **Optional** | Input token cost in USD | OWASP LLM10 |
+| `aitf.cost.output_cost` | double | **Optional** | Output token cost in USD | OWASP LLM10 |
 
-Emitted when a tool/function returns a result.
+### Security Enrichment
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `gen_ai.tool.name` | string | Tool/function name |
-| `gen_ai.tool.call_id` | string | Tool call ID |
-| `gen_ai.tool.result` | string | Tool result content |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.security.risk_score` | double | **Optional** | Security risk score (0–100) | OWASP LLM01–LLM10 |
+| `aitf.quality.confidence` | double | **Optional** | Response confidence score (0.0–1.0) | NIST AI RMF MEASURE-2.5 |
 
-### Span Status
+---
+
+## Tool Call Events
+
+### Event: `gen_ai.tool.call`
+
+Emitted when the model requests a tool/function call.
+
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `gen_ai.tool.name` | string | **Required** | Tool/function name | OWASP LLM06 (Excessive Agency) |
+| `gen_ai.tool.call_id` | string | **Required** | Tool call identifier | NIST AI RMF GOVERN-1.2 |
+| `gen_ai.tool.arguments` | string | **Recommended** | Tool arguments (JSON) | OWASP LLM01 (Prompt Injection) |
+
+### Event: `gen_ai.tool.result`
+
+Emitted when a tool/function returns its result.
+
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `gen_ai.tool.name` | string | **Required** | Tool/function name | OWASP LLM06 |
+| `gen_ai.tool.call_id` | string | **Required** | Tool call identifier | NIST AI RMF GOVERN-1.2 |
+| `gen_ai.tool.result` | string | **Recommended** | Tool result content | OWASP LLM05 (Improper Output) |
+
+---
+
+## Span Status
 
 - `OK` — Inference completed successfully
-- `ERROR` — Inference failed (with error description)
+- `ERROR` — Inference failed (with error description in span status)
 
-### Example
+---
+
+## CoSAI WS2 Field Mapping
+
+Cross-reference between CoSAI WS2 `AI_INTERACTION` field names and AITF attribute keys:
+
+| CoSAI WS2 Field | AITF Attribute | Notes |
+|---|---|---|
+| `ai.model.vendor` | `gen_ai.system` | OTel GenAI convention |
+| `ai.model.name` | `gen_ai.request.model` | OTel GenAI convention |
+| `ai.model.endpoint` | `server.address` | OTel standard |
+| `ai.input.prompt` | `gen_ai.prompt` | Emitted as span event |
+| `ai.system_prompt.hash` | `gen_ai.system_prompt.hash` | SHA-256 hash |
+| `ai.output.completion` | `gen_ai.completion` | Emitted as span event |
+| `ai.config.temperature` | `gen_ai.request.temperature` | OTel GenAI convention |
+| `ai.config.top_p` | `gen_ai.request.top_p` | OTel GenAI convention |
+| `ai.usage.prompt_tokens` | `gen_ai.usage.input_tokens` | OTel GenAI convention |
+| `ai.usage.completion_tokens` | `gen_ai.usage.output_tokens` | OTel GenAI convention |
+| `ai.latency_ms` | `aitf.latency.total_ms` | AITF extension |
+| `ai.finish_reason` | `gen_ai.response.finish_reasons` | Array of reasons |
+
+---
+
+## Example
 
 ```
 Span: chat claude-sonnet-4-5-20250929
@@ -113,14 +174,14 @@ Span: chat claude-sonnet-4-5-20250929
     gen_ai.request.model: "claude-sonnet-4-5-20250929"
     gen_ai.request.max_tokens: 4096
     gen_ai.request.temperature: 0.7
+    gen_ai.system_prompt.hash: "sha256:a3f2b8..."
     gen_ai.response.id: "msg_abc123"
     gen_ai.response.model: "claude-sonnet-4-5-20250929"
     gen_ai.response.finish_reasons: ["end_turn"]
     gen_ai.usage.input_tokens: 150
     gen_ai.usage.output_tokens: 500
+    aitf.latency.total_ms: 1250.0
     aitf.cost.total_cost: 0.0075
-    aitf.cost.input_cost: 0.00045
-    aitf.cost.output_cost: 0.0075
   Events:
     gen_ai.content.prompt: {gen_ai.prompt: "Explain AITF"}
     gen_ai.content.completion: {gen_ai.completion: "AITF is..."}
@@ -138,31 +199,15 @@ Format: `embeddings {gen_ai.request.model}`
 
 `CLIENT`
 
-### Required Attributes
+### Normative Field Table
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `gen_ai.system` | string | Provider identifier |
-| `gen_ai.operation.name` | string | `"embeddings"` |
-| `gen_ai.request.model` | string | Embedding model ID |
-
-### AITF Extended Attributes
-
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `gen_ai.request.encoding_format` | string | `"float"`, `"base64"` |
-| `gen_ai.request.dimensions` | int | Requested dimensions |
-| `gen_ai.usage.input_tokens` | int | Tokens processed |
-| `aitf.cost.total_cost` | double | Cost (USD) |
-
-## Streaming Support
-
-For streaming responses, AITF extends OTel GenAI with additional timing attributes:
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `aitf.latency.total_ms` | double | Total latency (ms) |
-| `aitf.latency.time_to_first_token_ms` | double | Time to first token (ms) |
-| `aitf.latency.tokens_per_second` | double | Token generation rate |
-| `aitf.latency.queue_time_ms` | double | Time in queue (ms) |
-| `aitf.latency.inference_time_ms` | double | Pure inference time (ms) |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `gen_ai.system` | string | **Required** | Provider identifier | MITRE ATLAS AML.T0044 |
+| `gen_ai.operation.name` | string | **Required** | `"embeddings"` | NIST AI RMF MAP-1.1 |
+| `gen_ai.request.model` | string | **Required** | Embedding model identifier | MITRE ATLAS AML.T0044, EU AI Act Art.13 |
+| `gen_ai.request.encoding_format` | string | **Optional** | `"float"`, `"base64"` | — |
+| `gen_ai.request.dimensions` | int | **Optional** | Requested embedding dimensions | — |
+| `gen_ai.usage.input_tokens` | int | **Required** | Tokens processed | OWASP LLM10, NIST AI RMF MEASURE-2.5 |
+| `aitf.latency.total_ms` | double | **Required** | Total latency in milliseconds | NIST AI RMF MEASURE-2.5 |
+| `aitf.cost.total_cost` | double | **Recommended** | Cost in USD | OWASP LLM10 |

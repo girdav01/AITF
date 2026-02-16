@@ -126,6 +126,10 @@ class InferenceSpan:
     def span(self) -> trace.Span:
         return self._span
 
+    def set_system_prompt_hash(self, hash_value: str) -> None:
+        """Set the system prompt hash (CoSAI WS2: AI_INTERACTION)."""
+        self._span.set_attribute(GenAIAttributes.SYSTEM_PROMPT_HASH, hash_value)
+
     def set_prompt(self, prompt: str) -> None:
         """Record the prompt content as an event."""
         self._span.add_event(

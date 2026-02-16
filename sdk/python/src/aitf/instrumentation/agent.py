@@ -54,6 +54,8 @@ class AgentInstrumentor:
         description: str | None = None,
         session_id: str | None = None,
         team_name: str | None = None,
+        workflow_id: str | None = None,
+        state: str | None = None,
     ) -> Generator[AgentSession, None, None]:
         """Context manager for tracing an agent session.
 
@@ -82,6 +84,10 @@ class AgentInstrumentor:
             attributes[AgentAttributes.DESCRIPTION] = description
         if team_name:
             attributes[AgentAttributes.TEAM_NAME] = team_name
+        if workflow_id:
+            attributes[AgentAttributes.WORKFLOW_ID] = workflow_id
+        if state:
+            attributes[AgentAttributes.STATE] = state
 
         with tracer.start_as_current_span(
             name=f"agent.session {agent_name}",
@@ -157,6 +163,14 @@ class AgentSession:
     @property
     def step_count(self) -> int:
         return self._step_count
+
+    def set_state(self, state: str) -> None:
+        """Set the agent lifecycle state (CoSAI WS2: AGENT_TRACE)."""
+        self._span.set_attribute(AgentAttributes.STATE, state)
+
+    def set_workflow_id(self, workflow_id: str) -> None:
+        """Set the workflow ID (CoSAI WS2: AGENT_TRACE)."""
+        self._span.set_attribute(AgentAttributes.WORKFLOW_ID, workflow_id)
 
     @contextmanager
     def step(
@@ -278,6 +292,14 @@ class AgentStep:
 
     def set_status(self, status: str) -> None:
         self._span.set_attribute(AgentAttributes.STEP_STATUS, status)
+
+    def set_scratchpad(self, scratchpad: str) -> None:
+        """Set the agent scratchpad / working memory (CoSAI WS2: AGENT_TRACE)."""
+        self._span.set_attribute(AgentAttributes.SCRATCHPAD, scratchpad)
+
+    def set_next_action(self, next_action: str) -> None:
+        """Set the next planned action (CoSAI WS2: AGENT_TRACE)."""
+        self._span.set_attribute(AgentAttributes.NEXT_ACTION, next_action)
 
 
 def agent_span(

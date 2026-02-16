@@ -50,6 +50,7 @@ class MCPInstrumentor:
         server_version: str | None = None,
         server_url: str | None = None,
         protocol_version: str = "2025-03-26",
+        connection_id: str | None = None,
     ) -> Generator[MCPServerConnection, None, None]:
         """Trace an MCP server connection lifecycle."""
         tracer = self.get_tracer()
@@ -62,6 +63,8 @@ class MCPInstrumentor:
             attributes[MCPAttributes.SERVER_VERSION] = server_version
         if server_url:
             attributes[MCPAttributes.SERVER_URL] = server_url
+        if connection_id:
+            attributes[MCPAttributes.CONNECTION_ID] = connection_id
 
         with tracer.start_as_current_span(
             name=f"mcp.server.connect {server_name}",
@@ -294,6 +297,7 @@ class MCPToolInvocation:
 
     def set_error(self, error: str) -> None:
         self._span.set_attribute(MCPAttributes.TOOL_IS_ERROR, True)
+        self._span.set_attribute(MCPAttributes.RESPONSE_ERROR, error)
         self._error_set = True
         self._span.add_event(
             "mcp.tool.error",

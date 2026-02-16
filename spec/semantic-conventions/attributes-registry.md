@@ -2,6 +2,8 @@
 
 Complete registry of all AITF semantic convention attributes. Organized by namespace.
 
+All tables use normative requirement levels per [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119). The **Compliance** column maps each attribute to applicable threat/compliance frameworks (MITRE ATLAS, OWASP LLM Top 10, NIST AI RMF, EU AI Act).
+
 ## OTel GenAI Attributes (Preserved)
 
 These attributes follow the OpenTelemetry GenAI semantic conventions exactly.
@@ -63,6 +65,12 @@ Additional attributes for enhanced LLM observability.
 | `gen_ai.request.response_format` | string | Response format | `"json_object"`, `"text"` | Stable |
 | `gen_ai.request.stream` | boolean | Whether streaming | `true` | Stable |
 
+### `gen_ai.system_prompt.*` (CoSAI WS2)
+
+| Attribute | Type | Requirement | Description | Compliance |
+|-----------|------|-------------|-------------|------------|
+| `gen_ai.system_prompt.hash` | string | Recommended | SHA-256 hash of system prompt (enables leak detection without storing content) | OWASP LLM07 (System Prompt Leakage), MITRE ATLAS AML.T0051 |
+
 ### `gen_ai.usage.*` (Extended)
 
 | Attribute | Type | Description | Example | Status |
@@ -92,6 +100,15 @@ Additional attributes for enhanced LLM observability.
 | `aitf.agent.session.id` | string | Agent session ID | `"sess-xyz789"` | Stable |
 | `aitf.agent.session.turn_count` | int | Number of turns in session | `5` | Stable |
 | `aitf.agent.session.start_time` | string | Session start ISO timestamp | `"2026-02-15T10:00:00Z"` | Stable |
+
+### `aitf.agent.*` (CoSAI WS2)
+
+| Attribute | Type | Requirement | Description | Compliance |
+|-----------|------|-------------|-------------|------------|
+| `aitf.agent.workflow_id` | string | Recommended | Workflow/DAG identifier linking related agent sessions | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
+| `aitf.agent.state` | string | Recommended | Agent lifecycle state: `"initializing"`, `"planning"`, `"executing"`, `"waiting"`, `"completed"`, `"failed"`, `"suspended"` | OWASP LLM06, MITRE ATLAS AML.T0048 |
+| `aitf.agent.scratchpad` | string | Optional | Accumulated agent scratchpad/working memory (JSON) | OWASP LLM02, MITRE ATLAS AML.T0048 |
+| `aitf.agent.next_action` | string | Recommended | Next planned action (forward-looking intent) | OWASP LLM06, MITRE ATLAS AML.T0048 |
 
 ### `aitf.agent.step.*`
 
@@ -148,6 +165,13 @@ Additional attributes for enhanced LLM observability.
 | `aitf.mcp.tool.duration_ms` | double | Tool execution time ms | `150.5` | Stable |
 | `aitf.mcp.tool.approval_required` | boolean | Whether human approval needed | `true` | Stable |
 | `aitf.mcp.tool.approved` | boolean | Whether approved (if required) | `true` | Stable |
+
+### `aitf.mcp.*` (CoSAI WS2)
+
+| Attribute | Type | Requirement | Description | Compliance |
+|-----------|------|-------------|-------------|------------|
+| `aitf.mcp.tool.response_error` | string | Recommended | Error message content when tool execution fails | NIST AI RMF MEASURE-2.5 |
+| `aitf.mcp.connection.id` | string | Recommended | Unique connection identifier for session correlation | NIST AI RMF GOVERN-1.2 |
 
 ### `aitf.mcp.resource.*`
 
@@ -221,6 +245,15 @@ Additional attributes for enhanced LLM observability.
 | `aitf.rag.retrieve.min_score` | double | Minimum similarity score | `0.7` | Stable |
 | `aitf.rag.retrieve.max_score` | double | Maximum similarity score | `0.95` | Stable |
 | `aitf.rag.retrieve.filter` | string | Metadata filter (JSON) | `"{\"source\":\"docs\"}"` | Stable |
+
+### `aitf.rag.doc.*` (CoSAI WS2)
+
+| Attribute | Type | Requirement | Description | Compliance |
+|-----------|------|-------------|-------------|------------|
+| `aitf.rag.doc.id` | string | Recommended | Document/chunk identifier | NIST AI RMF MAP-1.5, EU AI Act Art.12 |
+| `aitf.rag.doc.score` | double | Recommended | Similarity/relevance score (0.0–1.0) | OWASP LLM08, NIST AI RMF MEASURE-2.5 |
+| `aitf.rag.doc.provenance` | string | Recommended | Document source/origin URL or identifier | OWASP LLM09, EU AI Act Art.13 |
+| `aitf.rag.retrieval.docs` | string | Recommended | JSON array of retrieved document summaries | OWASP LLM08, MITRE ATLAS AML.T0043 |
 
 ### `aitf.rag.rerank.*`
 
