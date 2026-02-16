@@ -97,7 +97,7 @@ AITF defines ten OCSF event classes for AI systems:
 | 7007 | AI Governance | Compliance, audit, regulatory events |
 | 7008 | AI Identity | Agent identity, authentication, authorization, delegation, trust |
 | 7009 | AI Model Operations | Model lifecycle: training, evaluation, deployment, monitoring, serving |
-| 7010 | AI Asset Inventory | Asset registration, discovery, audit, risk classification, drift, memory security |
+| 7010 | AI Asset Inventory | Asset registration, discovery, audit, risk classification, drift, memory security, shadow AI |
 
 ## SDK Language Support
 
