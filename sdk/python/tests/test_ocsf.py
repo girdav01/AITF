@@ -126,8 +126,14 @@ class TestComplianceMapper:
     def test_map_csa_aicm(self):
         compliance = self.mapper.map_event("model_inference")
         assert compliance.csa_aicm is not None
+        assert "MDS-01" in compliance.csa_aicm["controls"]
         assert "AIS-04" in compliance.csa_aicm["controls"]
+        assert "AIS-08" in compliance.csa_aicm["controls"]
+        assert "LOG-14" in compliance.csa_aicm["controls"]
+        assert "GRC-13" in compliance.csa_aicm["controls"]
+        assert "TVM-11" in compliance.csa_aicm["controls"]
         assert compliance.csa_aicm["domain"] == "Model Security"
+        assert len(compliance.csa_aicm["controls"]) == 32
 
     def test_map_csa_aicm_all_event_types(self):
         event_types = [
@@ -140,6 +146,41 @@ class TestComplianceMapper:
             assert compliance.csa_aicm is not None, f"CSA AICM missing for {event_type}"
             assert "controls" in compliance.csa_aicm, f"controls missing for {event_type}"
             assert "domain" in compliance.csa_aicm, f"domain missing for {event_type}"
+            assert len(compliance.csa_aicm["controls"]) >= 12, (
+                f"Expected >= 12 AICM controls for {event_type}, "
+                f"got {len(compliance.csa_aicm['controls'])}"
+            )
+
+    def test_map_csa_aicm_comprehensive_coverage(self):
+        """Verify comprehensive AICM coverage across all event types."""
+        all_controls = set()
+        event_types = [
+            "model_inference", "agent_activity", "tool_execution",
+            "data_retrieval", "security_finding", "supply_chain",
+            "governance", "identity",
+        ]
+        for event_type in event_types:
+            compliance = self.mapper.map_event(event_type)
+            all_controls.update(compliance.csa_aicm["controls"])
+
+        # Verify coverage of all 18 AICM domains
+        domains_covered = set()
+        for ctrl in all_controls:
+            prefix = ctrl.split("-")[0]
+            domains_covered.add(prefix)
+
+        expected_domains = {
+            "MDS", "AIS", "LOG", "GRC", "TVM", "DSP", "IAM", "CEK",
+            "SEF", "STA", "CCC", "DCS", "IPY", "BCR", "HRS", "A&A",
+            "UEM", "I&S",
+        }
+        assert expected_domains.issubset(domains_covered), (
+            f"Missing domains: {expected_domains - domains_covered}"
+        )
+        # Should cover all 243 AICM controls across all event types
+        assert len(all_controls) >= 230, (
+            f"Expected >= 230 unique AICM controls, got {len(all_controls)}"
+        )
 
     def test_coverage_matrix(self):
         matrix = self.mapper.get_coverage_matrix()
@@ -170,6 +211,7 @@ class TestComplianceMapper:
         compliance = mapper.map_event("model_inference")
         assert compliance.csa_aicm is not None
         assert compliance.nist_ai_rmf is None
+        assert "MDS-01" in compliance.csa_aicm["controls"]
         assert "AIS-04" in compliance.csa_aicm["controls"]
 
     def test_enrich_event(self):
