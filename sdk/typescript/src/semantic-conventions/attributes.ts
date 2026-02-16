@@ -226,6 +226,8 @@ export const SkillAttributes = {
   RETRY_COUNT: "aitf.skill.retry_count",
   SOURCE: "aitf.skill.source",
   PERMISSIONS: "aitf.skill.permissions",
+  HASH: "aitf.skill.hash",
+  AUTHORS: "aitf.skill.authors",
   COUNT: "aitf.skill.count",
   NAMES: "aitf.skill.names",
 

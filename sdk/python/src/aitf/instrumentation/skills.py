@@ -54,6 +54,8 @@ class SkillInstrumentor:
         skill_input: str | None = None,
         source: str | None = None,
         permissions: list[str] | None = None,
+        skill_hash: str | None = None,
+        authors: list[str] | None = None,
     ) -> Generator[SkillInvocation, None, None]:
         """Trace a skill invocation."""
         tracer = self.get_tracer()
@@ -75,6 +77,10 @@ class SkillInstrumentor:
             attributes[SkillAttributes.SOURCE] = source
         if permissions:
             attributes[SkillAttributes.PERMISSIONS] = permissions
+        if skill_hash:
+            attributes[SkillAttributes.HASH] = skill_hash
+        if authors:
+            attributes[SkillAttributes.AUTHORS] = authors
 
         with tracer.start_as_current_span(
             name=f"skill.invoke {skill_name}",
@@ -194,6 +200,12 @@ class SkillInvocation:
 
     def set_retry_count(self, count: int) -> None:
         self._span.set_attribute(SkillAttributes.RETRY_COUNT, count)
+
+    def set_hash(self, hash_value: str) -> None:
+        self._span.set_attribute(SkillAttributes.HASH, hash_value)
+
+    def set_authors(self, authors: list[str]) -> None:
+        self._span.set_attribute(SkillAttributes.AUTHORS, authors)
 
 
 class SkillDiscovery:
