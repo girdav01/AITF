@@ -3,7 +3,7 @@
 Provides auto-instrumentation for LLM inference, agent execution,
 MCP protocol, RAG pipelines, skill invocations, model operations
 (LLMOps/MLOps), agentic identity management, AI asset inventory,
-and model drift detection.
+model drift detection, and agentic communication protocols (A2A, ACP).
 """
 
 from __future__ import annotations
@@ -11,6 +11,8 @@ from __future__ import annotations
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 
+from aitf.instrumentation.a2a import A2AInstrumentor
+from aitf.instrumentation.acp import ACPInstrumentor
 from aitf.instrumentation.agent import AgentInstrumentor
 from aitf.instrumentation.asset_inventory import AssetInventoryInstrumentor
 from aitf.instrumentation.drift_detection import DriftDetectionInstrumentor
@@ -44,6 +46,8 @@ class AITFInstrumentor:
         self._identity = IdentityInstrumentor(tracer_provider=tracer_provider)
         self._asset_inventory = AssetInventoryInstrumentor(tracer_provider=tracer_provider)
         self._drift_detection = DriftDetectionInstrumentor(tracer_provider=tracer_provider)
+        self._a2a = A2AInstrumentor(tracer_provider=tracer_provider)
+        self._acp = ACPInstrumentor(tracer_provider=tracer_provider)
         self._instrumented = False
 
     def instrument_all(self) -> None:
@@ -57,6 +61,8 @@ class AITFInstrumentor:
         self._identity.instrument()
         self._asset_inventory.instrument()
         self._drift_detection.instrument()
+        self._a2a.instrument()
+        self._acp.instrument()
         self._instrumented = True
 
     def instrument(
@@ -70,6 +76,8 @@ class AITFInstrumentor:
         identity: bool = False,
         asset_inventory: bool = False,
         drift_detection: bool = False,
+        a2a: bool = False,
+        acp: bool = False,
     ) -> None:
         """Selectively instrument AI components."""
         if llm:
@@ -90,6 +98,10 @@ class AITFInstrumentor:
             self._asset_inventory.instrument()
         if drift_detection:
             self._drift_detection.instrument()
+        if a2a:
+            self._a2a.instrument()
+        if acp:
+            self._acp.instrument()
         self._instrumented = True
 
     def uninstrument_all(self) -> None:
@@ -103,6 +115,8 @@ class AITFInstrumentor:
         self._identity.uninstrument()
         self._asset_inventory.uninstrument()
         self._drift_detection.uninstrument()
+        self._a2a.uninstrument()
+        self._acp.uninstrument()
         self._instrumented = False
 
     @property
@@ -145,6 +159,14 @@ class AITFInstrumentor:
     def drift_detection(self) -> DriftDetectionInstrumentor:
         return self._drift_detection
 
+    @property
+    def a2a(self) -> A2AInstrumentor:
+        return self._a2a
+
+    @property
+    def acp(self) -> ACPInstrumentor:
+        return self._acp
+
 
 __all__ = [
     "AITFInstrumentor",
@@ -157,4 +179,6 @@ __all__ = [
     "IdentityInstrumentor",
     "AssetInventoryInstrumentor",
     "DriftDetectionInstrumentor",
+    "A2AInstrumentor",
+    "ACPInstrumentor",
 ]

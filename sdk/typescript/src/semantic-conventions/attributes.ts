@@ -40,6 +40,9 @@ export const GenAIAttributes = {
   // Token attributes
   TOKEN_TYPE: "gen_ai.token.type",
 
+  // System prompt hash (CoSAI WS2: AI_INTERACTION)
+  SYSTEM_PROMPT_HASH: "gen_ai.system_prompt.hash",
+
   // Event attributes
   PROMPT: "gen_ai.prompt",
   COMPLETION: "gen_ai.completion",
@@ -85,6 +88,12 @@ export const AgentAttributes = {
   SESSION_ID: "aitf.agent.session.id",
   SESSION_TURN_COUNT: "aitf.agent.session.turn_count",
   SESSION_START_TIME: "aitf.agent.session.start_time",
+
+  // CoSAI WS2: AGENT_TRACE fields
+  WORKFLOW_ID: "aitf.agent.workflow_id",
+  STATE: "aitf.agent.state",
+  SCRATCHPAD: "aitf.agent.scratchpad",
+  NEXT_ACTION: "aitf.agent.next_action",
 
   // Step attributes
   STEP_TYPE: "aitf.agent.step.type",
@@ -173,6 +182,10 @@ export const MCPAttributes = {
   TOOL_APPROVED: "aitf.mcp.tool.approved",
   TOOL_COUNT: "aitf.mcp.tool.count",
   TOOL_NAMES: "aitf.mcp.tool.names",
+
+  // CoSAI WS2: MCP_ACTIVITY fields
+  TOOL_RESPONSE_ERROR: "aitf.mcp.tool.response_error",
+  CONNECTION_ID: "aitf.mcp.connection.id",
 
   // Resource attributes
   RESOURCE_URI: "aitf.mcp.resource.uri",
@@ -278,6 +291,12 @@ export const RAGAttributes = {
   RETRIEVE_MIN_SCORE: "aitf.rag.retrieve.min_score",
   RETRIEVE_MAX_SCORE: "aitf.rag.retrieve.max_score",
   RETRIEVE_FILTER: "aitf.rag.retrieve.filter",
+
+  // CoSAI WS2: RAG_CONTEXT document-level fields
+  DOC_ID: "aitf.rag.doc.id",
+  DOC_SCORE: "aitf.rag.doc.score",
+  DOC_PROVENANCE: "aitf.rag.doc.provenance",
+  RETRIEVAL_DOCS: "aitf.rag.retrieval.docs",
 
   // Reranking attributes
   RERANK_MODEL: "aitf.rag.rerank.model",
@@ -902,4 +921,147 @@ export const MemorySecurityAttributes = {
   MUTATION_COUNT: "aitf.memory.security.mutation_count",
   SNAPSHOT_BEFORE: "aitf.memory.security.snapshot_before",
   SNAPSHOT_AFTER: "aitf.memory.security.snapshot_after",
+} as const;
+
+/** AITF A2A (Agent-to-Agent Protocol) semantic convention attributes. */
+export const A2AAttributes = {
+  // Agent Card / Discovery
+  AGENT_NAME: "aitf.a2a.agent.name",
+  AGENT_URL: "aitf.a2a.agent.url",
+  AGENT_VERSION: "aitf.a2a.agent.version",
+  AGENT_PROVIDER_ORG: "aitf.a2a.agent.provider.organization",
+  AGENT_SKILLS: "aitf.a2a.agent.skills",
+  AGENT_CAPABILITIES_STREAMING: "aitf.a2a.agent.capabilities.streaming",
+  AGENT_CAPABILITIES_PUSH: "aitf.a2a.agent.capabilities.push_notifications",
+  PROTOCOL_VERSION: "aitf.a2a.protocol.version",
+  TRANSPORT: "aitf.a2a.transport",
+
+  // Task
+  TASK_ID: "aitf.a2a.task.id",
+  TASK_CONTEXT_ID: "aitf.a2a.task.context_id",
+  TASK_STATE: "aitf.a2a.task.state",
+  TASK_PREVIOUS_STATE: "aitf.a2a.task.previous_state",
+  TASK_ARTIFACTS_COUNT: "aitf.a2a.task.artifacts_count",
+  TASK_HISTORY_LENGTH: "aitf.a2a.task.history_length",
+
+  // Message
+  MESSAGE_ID: "aitf.a2a.message.id",
+  MESSAGE_ROLE: "aitf.a2a.message.role",
+  MESSAGE_PARTS_COUNT: "aitf.a2a.message.parts_count",
+  MESSAGE_PART_TYPES: "aitf.a2a.message.part_types",
+
+  // Operation
+  METHOD: "aitf.a2a.method",
+  INTERACTION_MODE: "aitf.a2a.interaction_mode",
+  JSONRPC_REQUEST_ID: "aitf.a2a.jsonrpc.request_id",
+  JSONRPC_ERROR_CODE: "aitf.a2a.jsonrpc.error_code",
+  JSONRPC_ERROR_MESSAGE: "aitf.a2a.jsonrpc.error_message",
+
+  // Artifact
+  ARTIFACT_ID: "aitf.a2a.artifact.id",
+  ARTIFACT_NAME: "aitf.a2a.artifact.name",
+  ARTIFACT_PARTS_COUNT: "aitf.a2a.artifact.parts_count",
+
+  // Streaming
+  STREAM_EVENT_TYPE: "aitf.a2a.stream.event_type",
+  STREAM_IS_FINAL: "aitf.a2a.stream.is_final",
+  STREAM_EVENTS_COUNT: "aitf.a2a.stream.events_count",
+
+  // Push notifications
+  PUSH_URL: "aitf.a2a.push.url",
+
+  /** Task state values */
+  TaskState: {
+    SUBMITTED: "submitted",
+    WORKING: "working",
+    INPUT_REQUIRED: "input-required",
+    COMPLETED: "completed",
+    CANCELED: "canceled",
+    FAILED: "failed",
+    REJECTED: "rejected",
+    AUTH_REQUIRED: "auth-required",
+  },
+
+  /** Interaction mode values */
+  InteractionMode: {
+    SYNC: "sync",
+    STREAM: "stream",
+    PUSH: "push",
+  },
+
+  /** Transport values */
+  Transport: {
+    JSONRPC: "jsonrpc",
+    GRPC: "grpc",
+    HTTP_JSON: "http_json",
+  },
+} as const;
+
+/** AITF ACP (Agent Communication Protocol) semantic convention attributes. */
+export const ACPAttributes = {
+  // Agent discovery
+  AGENT_NAME: "aitf.acp.agent.name",
+  AGENT_DESCRIPTION: "aitf.acp.agent.description",
+  AGENT_INPUT_CONTENT_TYPES: "aitf.acp.agent.input_content_types",
+  AGENT_OUTPUT_CONTENT_TYPES: "aitf.acp.agent.output_content_types",
+  AGENT_FRAMEWORK: "aitf.acp.agent.framework",
+  AGENT_SUCCESS_RATE: "aitf.acp.agent.status.success_rate",
+  AGENT_AVG_RUN_TIME: "aitf.acp.agent.status.avg_run_time_seconds",
+
+  // Run
+  RUN_ID: "aitf.acp.run.id",
+  RUN_AGENT_NAME: "aitf.acp.run.agent_name",
+  RUN_SESSION_ID: "aitf.acp.run.session_id",
+  RUN_MODE: "aitf.acp.run.mode",
+  RUN_STATUS: "aitf.acp.run.status",
+  RUN_PREVIOUS_STATUS: "aitf.acp.run.previous_status",
+  RUN_ERROR_CODE: "aitf.acp.run.error.code",
+  RUN_ERROR_MESSAGE: "aitf.acp.run.error.message",
+  RUN_CREATED_AT: "aitf.acp.run.created_at",
+  RUN_FINISHED_AT: "aitf.acp.run.finished_at",
+  RUN_DURATION_MS: "aitf.acp.run.duration_ms",
+
+  // Message
+  MESSAGE_ROLE: "aitf.acp.message.role",
+  MESSAGE_PARTS_COUNT: "aitf.acp.message.parts_count",
+  MESSAGE_CONTENT_TYPES: "aitf.acp.message.content_types",
+  MESSAGE_HAS_CITATIONS: "aitf.acp.message.has_citations",
+  MESSAGE_HAS_TRAJECTORY: "aitf.acp.message.has_trajectory",
+
+  // Await/Resume
+  AWAIT_ACTIVE: "aitf.acp.await.active",
+  AWAIT_COUNT: "aitf.acp.await.count",
+  AWAIT_DURATION_MS: "aitf.acp.await.duration_ms",
+
+  // I/O counts
+  INPUT_MESSAGE_COUNT: "aitf.acp.input.message_count",
+  OUTPUT_MESSAGE_COUNT: "aitf.acp.output.message_count",
+
+  // Operation
+  OPERATION: "aitf.acp.operation",
+  HTTP_METHOD: "aitf.acp.http.method",
+  HTTP_STATUS_CODE: "aitf.acp.http.status_code",
+  HTTP_URL: "aitf.acp.http.url",
+
+  // Trajectory metadata
+  TRAJECTORY_TOOL_NAME: "aitf.acp.trajectory.tool_name",
+  TRAJECTORY_MESSAGE: "aitf.acp.trajectory.message",
+
+  /** Run status values */
+  RunStatus: {
+    CREATED: "created",
+    IN_PROGRESS: "in-progress",
+    AWAITING: "awaiting",
+    CANCELLING: "cancelling",
+    CANCELLED: "cancelled",
+    COMPLETED: "completed",
+    FAILED: "failed",
+  },
+
+  /** Run mode values */
+  RunMode: {
+    SYNC: "sync",
+    ASYNC: "async",
+    STREAM: "stream",
+  },
 } as const;

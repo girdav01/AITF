@@ -229,12 +229,29 @@ class RetrievalSpan:
         count: int,
         min_score: float | None = None,
         max_score: float | None = None,
+        docs_json: str | None = None,
     ) -> None:
         self._span.set_attribute(RAGAttributes.RETRIEVE_RESULTS_COUNT, count)
         if min_score is not None:
             self._span.set_attribute(RAGAttributes.RETRIEVE_MIN_SCORE, min_score)
         if max_score is not None:
             self._span.set_attribute(RAGAttributes.RETRIEVE_MAX_SCORE, max_score)
+        if docs_json is not None:
+            self._span.set_attribute(RAGAttributes.RETRIEVAL_DOCS, docs_json)
+
+    def add_document(
+        self,
+        doc_id: str,
+        score: float | None = None,
+        provenance: str | None = None,
+    ) -> None:
+        """Record a retrieved document as a span event (CoSAI WS2: RAG_CONTEXT)."""
+        attrs: dict[str, Any] = {RAGAttributes.DOC_ID: doc_id}
+        if score is not None:
+            attrs[RAGAttributes.DOC_SCORE] = score
+        if provenance is not None:
+            attrs[RAGAttributes.DOC_PROVENANCE] = provenance
+        self._span.add_event("rag.doc.retrieved", attributes=attrs)
 
 
 class RerankSpan:

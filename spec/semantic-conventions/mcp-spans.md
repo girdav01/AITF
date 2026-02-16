@@ -1,6 +1,12 @@
-# MCP Span Conventions
+# MCP Span Conventions (MCP_ACTIVITY)
 
-AITF defines semantic conventions for the Model Context Protocol (MCP), covering server lifecycle, tool discovery and invocation, resource access, prompt management, and sampling.
+Status: **Normative** | CoSAI WS2 Alignment: **MCP_ACTIVITY** | OCSF Class: **7003 Tool Execution**
+
+AITF defines semantic conventions for the Model Context Protocol (MCP), covering server lifecycle, tool discovery and invocation, resource access, prompt management, and sampling. This specification defines the normative field requirements aligned with CoSAI Working Stream 2 (Telemetry for AI) and mapped to applicable compliance and threat frameworks.
+
+Key words "MUST", "SHOULD", "MAY" follow [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).
+
+---
 
 ## Overview
 
@@ -8,7 +14,7 @@ MCP is a protocol that enables AI models to interact with external systems throu
 
 ```
 MCP Server Lifecycle:
-  connect → initialize → discover (tools/resources/prompts) → use → disconnect
+  connect -> initialize -> discover (tools/resources/prompts) -> use -> disconnect
 
 MCP Operations:
   - Tool Discovery & Invocation
@@ -32,20 +38,16 @@ Format: `mcp.server.connect {aitf.mcp.server.name}`
 
 `CLIENT`
 
-### Required Attributes
+### Normative Field Table
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.server.name` | string | Server name |
-| `aitf.mcp.server.transport` | string | `"stdio"`, `"sse"`, `"streamable_http"` |
-
-### Recommended Attributes
-
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.server.version` | string | Server version |
-| `aitf.mcp.server.url` | string | Server URL (if network transport) |
-| `aitf.mcp.protocol.version` | string | MCP protocol version |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.mcp.server.name` | string | **Required** | MCP server name | OWASP LLM06 (Excessive Agency), MITRE ATLAS [AML.T0040](https://atlas.mitre.org/techniques/AML.T0040) |
+| `aitf.mcp.server.transport` | string | **Required** | Transport type: `"stdio"`, `"sse"`, `"streamable_http"` | MITRE ATLAS [AML.T0040](https://atlas.mitre.org/techniques/AML.T0040) (ML Supply Chain) |
+| `aitf.mcp.connection.id` | string | **Recommended** | Unique connection identifier for session correlation | NIST AI RMF GOVERN-1.2 |
+| `aitf.mcp.server.version` | string | **Recommended** | MCP server version | NIST AI RMF MAP-1.1 |
+| `aitf.mcp.server.url` | string | **Recommended** | Server URL (if network transport) | MITRE ATLAS AML.T0040 |
+| `aitf.mcp.protocol.version` | string | **Recommended** | MCP protocol version (e.g. `"2025-03-26"`) | NIST AI RMF MAP-1.1 |
 
 ### Events
 
@@ -53,13 +55,13 @@ Format: `mcp.server.connect {aitf.mcp.server.name}`
 
 Emitted after successful initialization.
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `mcp.capabilities.tools` | boolean | Server supports tools |
-| `mcp.capabilities.resources` | boolean | Server supports resources |
-| `mcp.capabilities.prompts` | boolean | Server supports prompts |
-| `mcp.capabilities.sampling` | boolean | Server supports sampling |
-| `mcp.capabilities.roots` | boolean | Server supports roots |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `mcp.capabilities.tools` | boolean | **Recommended** | Server supports tools | OWASP LLM06 |
+| `mcp.capabilities.resources` | boolean | **Recommended** | Server supports resources | — |
+| `mcp.capabilities.prompts` | boolean | **Optional** | Server supports prompts | — |
+| `mcp.capabilities.sampling` | boolean | **Optional** | Server supports sampling | — |
+| `mcp.capabilities.roots` | boolean | **Optional** | Server supports roots | — |
 
 ---
 
@@ -75,11 +77,12 @@ Format: `mcp.server.disconnect {aitf.mcp.server.name}`
 
 `CLIENT`
 
-### Required Attributes
+### Normative Field Table
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.server.name` | string | Server name |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.mcp.server.name` | string | **Required** | Server name | OWASP LLM06 |
+| `aitf.mcp.connection.id` | string | **Recommended** | Connection identifier | NIST AI RMF GOVERN-1.2 |
 
 ---
 
@@ -95,18 +98,14 @@ Format: `mcp.tool.discover {aitf.mcp.server.name}`
 
 `CLIENT`
 
-### Required Attributes
+### Normative Field Table
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.server.name` | string | Server name |
-
-### Recommended Attributes
-
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.tool.count` | int | Number of tools discovered |
-| `aitf.mcp.tool.names` | string[] | Names of discovered tools |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.mcp.server.name` | string | **Required** | Server name | OWASP LLM06 |
+| `aitf.mcp.tool.count` | int | **Recommended** | Number of tools discovered | OWASP LLM06 |
+| `aitf.mcp.tool.names` | string[] | **Recommended** | Names of discovered tools | OWASP LLM06, MITRE ATLAS AML.T0048 |
+| `aitf.mcp.connection.id` | string | **Optional** | Connection identifier | NIST AI RMF GOVERN-1.2 |
 
 ---
 
@@ -122,24 +121,38 @@ Format: `mcp.tool.invoke {aitf.mcp.tool.name}`
 
 `CLIENT`
 
-### Required Attributes
+### Normative Field Table
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.tool.name` | string | Tool name |
-| `aitf.mcp.tool.server` | string | Source MCP server name |
+#### Tool Identification
 
-### Recommended Attributes
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.mcp.tool.name` | string | **Required** | Tool name | OWASP LLM06 (Excessive Agency), MITRE ATLAS [AML.T0048](https://atlas.mitre.org/techniques/AML.T0048) |
+| `aitf.mcp.tool.server` | string | **Required** | Source MCP server name | OWASP LLM06, MITRE ATLAS [AML.T0040](https://atlas.mitre.org/techniques/AML.T0040) |
+| `aitf.mcp.connection.id` | string | **Recommended** | Connection identifier for session correlation | NIST AI RMF GOVERN-1.2 |
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.tool.input` | string | Input parameters (JSON) |
-| `aitf.mcp.tool.output` | string | Tool output (may be redacted) |
-| `aitf.mcp.tool.is_error` | boolean | Whether tool returned error |
-| `aitf.mcp.tool.duration_ms` | double | Execution duration (ms) |
-| `aitf.mcp.tool.approval_required` | boolean | Human approval needed |
-| `aitf.mcp.tool.approved` | boolean | Whether approved |
-| `aitf.mcp.server.transport` | string | Transport type |
+#### Request & Response (CoSAI WS2)
+
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.mcp.tool.input` | string | **Recommended** | Input parameters (JSON) | OWASP LLM01 (Prompt Injection via tools), MITRE ATLAS [AML.T0051](https://atlas.mitre.org/techniques/AML.T0051) |
+| `aitf.mcp.tool.output` | string | **Recommended** | Tool output (may be redacted for sensitive content) | OWASP LLM05 (Improper Output), OWASP LLM02 (Sensitive Info) |
+| `aitf.mcp.tool.response_error` | string | **Recommended** | Error message content when tool execution fails | NIST AI RMF MEASURE-2.5 |
+| `aitf.mcp.tool.is_error` | boolean | **Recommended** | Whether tool returned an error | NIST AI RMF MEASURE-2.5 |
+
+#### Execution Metadata
+
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.mcp.tool.duration_ms` | double | **Recommended** | Execution duration in milliseconds | NIST AI RMF MEASURE-2.5, OWASP LLM10 |
+| `aitf.mcp.server.transport` | string | **Recommended** | Transport type | MITRE ATLAS AML.T0040 |
+
+#### Human Approval
+
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.mcp.tool.approval_required` | boolean | **Recommended** | Whether human approval was needed | EU AI Act Art.14 (Human Oversight) |
+| `aitf.mcp.tool.approved` | boolean | **Recommended** | Whether the tool was approved (if required) | EU AI Act Art.14 |
 
 ### Events
 
@@ -147,27 +160,27 @@ Format: `mcp.tool.invoke {aitf.mcp.tool.name}`
 
 Emitted with tool input (can be sampled/redacted for sensitive inputs).
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `mcp.tool.input.content` | string | Full input content |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `mcp.tool.input.content` | string | **Optional** | Full input content | OWASP LLM01 |
 
 #### `mcp.tool.output`
 
 Emitted with tool output (can be sampled/redacted).
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `mcp.tool.output.content` | string | Full output content |
-| `mcp.tool.output.type` | string | `"text"`, `"image"`, `"resource"` |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `mcp.tool.output.content` | string | **Optional** | Full output content | OWASP LLM05, OWASP LLM02 |
+| `mcp.tool.output.type` | string | **Optional** | Output type: `"text"`, `"image"`, `"resource"` | — |
 
 #### `mcp.tool.approval`
 
 Emitted when human approval is requested/granted.
 
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `mcp.tool.approval.status` | string | `"requested"`, `"approved"`, `"denied"` |
-| `mcp.tool.approval.approver` | string | Who approved (if applicable) |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `mcp.tool.approval.status` | string | **Required** | `"requested"`, `"approved"`, `"denied"` | EU AI Act Art.14 |
+| `mcp.tool.approval.approver` | string | **Recommended** | Who approved (if applicable) | EU AI Act Art.14, NIST AI RMF GOVERN-1.7 |
 
 ---
 
@@ -183,20 +196,16 @@ Format: `mcp.resource.read {aitf.mcp.resource.uri}`
 
 `CLIENT`
 
-### Required Attributes
+### Normative Field Table
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.resource.uri` | string | Resource URI |
-| `aitf.mcp.server.name` | string | Server name |
-
-### Recommended Attributes
-
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.resource.name` | string | Resource display name |
-| `aitf.mcp.resource.mime_type` | string | Content MIME type |
-| `aitf.mcp.resource.size_bytes` | int | Content size |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.mcp.resource.uri` | string | **Required** | Resource URI | OWASP LLM02 (Sensitive Info) |
+| `aitf.mcp.server.name` | string | **Required** | Server name | OWASP LLM06 |
+| `aitf.mcp.connection.id` | string | **Optional** | Connection identifier | NIST AI RMF GOVERN-1.2 |
+| `aitf.mcp.resource.name` | string | **Recommended** | Resource display name | — |
+| `aitf.mcp.resource.mime_type` | string | **Recommended** | Content MIME type | — |
+| `aitf.mcp.resource.size_bytes` | int | **Optional** | Content size in bytes | OWASP LLM10 |
 
 ---
 
@@ -212,12 +221,13 @@ Format: `mcp.resource.subscribe {aitf.mcp.resource.uri}`
 
 `CLIENT`
 
-### Required Attributes
+### Normative Field Table
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.resource.uri` | string | Resource URI |
-| `aitf.mcp.server.name` | string | Server name |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.mcp.resource.uri` | string | **Required** | Resource URI | OWASP LLM02 |
+| `aitf.mcp.server.name` | string | **Required** | Server name | OWASP LLM06 |
+| `aitf.mcp.connection.id` | string | **Optional** | Connection identifier | NIST AI RMF GOVERN-1.2 |
 
 ---
 
@@ -233,19 +243,14 @@ Format: `mcp.prompt.get {aitf.mcp.prompt.name}`
 
 `CLIENT`
 
-### Required Attributes
+### Normative Field Table
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.prompt.name` | string | Prompt name |
-| `aitf.mcp.server.name` | string | Server name |
-
-### Recommended Attributes
-
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.prompt.arguments` | string | Prompt arguments (JSON) |
-| `aitf.mcp.prompt.description` | string | Prompt description |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.mcp.prompt.name` | string | **Required** | Prompt template name | OWASP LLM01 (Prompt Injection) |
+| `aitf.mcp.server.name` | string | **Required** | Server name | OWASP LLM06 |
+| `aitf.mcp.prompt.arguments` | string | **Recommended** | Prompt arguments (JSON) | OWASP LLM01 |
+| `aitf.mcp.prompt.description` | string | **Optional** | Prompt description | EU AI Act Art.13 |
 
 ---
 
@@ -261,21 +266,45 @@ Format: `mcp.sampling.request {aitf.mcp.server.name}`
 
 `SERVER` (server is requesting from the client)
 
-### Required Attributes
+### Normative Field Table
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.server.name` | string | Requesting server |
-| `aitf.mcp.sampling.model` | string | Requested model hint |
+| Field Name | Type | Requirement | Description | Compliance |
+|---|---|---|---|---|
+| `aitf.mcp.server.name` | string | **Required** | Requesting server name | OWASP LLM06, MITRE ATLAS AML.T0048 |
+| `aitf.mcp.sampling.model` | string | **Required** | Requested model hint | MITRE ATLAS AML.T0044 |
+| `aitf.mcp.sampling.max_tokens` | int | **Recommended** | Max tokens | OWASP LLM10 |
+| `aitf.mcp.sampling.include_context` | string | **Optional** | Context scope: `"thisServer"`, `"allServers"` | OWASP LLM02 |
+| `gen_ai.usage.input_tokens` | int | **Recommended** | Input tokens used | OWASP LLM10 |
+| `gen_ai.usage.output_tokens` | int | **Recommended** | Output tokens used | OWASP LLM10 |
 
-### Recommended Attributes
+---
 
-| Attribute | Type | Notes |
-|-----------|------|-------|
-| `aitf.mcp.sampling.max_tokens` | int | Max tokens |
-| `aitf.mcp.sampling.include_context` | string | Context scope |
-| `gen_ai.usage.input_tokens` | int | Input tokens used |
-| `gen_ai.usage.output_tokens` | int | Output tokens used |
+## CoSAI WS2 Field Mapping
+
+Cross-reference between CoSAI WS2 `MCP_ACTIVITY` field names and AITF attribute keys:
+
+| CoSAI WS2 Field | AITF Attribute | Notes |
+|---|---|---|
+| `mcp.server.name` | `aitf.mcp.server.name` | Direct match |
+| `mcp.tool.name` | `aitf.mcp.tool.name` | Direct match |
+| `mcp.request.args` | `aitf.mcp.tool.input` | JSON-encoded input parameters |
+| `mcp.response.result` | `aitf.mcp.tool.output` | May be redacted |
+| `mcp.response.error` | `aitf.mcp.tool.response_error` | New in CoSAI WS2 alignment |
+| `mcp.transport` | `aitf.mcp.server.transport` | On server/tool spans |
+| `mcp.connection.id` | `aitf.mcp.connection.id` | New in CoSAI WS2 alignment |
+
+---
+
+## Security Considerations
+
+MCP tool invocations should be monitored for:
+
+1. **Unauthorized file access** -- Tools accessing files outside allowed paths
+2. **Command injection** -- Malicious input parameters
+3. **Data exfiltration** -- Tools sending sensitive data to external systems
+4. **Privilege escalation** -- Tools operating beyond granted permissions
+
+AITF's Security Processor automatically flags suspicious MCP tool invocations based on configurable policies.
 
 ---
 
@@ -285,59 +314,35 @@ Format: `mcp.sampling.request {aitf.mcp.server.name}`
 Span: mcp.server.connect filesystem
   aitf.mcp.server.transport: "stdio"
   aitf.mcp.protocol.version: "2025-03-26"
-  │
-  ├─ Event: mcp.server.capabilities
-  │    mcp.capabilities.tools: true
-  │    mcp.capabilities.resources: true
-  │
-  ├─ Span: mcp.tool.discover filesystem
-  │    aitf.mcp.tool.count: 5
-  │    aitf.mcp.tool.names: ["read_file", "write_file", "list_dir", "search", "move_file"]
-  │
-  ├─ Span: mcp.tool.invoke read_file
-  │    aitf.mcp.tool.server: "filesystem"
-  │    aitf.mcp.tool.input: "{\"path\":\"/data/config.yaml\"}"
-  │    aitf.mcp.tool.is_error: false
-  │    aitf.mcp.tool.duration_ms: 12.5
-  │    Events:
-  │      mcp.tool.input: {content: "{\"path\":\"/data/config.yaml\"}"}
-  │      mcp.tool.output: {content: "server:\n  port: 8080\n...", type: "text"}
-  │
-  └─ Span: mcp.tool.invoke write_file
+  aitf.mcp.connection.id: "conn-fs-abc123"
+  |
+  +- Event: mcp.server.capabilities
+  |    mcp.capabilities.tools: true
+  |    mcp.capabilities.resources: true
+  |
+  +- Span: mcp.tool.discover filesystem
+  |    aitf.mcp.tool.count: 5
+  |    aitf.mcp.tool.names: ["read_file", "write_file", "list_dir", "search", "move_file"]
+  |
+  +- Span: mcp.tool.invoke read_file
+  |    aitf.mcp.tool.server: "filesystem"
+  |    aitf.mcp.tool.input: "{\"path\":\"/data/config.yaml\"}"
+  |    aitf.mcp.tool.is_error: false
+  |    aitf.mcp.tool.response_error: ""
+  |    aitf.mcp.tool.duration_ms: 12.5
+  |    aitf.mcp.connection.id: "conn-fs-abc123"
+  |    Events:
+  |      mcp.tool.input: {content: "{\"path\":\"/data/config.yaml\"}"}
+  |      mcp.tool.output: {content: "server:\n  port: 8080\n...", type: "text"}
+  |
+  +- Span: mcp.tool.invoke write_file
        aitf.mcp.tool.server: "filesystem"
        aitf.mcp.tool.approval_required: true
        aitf.mcp.tool.approved: true
        aitf.mcp.tool.duration_ms: 25.0
+       aitf.mcp.connection.id: "conn-fs-abc123"
        Events:
          mcp.tool.approval: {status: "approved", approver: "user@example.com"}
          mcp.tool.input: {content: "{\"path\":\"/data/output.txt\",\"content\":\"...\"}"}
          mcp.tool.output: {content: "File written successfully", type: "text"}
 ```
-
-## Example: MCP Sampling (Server-Initiated LLM Request)
-
-```
-Span: mcp.sampling.request code-analyzer
-  aitf.mcp.server.name: "code-analyzer"
-  aitf.mcp.sampling.model: "claude-sonnet-4-5-20250929"
-  aitf.mcp.sampling.max_tokens: 1024
-  aitf.mcp.sampling.include_context: "thisServer"
-  gen_ai.usage.input_tokens: 200
-  gen_ai.usage.output_tokens: 150
-  │
-  └─ Span: chat claude-sonnet-4-5-20250929
-       gen_ai.system: "anthropic"
-       gen_ai.operation.name: "chat"
-       ...
-```
-
-## Security Considerations
-
-MCP tool invocations should be monitored for:
-
-1. **Unauthorized file access** — Tools accessing files outside allowed paths
-2. **Command injection** — Malicious input parameters
-3. **Data exfiltration** — Tools sending sensitive data to external systems
-4. **Privilege escalation** — Tools operating beyond granted permissions
-
-AITF's Security Processor automatically flags suspicious MCP tool invocations based on configurable policies.
