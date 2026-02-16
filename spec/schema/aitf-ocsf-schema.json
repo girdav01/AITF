@@ -325,6 +325,114 @@
           }
         }
       ]
+    },
+    "AIIdentityEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/AIBaseEvent" },
+        {
+          "type": "object",
+          "required": ["agent_name", "agent_id", "identity_type", "auth_method", "auth_result"],
+          "properties": {
+            "class_uid": { "const": 7008 },
+            "agent_name": { "type": "string" },
+            "agent_id": { "type": "string" },
+            "identity_type": {
+              "type": "string",
+              "enum": ["persistent", "ephemeral", "delegated", "federated", "workload"]
+            },
+            "auth_method": { "type": "string" },
+            "auth_result": {
+              "type": "string",
+              "enum": ["success", "failure", "denied", "expired", "revoked"]
+            },
+            "identity_provider": { "type": "string" },
+            "delegation_info": {
+              "type": "object",
+              "properties": {
+                "delegator": { "type": "string" },
+                "delegatee": { "type": "string" },
+                "delegation_type": { "type": "string" },
+                "delegation_chain": { "type": "array", "items": { "type": "string" } },
+                "chain_depth": { "type": "integer", "minimum": 0 },
+                "scope_delegated": { "type": "array", "items": { "type": "string" } },
+                "scope_attenuated": { "type": "boolean" }
+              }
+            },
+            "trust_info": {
+              "type": "object",
+              "properties": {
+                "peer_agent": { "type": "string" },
+                "trust_method": { "type": "string" },
+                "trust_result": { "type": "string" },
+                "trust_level": { "type": "string" },
+                "cross_domain": { "type": "boolean" }
+              }
+            },
+            "policy_engine": { "type": "string" },
+            "risk_score": { "type": "number", "minimum": 0, "maximum": 100 },
+            "failure_reason": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "AIModelOperationsEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/AIBaseEvent" },
+        {
+          "type": "object",
+          "required": ["model_id", "operation_type"],
+          "properties": {
+            "class_uid": { "const": 7009 },
+            "model_id": { "type": "string" },
+            "model_version": { "type": "string" },
+            "operation_type": {
+              "type": "string",
+              "enum": ["training", "evaluation", "registry", "deployment", "monitoring", "serving", "prompt"]
+            },
+            "training_info": {
+              "type": "object",
+              "properties": {
+                "run_id": { "type": "string" },
+                "training_type": { "type": "string" },
+                "base_model": { "type": "string" },
+                "dataset_id": { "type": "string" },
+                "loss_final": { "type": "number" },
+                "gpu_hours": { "type": "number" },
+                "output_model_id": { "type": "string" },
+                "status": { "type": "string" }
+              }
+            },
+            "deployment_info": {
+              "type": "object",
+              "properties": {
+                "deployment_id": { "type": "string" },
+                "strategy": { "type": "string" },
+                "environment": { "type": "string" },
+                "canary_percent": { "type": "number" },
+                "status": { "type": "string" }
+              }
+            },
+            "monitoring_info": {
+              "type": "object",
+              "properties": {
+                "check_type": { "type": "string" },
+                "drift_score": { "type": "number" },
+                "drift_type": { "type": "string" },
+                "action_triggered": { "type": "string" }
+              }
+            },
+            "serving_info": {
+              "type": "object",
+              "properties": {
+                "operation": { "type": "string" },
+                "selected_model": { "type": "string" },
+                "fallback_trigger": { "type": "string" },
+                "cache_hit": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      ]
     }
   }
 }

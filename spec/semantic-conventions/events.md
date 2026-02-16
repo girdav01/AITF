@@ -195,3 +195,216 @@ Emitted when agent requests/receives human approval.
 | `aitf.agent.approval.status` | string | `"requested"`, `"approved"`, `"denied"` | Yes |
 | `aitf.agent.approval.approver` | string | Approver identity | Recommended |
 | `aitf.agent.approval.reason` | string | Reason for decision | Recommended |
+
+---
+
+## Model Operations (LLMOps/MLOps) Events
+
+### `aitf.model_ops.training_completed`
+
+Emitted when a training or fine-tuning run completes.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.model_ops.training.run_id` | string | Training run ID | Yes |
+| `aitf.model_ops.training.type` | string | Training type | Yes |
+| `aitf.model_ops.training.base_model` | string | Base model | Yes |
+| `aitf.model_ops.training.status` | string | `"completed"`, `"failed"`, `"cancelled"` | Yes |
+| `aitf.model_ops.training.loss_final` | double | Final training loss | Recommended |
+| `aitf.model_ops.training.output_model.id` | string | Output model ID | Recommended |
+| `aitf.model_ops.training.compute.gpu_hours` | double | GPU hours consumed | Recommended |
+
+### `aitf.model_ops.evaluation_completed`
+
+Emitted when a model evaluation run completes.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.model_ops.evaluation.run_id` | string | Evaluation run ID | Yes |
+| `aitf.model_ops.evaluation.model_id` | string | Model evaluated | Yes |
+| `aitf.model_ops.evaluation.type` | string | Evaluation type | Yes |
+| `aitf.model_ops.evaluation.pass` | boolean | Passed quality gates | Yes |
+| `aitf.model_ops.evaluation.metrics` | string | JSON metric results | Recommended |
+| `aitf.model_ops.evaluation.regression_detected` | boolean | Regression found | Recommended |
+
+### `aitf.model_ops.model_promoted`
+
+Emitted when a model is promoted through lifecycle stages.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.model_ops.registry.model_id` | string | Model ID | Yes |
+| `aitf.model_ops.registry.stage` | string | New stage | Yes |
+| `aitf.model_ops.registry.previous_stage` | string | Previous stage | Yes |
+| `aitf.model_ops.registry.model_alias` | string | Alias assigned | Recommended |
+| `aitf.model_ops.registry.approval.approver` | string | Approver | Recommended |
+
+### `aitf.model_ops.deployment_completed`
+
+Emitted when a model deployment completes (success or failure).
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.model_ops.deployment.id` | string | Deployment ID | Yes |
+| `aitf.model_ops.deployment.model_id` | string | Model deployed | Yes |
+| `aitf.model_ops.deployment.strategy` | string | Deployment strategy | Yes |
+| `aitf.model_ops.deployment.status` | string | `"completed"`, `"failed"`, `"rolled_back"` | Yes |
+| `aitf.model_ops.deployment.environment` | string | Target environment | Recommended |
+| `aitf.model_ops.deployment.canary_percent` | double | Canary traffic % | Recommended |
+
+### `aitf.model_ops.drift_detected`
+
+Emitted when model monitoring detects drift above threshold.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.model_ops.monitoring.model_id` | string | Monitored model | Yes |
+| `aitf.model_ops.monitoring.drift_type` | string | Type of drift | Yes |
+| `aitf.model_ops.monitoring.drift_score` | double | Drift magnitude (0-1) | Yes |
+| `aitf.model_ops.monitoring.result` | string | Alert level | Yes |
+| `aitf.model_ops.monitoring.baseline_value` | double | Baseline value | Recommended |
+| `aitf.model_ops.monitoring.metric_value` | double | Current value | Recommended |
+| `aitf.model_ops.monitoring.action_triggered` | string | Automated action | Recommended |
+
+### `aitf.model_ops.fallback_triggered`
+
+Emitted when a model serving fallback occurs.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.model_ops.serving.fallback.original_model` | string | Original model | Yes |
+| `aitf.model_ops.serving.fallback.final_model` | string | Fallback model used | Yes |
+| `aitf.model_ops.serving.fallback.trigger` | string | Trigger reason | Yes |
+| `aitf.model_ops.serving.fallback.depth` | int | Fallback depth | Recommended |
+| `aitf.model_ops.serving.cache.cost_saved_usd` | double | Cost saved by cache | Recommended |
+
+### `aitf.model_ops.prompt_promoted`
+
+Emitted when a prompt version is promoted to a deployment label.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.model_ops.prompt.name` | string | Prompt name | Yes |
+| `aitf.model_ops.prompt.version` | string | Promoted version | Yes |
+| `aitf.model_ops.prompt.label` | string | Target label | Yes |
+| `aitf.model_ops.prompt.previous_version` | string | Previous version at label | Recommended |
+| `aitf.model_ops.prompt.evaluation.score` | double | Evaluation score | Recommended |
+
+---
+
+## Identity Events
+
+### `aitf.identity.created`
+
+Emitted when a new agent identity is created.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.identity.agent_id` | string | Agent identity ID | Yes |
+| `aitf.identity.agent_name` | string | Agent name | Yes |
+| `aitf.identity.type` | string | Identity type | Yes |
+| `aitf.identity.provider` | string | Identity provider | Recommended |
+| `aitf.identity.owner` | string | Identity owner | Recommended |
+| `aitf.identity.credential_type` | string | Credential type | Recommended |
+| `aitf.identity.ttl_seconds` | int | TTL | Recommended |
+
+### `aitf.identity.auth_failed`
+
+Emitted when agent authentication fails.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.identity.agent_id` | string | Agent identity ID | Yes |
+| `aitf.identity.agent_name` | string | Agent name | Yes |
+| `aitf.identity.auth.method` | string | Auth method used | Yes |
+| `aitf.identity.auth.result` | string | Failure type | Yes |
+| `aitf.identity.auth.failure_reason` | string | Failure reason | Yes |
+| `aitf.identity.auth.target_service` | string | Target service | Recommended |
+
+### `aitf.identity.authz_denied`
+
+Emitted when an authorization request is denied.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.identity.agent_id` | string | Agent identity ID | Yes |
+| `aitf.identity.agent_name` | string | Agent name | Yes |
+| `aitf.identity.authz.resource` | string | Resource requested | Yes |
+| `aitf.identity.authz.action` | string | Action requested | Yes |
+| `aitf.identity.authz.deny_reason` | string | Denial reason | Yes |
+| `aitf.identity.authz.policy_id` | string | Policy that denied | Recommended |
+
+### `aitf.identity.delegation_created`
+
+Emitted when credentials are delegated between agents.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.identity.delegation.delegator` | string | Delegating agent | Yes |
+| `aitf.identity.delegation.delegatee` | string | Receiving agent | Yes |
+| `aitf.identity.delegation.type` | string | Delegation type | Yes |
+| `aitf.identity.delegation.scope_delegated` | string[] | Delegated scopes | Yes |
+| `aitf.identity.delegation.chain_depth` | int | Chain depth | Recommended |
+| `aitf.identity.delegation.scope_attenuated` | boolean | Scope was reduced | Recommended |
+| `aitf.identity.delegation.ttl_seconds` | int | Delegation TTL | Recommended |
+
+### `aitf.identity.privilege_escalation`
+
+Emitted when potential privilege escalation is detected — an agent attempts to access resources beyond its delegated scope.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.identity.agent_id` | string | Agent identity ID | Yes |
+| `aitf.identity.agent_name` | string | Agent name | Yes |
+| `aitf.identity.authz.resource` | string | Resource attempted | Yes |
+| `aitf.identity.authz.action` | string | Action attempted | Yes |
+| `aitf.identity.authz.scope_required` | string[] | Scopes required | Yes |
+| `aitf.identity.authz.scope_present` | string[] | Scopes present | Yes |
+| `aitf.identity.delegation.chain` | string[] | Delegation chain | Recommended |
+
+### `aitf.identity.credential_rotated`
+
+Emitted when agent credentials are rotated.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.identity.agent_id` | string | Agent identity ID | Yes |
+| `aitf.identity.credential_type` | string | Credential type | Yes |
+| `aitf.identity.auto_rotate` | boolean | Was auto-rotation | Yes |
+| `aitf.identity.expires_at` | string | New expiration | Recommended |
+
+### `aitf.identity.revoked`
+
+Emitted when an agent identity is revoked.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.identity.agent_id` | string | Agent identity ID | Yes |
+| `aitf.identity.agent_name` | string | Agent name | Yes |
+| `aitf.identity.status` | string | New status (`"revoked"`) | Yes |
+| `aitf.identity.previous_status` | string | Previous status | Yes |
+| `aitf.identity.lifecycle.operation` | string | `"revoke"` | Yes |
+
+### `aitf.identity.trust_established`
+
+Emitted when trust is established between two agents.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.identity.agent_name` | string | This agent | Yes |
+| `aitf.identity.trust.peer_agent` | string | Peer agent | Yes |
+| `aitf.identity.trust.method` | string | Trust method | Yes |
+| `aitf.identity.trust.result` | string | Trust result | Yes |
+| `aitf.identity.trust.trust_level` | string | Trust level | Recommended |
+| `aitf.identity.trust.cross_domain` | boolean | Cross-domain | Recommended |
+
+### `aitf.identity.session_hijack_detected`
+
+Emitted when potential session hijacking is detected.
+
+| Attribute | Type | Description | Required |
+|-----------|------|-------------|----------|
+| `aitf.identity.agent_id` | string | Agent identity ID | Yes |
+| `aitf.identity.session.id` | string | Session ID | Yes |
+| `aitf.identity.session.ip_address` | string | Anomalous source IP | Recommended |
+| `aitf.identity.session.user_agent` | string | Anomalous user agent | Recommended |

@@ -444,6 +444,255 @@ class MemoryAttributes:
         PROCEDURAL = "procedural"
 
 
+class ModelOpsAttributes:
+    """AITF Model Operations (LLMOps/MLOps) semantic convention attributes."""
+
+    # Training attributes
+    TRAINING_RUN_ID = "aitf.model_ops.training.run_id"
+    TRAINING_TYPE = "aitf.model_ops.training.type"
+    TRAINING_BASE_MODEL = "aitf.model_ops.training.base_model"
+    TRAINING_FRAMEWORK = "aitf.model_ops.training.framework"
+    TRAINING_DATASET_ID = "aitf.model_ops.training.dataset.id"
+    TRAINING_DATASET_VERSION = "aitf.model_ops.training.dataset.version"
+    TRAINING_DATASET_SIZE = "aitf.model_ops.training.dataset.size"
+    TRAINING_HYPERPARAMETERS = "aitf.model_ops.training.hyperparameters"
+    TRAINING_EPOCHS = "aitf.model_ops.training.epochs"
+    TRAINING_BATCH_SIZE = "aitf.model_ops.training.batch_size"
+    TRAINING_LEARNING_RATE = "aitf.model_ops.training.learning_rate"
+    TRAINING_LOSS_FINAL = "aitf.model_ops.training.loss_final"
+    TRAINING_VAL_LOSS_FINAL = "aitf.model_ops.training.val_loss_final"
+    TRAINING_COMPUTE_GPU_TYPE = "aitf.model_ops.training.compute.gpu_type"
+    TRAINING_COMPUTE_GPU_COUNT = "aitf.model_ops.training.compute.gpu_count"
+    TRAINING_COMPUTE_GPU_HOURS = "aitf.model_ops.training.compute.gpu_hours"
+    TRAINING_OUTPUT_MODEL_ID = "aitf.model_ops.training.output_model.id"
+    TRAINING_OUTPUT_MODEL_HASH = "aitf.model_ops.training.output_model.hash"
+    TRAINING_CODE_COMMIT = "aitf.model_ops.training.code_commit"
+    TRAINING_EXPERIMENT_ID = "aitf.model_ops.training.experiment.id"
+    TRAINING_EXPERIMENT_NAME = "aitf.model_ops.training.experiment.name"
+    TRAINING_STATUS = "aitf.model_ops.training.status"
+
+    # Evaluation attributes
+    EVALUATION_RUN_ID = "aitf.model_ops.evaluation.run_id"
+    EVALUATION_MODEL_ID = "aitf.model_ops.evaluation.model_id"
+    EVALUATION_TYPE = "aitf.model_ops.evaluation.type"
+    EVALUATION_DATASET_ID = "aitf.model_ops.evaluation.dataset.id"
+    EVALUATION_DATASET_VERSION = "aitf.model_ops.evaluation.dataset.version"
+    EVALUATION_DATASET_SIZE = "aitf.model_ops.evaluation.dataset.size"
+    EVALUATION_METRICS = "aitf.model_ops.evaluation.metrics"
+    EVALUATION_JUDGE_MODEL = "aitf.model_ops.evaluation.judge_model"
+    EVALUATION_BASELINE_MODEL = "aitf.model_ops.evaluation.baseline_model"
+    EVALUATION_REGRESSION_DETECTED = "aitf.model_ops.evaluation.regression_detected"
+    EVALUATION_PASS = "aitf.model_ops.evaluation.pass"
+
+    # Registry attributes
+    REGISTRY_OPERATION = "aitf.model_ops.registry.operation"
+    REGISTRY_MODEL_ID = "aitf.model_ops.registry.model_id"
+    REGISTRY_MODEL_VERSION = "aitf.model_ops.registry.model_version"
+    REGISTRY_MODEL_ALIAS = "aitf.model_ops.registry.model_alias"
+    REGISTRY_STAGE = "aitf.model_ops.registry.stage"
+    REGISTRY_PREVIOUS_STAGE = "aitf.model_ops.registry.previous_stage"
+    REGISTRY_OWNER = "aitf.model_ops.registry.owner"
+    REGISTRY_LINEAGE_TRAINING_RUN_ID = "aitf.model_ops.registry.lineage.training_run_id"
+    REGISTRY_LINEAGE_PARENT_MODEL_ID = "aitf.model_ops.registry.lineage.parent_model_id"
+
+    # Deployment attributes
+    DEPLOYMENT_ID = "aitf.model_ops.deployment.id"
+    DEPLOYMENT_MODEL_ID = "aitf.model_ops.deployment.model_id"
+    DEPLOYMENT_STRATEGY = "aitf.model_ops.deployment.strategy"
+    DEPLOYMENT_MODEL_VERSION = "aitf.model_ops.deployment.model_version"
+    DEPLOYMENT_ENVIRONMENT = "aitf.model_ops.deployment.environment"
+    DEPLOYMENT_ENDPOINT = "aitf.model_ops.deployment.endpoint"
+    DEPLOYMENT_INFRA_PROVIDER = "aitf.model_ops.deployment.infrastructure.provider"
+    DEPLOYMENT_INFRA_GPU_TYPE = "aitf.model_ops.deployment.infrastructure.gpu_type"
+    DEPLOYMENT_INFRA_REPLICAS = "aitf.model_ops.deployment.infrastructure.replicas"
+    DEPLOYMENT_CANARY_PERCENT = "aitf.model_ops.deployment.canary_percent"
+    DEPLOYMENT_STATUS = "aitf.model_ops.deployment.status"
+    DEPLOYMENT_HEALTH_STATUS = "aitf.model_ops.deployment.health_check.status"
+    DEPLOYMENT_HEALTH_LATENCY = "aitf.model_ops.deployment.health_check.latency_ms"
+
+    # Serving attributes
+    SERVING_OPERATION = "aitf.model_ops.serving.operation"
+    SERVING_ROUTE_SELECTED_MODEL = "aitf.model_ops.serving.route.selected_model"
+    SERVING_ROUTE_REASON = "aitf.model_ops.serving.route.reason"
+    SERVING_ROUTE_CANDIDATES = "aitf.model_ops.serving.route.candidates"
+    SERVING_FALLBACK_CHAIN = "aitf.model_ops.serving.fallback.chain"
+    SERVING_FALLBACK_DEPTH = "aitf.model_ops.serving.fallback.depth"
+    SERVING_FALLBACK_TRIGGER = "aitf.model_ops.serving.fallback.trigger"
+    SERVING_FALLBACK_ORIGINAL_MODEL = "aitf.model_ops.serving.fallback.original_model"
+    SERVING_FALLBACK_FINAL_MODEL = "aitf.model_ops.serving.fallback.final_model"
+    SERVING_CACHE_HIT = "aitf.model_ops.serving.cache.hit"
+    SERVING_CACHE_TYPE = "aitf.model_ops.serving.cache.type"
+    SERVING_CACHE_SIMILARITY_SCORE = "aitf.model_ops.serving.cache.similarity_score"
+    SERVING_CACHE_COST_SAVED = "aitf.model_ops.serving.cache.cost_saved_usd"
+    SERVING_CIRCUIT_BREAKER_STATE = "aitf.model_ops.serving.circuit_breaker.state"
+    SERVING_CIRCUIT_BREAKER_MODEL = "aitf.model_ops.serving.circuit_breaker.model"
+
+    # Monitoring attributes
+    MONITORING_CHECK_TYPE = "aitf.model_ops.monitoring.check_type"
+    MONITORING_MODEL_ID = "aitf.model_ops.monitoring.model_id"
+    MONITORING_RESULT = "aitf.model_ops.monitoring.result"
+    MONITORING_METRIC_NAME = "aitf.model_ops.monitoring.metric_name"
+    MONITORING_METRIC_VALUE = "aitf.model_ops.monitoring.metric_value"
+    MONITORING_BASELINE_VALUE = "aitf.model_ops.monitoring.baseline_value"
+    MONITORING_DRIFT_SCORE = "aitf.model_ops.monitoring.drift_score"
+    MONITORING_DRIFT_TYPE = "aitf.model_ops.monitoring.drift_type"
+    MONITORING_ACTION_TRIGGERED = "aitf.model_ops.monitoring.action_triggered"
+
+    # Prompt attributes
+    PROMPT_NAME = "aitf.model_ops.prompt.name"
+    PROMPT_OPERATION = "aitf.model_ops.prompt.operation"
+    PROMPT_VERSION = "aitf.model_ops.prompt.version"
+    PROMPT_CONTENT_HASH = "aitf.model_ops.prompt.content_hash"
+    PROMPT_LABEL = "aitf.model_ops.prompt.label"
+    PROMPT_MODEL_TARGET = "aitf.model_ops.prompt.model_target"
+    PROMPT_EVAL_SCORE = "aitf.model_ops.prompt.evaluation.score"
+    PROMPT_EVAL_PASS = "aitf.model_ops.prompt.evaluation.pass"
+    PROMPT_AB_TEST_ID = "aitf.model_ops.prompt.a_b_test.id"
+    PROMPT_AB_TEST_VARIANT = "aitf.model_ops.prompt.a_b_test.variant"
+
+    # Training type values
+    class TrainingType:
+        PRE_TRAINING = "pre_training"
+        FINE_TUNING = "fine_tuning"
+        RLHF = "rlhf"
+        DPO = "dpo"
+        LORA = "lora"
+        QLORA = "qlora"
+        DISTILLATION = "distillation"
+        CONTINUED_PRE_TRAINING = "continued_pre_training"
+
+    # Deployment strategy values
+    class DeploymentStrategy:
+        ROLLING = "rolling"
+        CANARY = "canary"
+        BLUE_GREEN = "blue_green"
+        SHADOW = "shadow"
+        AB_TEST = "a_b_test"
+        IMMEDIATE = "immediate"
+
+    # Drift type values
+    class DriftType:
+        DATA = "data"
+        PREDICTION = "prediction"
+        CONCEPT = "concept"
+        EMBEDDING = "embedding"
+        FEATURE = "feature"
+
+
+class IdentityAttributes:
+    """AITF Agentic Identity semantic convention attributes."""
+
+    # Core identity attributes
+    AGENT_ID = "aitf.identity.agent_id"
+    AGENT_NAME = "aitf.identity.agent_name"
+    TYPE = "aitf.identity.type"
+    PROVIDER = "aitf.identity.provider"
+    OWNER = "aitf.identity.owner"
+    OWNER_TYPE = "aitf.identity.owner_type"
+    CREDENTIAL_TYPE = "aitf.identity.credential_type"
+    CREDENTIAL_ID = "aitf.identity.credential_id"
+    STATUS = "aitf.identity.status"
+    PREVIOUS_STATUS = "aitf.identity.previous_status"
+    SCOPE = "aitf.identity.scope"
+    EXPIRES_AT = "aitf.identity.expires_at"
+    TTL_SECONDS = "aitf.identity.ttl_seconds"
+    AUTO_ROTATE = "aitf.identity.auto_rotate"
+    ROTATION_INTERVAL = "aitf.identity.rotation_interval_seconds"
+
+    # Lifecycle attributes
+    LIFECYCLE_OPERATION = "aitf.identity.lifecycle.operation"
+
+    # Authentication attributes
+    AUTH_METHOD = "aitf.identity.auth.method"
+    AUTH_RESULT = "aitf.identity.auth.result"
+    AUTH_PROVIDER = "aitf.identity.auth.provider"
+    AUTH_TARGET_SERVICE = "aitf.identity.auth.target_service"
+    AUTH_FAILURE_REASON = "aitf.identity.auth.failure_reason"
+    AUTH_TOKEN_TYPE = "aitf.identity.auth.token_type"
+    AUTH_SCOPE_REQUESTED = "aitf.identity.auth.scope_requested"
+    AUTH_SCOPE_GRANTED = "aitf.identity.auth.scope_granted"
+    AUTH_CONTINUOUS = "aitf.identity.auth.continuous"
+    AUTH_PKCE_USED = "aitf.identity.auth.pkce_used"
+    AUTH_DPOP_USED = "aitf.identity.auth.dpop_used"
+
+    # Authorization attributes
+    AUTHZ_DECISION = "aitf.identity.authz.decision"
+    AUTHZ_RESOURCE = "aitf.identity.authz.resource"
+    AUTHZ_ACTION = "aitf.identity.authz.action"
+    AUTHZ_POLICY_ENGINE = "aitf.identity.authz.policy_engine"
+    AUTHZ_POLICY_ID = "aitf.identity.authz.policy_id"
+    AUTHZ_DENY_REASON = "aitf.identity.authz.deny_reason"
+    AUTHZ_RISK_SCORE = "aitf.identity.authz.risk_score"
+    AUTHZ_PRIVILEGE_LEVEL = "aitf.identity.authz.privilege_level"
+    AUTHZ_JEA = "aitf.identity.authz.jea"
+    AUTHZ_TIME_LIMITED = "aitf.identity.authz.time_limited"
+    AUTHZ_EXPIRES_AT = "aitf.identity.authz.expires_at"
+
+    # Delegation attributes
+    DELEGATION_DELEGATOR = "aitf.identity.delegation.delegator"
+    DELEGATION_DELEGATOR_ID = "aitf.identity.delegation.delegator_id"
+    DELEGATION_DELEGATEE = "aitf.identity.delegation.delegatee"
+    DELEGATION_DELEGATEE_ID = "aitf.identity.delegation.delegatee_id"
+    DELEGATION_TYPE = "aitf.identity.delegation.type"
+    DELEGATION_CHAIN = "aitf.identity.delegation.chain"
+    DELEGATION_CHAIN_DEPTH = "aitf.identity.delegation.chain_depth"
+    DELEGATION_SCOPE_DELEGATED = "aitf.identity.delegation.scope_delegated"
+    DELEGATION_SCOPE_ATTENUATED = "aitf.identity.delegation.scope_attenuated"
+    DELEGATION_RESULT = "aitf.identity.delegation.result"
+    DELEGATION_PROOF_TYPE = "aitf.identity.delegation.proof_type"
+    DELEGATION_TTL_SECONDS = "aitf.identity.delegation.ttl_seconds"
+
+    # Trust attributes
+    TRUST_OPERATION = "aitf.identity.trust.operation"
+    TRUST_PEER_AGENT = "aitf.identity.trust.peer_agent"
+    TRUST_PEER_AGENT_ID = "aitf.identity.trust.peer_agent_id"
+    TRUST_RESULT = "aitf.identity.trust.result"
+    TRUST_METHOD = "aitf.identity.trust.method"
+    TRUST_DOMAIN = "aitf.identity.trust.trust_domain"
+    TRUST_PEER_DOMAIN = "aitf.identity.trust.peer_trust_domain"
+    TRUST_CROSS_DOMAIN = "aitf.identity.trust.cross_domain"
+    TRUST_LEVEL = "aitf.identity.trust.trust_level"
+    TRUST_PROTOCOL = "aitf.identity.trust.protocol"
+
+    # Session attributes
+    SESSION_ID = "aitf.identity.session.id"
+    SESSION_OPERATION = "aitf.identity.session.operation"
+    SESSION_SCOPE = "aitf.identity.session.scope"
+    SESSION_EXPIRES_AT = "aitf.identity.session.expires_at"
+    SESSION_ACTIONS_COUNT = "aitf.identity.session.actions_count"
+    SESSION_DELEGATIONS_COUNT = "aitf.identity.session.delegations_count"
+    SESSION_TERMINATION_REASON = "aitf.identity.session.termination_reason"
+
+    # Identity type values
+    class IdentityType:
+        PERSISTENT = "persistent"
+        EPHEMERAL = "ephemeral"
+        DELEGATED = "delegated"
+        FEDERATED = "federated"
+        WORKLOAD = "workload"
+
+    # Auth method values
+    class AuthMethod:
+        API_KEY = "api_key"
+        OAUTH2 = "oauth2"
+        OAUTH2_PKCE = "oauth2_pkce"
+        JWT_BEARER = "jwt_bearer"
+        MTLS = "mtls"
+        SPIFFE_SVID = "spiffe_svid"
+        DID_VC = "did_vc"
+        HTTP_SIGNATURE = "http_signature"
+        TOKEN_EXCHANGE = "token_exchange"
+
+    # Delegation type values
+    class DelegationType:
+        ON_BEHALF_OF = "on_behalf_of"
+        TOKEN_EXCHANGE = "token_exchange"
+        CREDENTIAL_FORWARDING = "credential_forwarding"
+        IMPERSONATION = "impersonation"
+        CAPABILITY_GRANT = "capability_grant"
+        SCOPED_PROXY = "scoped_proxy"
+
+
 # Latency attributes (used across multiple span types)
 class LatencyAttributes:
     """AITF Latency attributes for performance tracking."""

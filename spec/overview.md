@@ -107,11 +107,13 @@ AITF defines a clear span hierarchy for AI operations:
 
 ```
 [Agent Session]                         aitf.agent.session
+  └─[Identity Auth]                    aitf.identity.authentication
   └─[Agent Step: planning]              aitf.agent.step
       └─[LLM Inference]                gen_ai.inference
           ├─[gen_ai.content.prompt]     (event)
           └─[gen_ai.content.completion] (event)
   └─[Agent Step: tool_use]             aitf.agent.step
+      ├─[Identity Authz]              aitf.identity.authorization
       └─[MCP Tool Call]                aitf.mcp.tool.invoke
           └─[Skill Execution]          aitf.skill.invoke
   └─[Agent Step: rag]                  aitf.agent.step
@@ -119,8 +121,23 @@ AITF defines a clear span hierarchy for AI operations:
           ├─[Vector Search]            aitf.rag.retrieve
           └─[LLM Generation]          gen_ai.inference
   └─[Agent Step: delegation]           aitf.agent.step
+      ├─[Identity Delegation]         aitf.identity.delegation
+      ├─[Trust Establishment]         aitf.identity.trust
       └─[Sub-Agent Session]           aitf.agent.session
           └─ ...
+
+[Model Operations Pipeline]            aitf.model_ops.*
+  └─[Training Run]                    aitf.model_ops.training
+      └─[Evaluation]                  aitf.model_ops.evaluation
+          └─[Registry: register]      aitf.model_ops.registry
+              └─[Deployment]          aitf.model_ops.deployment
+                  └─[Monitoring]      aitf.model_ops.monitoring
+
+[Serving Request]                       aitf.model_ops.serving
+  ├─[Route Decision]                  aitf.model_ops.serving (route)
+  ├─[Cache Lookup]                    aitf.model_ops.serving (cache_lookup)
+  ├─[LLM Inference]                   gen_ai.inference
+  └─[Fallback]                        aitf.model_ops.serving (fallback)
 ```
 
 ## 4. Namespace Registry
@@ -149,7 +166,8 @@ AITF defines a clear span hierarchy for AI operations:
 | `aitf.cost.*` | Token costs, budget tracking, attribution |
 | `aitf.quality.*` | Output quality (hallucination, confidence) |
 | `aitf.supply_chain.*` | Model provenance, AI-BOM, integrity |
-| `aitf.identity.*` | Agent identity, credential delegation, auth |
+| `aitf.identity.*` | Agent identity lifecycle, authentication, authorization, delegation, trust |
+| `aitf.model_ops.*` | LLMOps/MLOps lifecycle (training, evaluation, registry, deployment, serving, monitoring, prompts) |
 | `aitf.guardrail.*` | Content filtering, safety checks, policies |
 | `aitf.memory.*` | Agent memory operations (store, retrieve) |
 
@@ -189,6 +207,8 @@ See [Compliance Mapping](ocsf-mapping/compliance-mapping.md) for framework detai
 8. **Supply Chain Telemetry** — Model provenance tracking, AI Bill of Materials, integrity verification, and model signing
 9. **Guardrail Telemetry** — Content filter results, safety check outcomes, policy enforcement, and risk scoring
 10. **Agent Memory** — Memory operation tracing (store, retrieve, update, delete) with provenance and TTL tracking
+11. **Agentic Identity** — Full agent identity lifecycle (creation, rotation, revocation), authentication (OAuth 2.1, SPIFFE, mTLS, DID/VC), authorization with policy-as-code, delegation chains with scope attenuation, agent-to-agent trust establishment, and identity session management
+12. **Model Operations (LLMOps/MLOps)** — Training/fine-tuning runs, model evaluation and benchmarking, model registry with lineage tracking, deployment strategies (canary, blue-green, A/B), serving infrastructure (routing, fallback chains, caching, circuit breakers), drift detection and monitoring, and prompt versioning lifecycle
 
 ## 7. Versioning and Stability
 
@@ -208,7 +228,8 @@ Current status:
 - `aitf.cost.*` — Stable
 - `aitf.quality.*` — Experimental
 - `aitf.supply_chain.*` — Experimental
-- `aitf.identity.*` — Experimental
+- `aitf.identity.*` — Stable
+- `aitf.model_ops.*` — Stable
 - `aitf.memory.*` — Experimental
 
 ## 8. Related Documents
@@ -218,6 +239,8 @@ Current status:
 - [Agent Spans](semantic-conventions/agent-spans.md)
 - [MCP Spans](semantic-conventions/mcp-spans.md)
 - [Skills](semantic-conventions/skills.md)
+- [Model Operations Spans](semantic-conventions/model-ops-spans.md)
+- [Identity Spans](semantic-conventions/identity-spans.md)
 - [Metrics](semantic-conventions/metrics.md)
 - [Events](semantic-conventions/events.md)
 - [OCSF Event Classes](ocsf-mapping/event-classes.md)

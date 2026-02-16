@@ -361,3 +361,231 @@ Additional attributes for enhanced LLM observability.
 | `aitf.memory.ttl_seconds` | int | Time to live in seconds | `3600` | Experimental |
 | `aitf.memory.hit` | boolean | Whether memory was found | `true` | Experimental |
 | `aitf.memory.provenance` | string | Origin of memory entry | `"conversation"`, `"tool_result"`, `"imported"` | Experimental |
+
+---
+
+## AITF Model Operations (LLMOps/MLOps) Attributes
+
+### `aitf.model_ops.training.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.model_ops.training.run_id` | string | Training run identifier | `"run-ft-20260215"` | Stable |
+| `aitf.model_ops.training.type` | string | Training type | `"fine_tuning"`, `"lora"`, `"rlhf"`, `"dpo"` | Stable |
+| `aitf.model_ops.training.base_model` | string | Base/foundation model | `"meta-llama/Llama-3.1-70B"` | Stable |
+| `aitf.model_ops.training.framework` | string | Training framework | `"pytorch"`, `"transformers"`, `"jax"` | Stable |
+| `aitf.model_ops.training.dataset.id` | string | Training dataset ID | `"customer-support-v3"` | Stable |
+| `aitf.model_ops.training.dataset.version` | string | Dataset version hash | `"sha256:abc123"` | Stable |
+| `aitf.model_ops.training.dataset.size` | int | Training examples count | `50000` | Stable |
+| `aitf.model_ops.training.hyperparameters` | string | JSON hyperparameters | `"{\"lr\":0.0001}"` | Stable |
+| `aitf.model_ops.training.epochs` | int | Training epochs | `3` | Stable |
+| `aitf.model_ops.training.batch_size` | int | Batch size | `32` | Stable |
+| `aitf.model_ops.training.learning_rate` | double | Learning rate | `0.0001` | Stable |
+| `aitf.model_ops.training.loss_final` | double | Final training loss | `0.42` | Stable |
+| `aitf.model_ops.training.val_loss_final` | double | Final validation loss | `0.48` | Stable |
+| `aitf.model_ops.training.compute.gpu_type` | string | GPU type | `"H100"`, `"A100"` | Stable |
+| `aitf.model_ops.training.compute.gpu_count` | int | GPU count | `8` | Stable |
+| `aitf.model_ops.training.compute.gpu_hours` | double | Total GPU hours | `24.5` | Stable |
+| `aitf.model_ops.training.output_model.id` | string | Output model ID | `"cs-llama-70b-lora-v3"` | Stable |
+| `aitf.model_ops.training.output_model.hash` | string | Output model hash | `"sha256:def456"` | Stable |
+| `aitf.model_ops.training.code_commit` | string | Code commit SHA | `"a1b2c3d"` | Stable |
+| `aitf.model_ops.training.experiment.id` | string | Experiment tracker ID | `"exp-123"` | Stable |
+| `aitf.model_ops.training.experiment.name` | string | Experiment name | `"cs-finetune-v3"` | Stable |
+| `aitf.model_ops.training.status` | string | Run status | `"running"`, `"completed"`, `"failed"` | Stable |
+
+### `aitf.model_ops.evaluation.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.model_ops.evaluation.run_id` | string | Evaluation run ID | `"eval-20260215"` | Stable |
+| `aitf.model_ops.evaluation.model_id` | string | Model being evaluated | `"cs-llama-70b-lora-v3"` | Stable |
+| `aitf.model_ops.evaluation.type` | string | Evaluation type | `"benchmark"`, `"llm_judge"`, `"safety"` | Stable |
+| `aitf.model_ops.evaluation.dataset.id` | string | Eval dataset ID | `"eval-cs-v2"` | Stable |
+| `aitf.model_ops.evaluation.dataset.version` | string | Dataset version | `"v2.1"` | Stable |
+| `aitf.model_ops.evaluation.dataset.size` | int | Eval examples count | `1000` | Stable |
+| `aitf.model_ops.evaluation.metrics` | string | JSON metric results | `"{\"accuracy\":0.94}"` | Stable |
+| `aitf.model_ops.evaluation.judge_model` | string | LLM-as-judge model | `"gpt-4o"` | Stable |
+| `aitf.model_ops.evaluation.baseline_model` | string | Baseline model for comparison | `"cs-llama-70b-lora-v2"` | Stable |
+| `aitf.model_ops.evaluation.regression_detected` | boolean | Regression detected | `false` | Stable |
+| `aitf.model_ops.evaluation.pass` | boolean | Passed quality gates | `true` | Stable |
+
+### `aitf.model_ops.registry.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.model_ops.registry.operation` | string | Registry operation | `"register"`, `"promote"`, `"rollback"` | Stable |
+| `aitf.model_ops.registry.model_id` | string | Model identifier | `"cs-llama-70b-lora-v3"` | Stable |
+| `aitf.model_ops.registry.model_version` | string | Model version | `"3.0.0"` | Stable |
+| `aitf.model_ops.registry.model_alias` | string | Model alias | `"@champion"` | Stable |
+| `aitf.model_ops.registry.stage` | string | Lifecycle stage | `"staging"`, `"production"`, `"archived"` | Stable |
+| `aitf.model_ops.registry.previous_stage` | string | Previous stage | `"staging"` | Stable |
+| `aitf.model_ops.registry.owner` | string | Model owner | `"ml-team"` | Stable |
+| `aitf.model_ops.registry.lineage.training_run_id` | string | Producing training run | `"run-ft-20260215"` | Stable |
+| `aitf.model_ops.registry.lineage.parent_model_id` | string | Parent model | `"meta-llama/Llama-3.1-70B"` | Stable |
+
+### `aitf.model_ops.deployment.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.model_ops.deployment.id` | string | Deployment identifier | `"deploy-cs-canary-001"` | Stable |
+| `aitf.model_ops.deployment.model_id` | string | Model being deployed | `"cs-llama-70b-lora-v3"` | Stable |
+| `aitf.model_ops.deployment.strategy` | string | Deployment strategy | `"canary"`, `"blue_green"`, `"rolling"` | Stable |
+| `aitf.model_ops.deployment.model_version` | string | Model version | `"3.0.0"` | Stable |
+| `aitf.model_ops.deployment.environment` | string | Target environment | `"production"` | Stable |
+| `aitf.model_ops.deployment.endpoint` | string | Serving endpoint | `"https://api.example.com/v1/chat"` | Stable |
+| `aitf.model_ops.deployment.canary_percent` | double | Canary traffic % | `10.0` | Stable |
+| `aitf.model_ops.deployment.infrastructure.provider` | string | Infra provider | `"aws"`, `"gcp"` | Stable |
+| `aitf.model_ops.deployment.infrastructure.gpu_type` | string | GPU type | `"H100"` | Stable |
+| `aitf.model_ops.deployment.infrastructure.replicas` | int | Replica count | `4` | Stable |
+| `aitf.model_ops.deployment.status` | string | Deployment status | `"completed"`, `"failed"`, `"rolled_back"` | Stable |
+| `aitf.model_ops.deployment.health_check.status` | string | Health status | `"healthy"`, `"degraded"` | Stable |
+
+### `aitf.model_ops.serving.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.model_ops.serving.operation` | string | Serving operation | `"route"`, `"fallback"`, `"cache_lookup"` | Stable |
+| `aitf.model_ops.serving.route.selected_model` | string | Model selected by router | `"claude-opus-4-6"` | Stable |
+| `aitf.model_ops.serving.route.reason` | string | Routing reason | `"cost"`, `"capability"`, `"latency"` | Stable |
+| `aitf.model_ops.serving.route.candidates` | string[] | Candidate models | `["claude-opus-4-6","gpt-4o"]` | Stable |
+| `aitf.model_ops.serving.fallback.chain` | string[] | Fallback chain | `["claude-opus-4-6","gpt-4o","llama-70b"]` | Stable |
+| `aitf.model_ops.serving.fallback.depth` | int | Fallback depth | `1` | Stable |
+| `aitf.model_ops.serving.fallback.trigger` | string | Fallback trigger | `"timeout"`, `"error"`, `"rate_limit"` | Stable |
+| `aitf.model_ops.serving.cache.hit` | boolean | Cache hit | `true` | Stable |
+| `aitf.model_ops.serving.cache.type` | string | Cache type | `"exact"`, `"semantic"` | Stable |
+| `aitf.model_ops.serving.cache.similarity_score` | double | Semantic similarity | `0.95` | Stable |
+| `aitf.model_ops.serving.cache.cost_saved_usd` | double | Cost saved | `0.003` | Stable |
+| `aitf.model_ops.serving.circuit_breaker.state` | string | Circuit breaker state | `"closed"`, `"open"`, `"half_open"` | Stable |
+
+### `aitf.model_ops.monitoring.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.model_ops.monitoring.check_type` | string | Monitoring check type | `"data_drift"`, `"embedding_drift"` | Stable |
+| `aitf.model_ops.monitoring.model_id` | string | Monitored model | `"cs-llama-70b-lora-v3"` | Stable |
+| `aitf.model_ops.monitoring.result` | string | Check result | `"normal"`, `"warning"`, `"alert"` | Stable |
+| `aitf.model_ops.monitoring.metric_name` | string | Metric being checked | `"accuracy"` | Stable |
+| `aitf.model_ops.monitoring.metric_value` | double | Current value | `0.94` | Stable |
+| `aitf.model_ops.monitoring.baseline_value` | double | Baseline value | `0.96` | Stable |
+| `aitf.model_ops.monitoring.drift_score` | double | Drift magnitude (0-1) | `0.15` | Stable |
+| `aitf.model_ops.monitoring.drift_type` | string | Drift type | `"data"`, `"embedding"`, `"concept"` | Stable |
+| `aitf.model_ops.monitoring.action_triggered` | string | Action taken | `"alert"`, `"retrain"`, `"rollback"` | Stable |
+
+### `aitf.model_ops.prompt.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.model_ops.prompt.name` | string | Prompt template name | `"customer-greeting"` | Stable |
+| `aitf.model_ops.prompt.operation` | string | Prompt operation | `"create"`, `"promote"`, `"rollback"` | Stable |
+| `aitf.model_ops.prompt.version` | string | Prompt version (SemVer) | `"2.1.0"` | Stable |
+| `aitf.model_ops.prompt.content_hash` | string | Template content hash | `"sha256:abc123"` | Stable |
+| `aitf.model_ops.prompt.label` | string | Deployment label | `"production"`, `"staging"` | Stable |
+| `aitf.model_ops.prompt.model_target` | string | Target model | `"claude-sonnet-4-5-20250929"` | Stable |
+| `aitf.model_ops.prompt.evaluation.score` | double | Evaluation score (0-1) | `0.92` | Stable |
+| `aitf.model_ops.prompt.evaluation.pass` | boolean | Passed quality gate | `true` | Stable |
+| `aitf.model_ops.prompt.a_b_test.id` | string | A/B experiment ID | `"exp-prompt-123"` | Stable |
+| `aitf.model_ops.prompt.a_b_test.variant` | string | Variant name | `"treatment_a"` | Stable |
+
+---
+
+## AITF Identity Attributes
+
+### `aitf.identity.*` (Core)
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.identity.agent_id` | string | Agent identity identifier | `"agent-orch-001"` | Stable |
+| `aitf.identity.agent_name` | string | Agent name | `"orchestrator"` | Stable |
+| `aitf.identity.type` | string | Identity type | `"persistent"`, `"ephemeral"`, `"delegated"`, `"workload"` | Stable |
+| `aitf.identity.provider` | string | Identity provider | `"okta"`, `"entra_id"`, `"spiffe"`, `"auth0"` | Stable |
+| `aitf.identity.owner` | string | Identity owner | `"platform-team"` | Stable |
+| `aitf.identity.owner_type` | string | Owner type | `"human"`, `"service"`, `"organization"` | Stable |
+| `aitf.identity.credential_type` | string | Credential type | `"oauth_token"`, `"spiffe_svid"`, `"jwt"`, `"mtls_cert"` | Stable |
+| `aitf.identity.credential_id` | string | Credential identifier | `"cred-abc123"` | Stable |
+| `aitf.identity.status` | string | Identity status | `"active"`, `"suspended"`, `"revoked"`, `"expired"` | Stable |
+| `aitf.identity.scope` | string[] | Granted scopes | `["tools:*","data:read"]` | Stable |
+| `aitf.identity.expires_at` | string | Expiration timestamp | `"2026-02-16T10:00:00Z"` | Stable |
+| `aitf.identity.ttl_seconds` | int | Time to live | `3600` | Stable |
+
+### `aitf.identity.lifecycle.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.identity.lifecycle.operation` | string | Lifecycle operation | `"create"`, `"rotate"`, `"revoke"`, `"suspend"` | Stable |
+| `aitf.identity.previous_status` | string | Previous status | `"active"` | Stable |
+| `aitf.identity.auto_rotate` | boolean | Auto-rotation enabled | `true` | Stable |
+| `aitf.identity.rotation_interval_seconds` | int | Rotation interval | `86400` | Stable |
+
+### `aitf.identity.auth.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.identity.auth.method` | string | Auth method | `"oauth2_pkce"`, `"spiffe_svid"`, `"mtls"`, `"jwt_bearer"` | Stable |
+| `aitf.identity.auth.result` | string | Auth result | `"success"`, `"failure"`, `"denied"`, `"expired"` | Stable |
+| `aitf.identity.auth.provider` | string | Auth provider service | `"auth0"` | Stable |
+| `aitf.identity.auth.target_service` | string | Service authenticated to | `"customer-db"` | Stable |
+| `aitf.identity.auth.failure_reason` | string | Failure reason | `"invalid_token"` | Stable |
+| `aitf.identity.auth.token_type` | string | Token type | `"bearer"`, `"dpop"`, `"mtls_bound"` | Stable |
+| `aitf.identity.auth.scope_requested` | string[] | Scopes requested | `["data:read","tools:search"]` | Stable |
+| `aitf.identity.auth.scope_granted` | string[] | Scopes granted | `["data:read"]` | Stable |
+| `aitf.identity.auth.continuous` | boolean | Continuous re-auth | `true` | Stable |
+| `aitf.identity.auth.pkce_used` | boolean | PKCE was used | `true` | Stable |
+| `aitf.identity.auth.dpop_used` | boolean | DPoP proof included | `false` | Stable |
+
+### `aitf.identity.authz.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.identity.authz.decision` | string | Authorization decision | `"allow"`, `"deny"`, `"conditional"` | Stable |
+| `aitf.identity.authz.resource` | string | Resource accessed | `"customer-db"` | Stable |
+| `aitf.identity.authz.action` | string | Action performed | `"read"`, `"write"`, `"execute"` | Stable |
+| `aitf.identity.authz.policy_engine` | string | Policy engine | `"opa"`, `"cedar"`, `"casbin"` | Stable |
+| `aitf.identity.authz.policy_id` | string | Matched policy | `"pol-agent-db-read"` | Stable |
+| `aitf.identity.authz.deny_reason` | string | Denial reason | `"insufficient_scope"` | Stable |
+| `aitf.identity.authz.risk_score` | double | Risk-based score (0-100) | `25.0` | Stable |
+| `aitf.identity.authz.privilege_level` | string | Privilege level | `"standard"`, `"elevated"`, `"admin"` | Stable |
+| `aitf.identity.authz.jea` | boolean | Just-Enough-Access applied | `true` | Stable |
+| `aitf.identity.authz.time_limited` | boolean | Time-limited permission | `true` | Stable |
+
+### `aitf.identity.delegation.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.identity.delegation.delegator` | string | Agent delegating authority | `"agent-orchestrator"` | Stable |
+| `aitf.identity.delegation.delegator_id` | string | Delegator identity ID | `"agent-orch-001"` | Stable |
+| `aitf.identity.delegation.delegatee` | string | Agent receiving authority | `"agent-researcher"` | Stable |
+| `aitf.identity.delegation.delegatee_id` | string | Delegatee identity ID | `"agent-res-002"` | Stable |
+| `aitf.identity.delegation.type` | string | Delegation type | `"on_behalf_of"`, `"token_exchange"`, `"capability_grant"` | Stable |
+| `aitf.identity.delegation.chain` | string[] | Full delegation chain | `["user-alice","agent-orch","agent-res"]` | Stable |
+| `aitf.identity.delegation.chain_depth` | int | Delegation depth | `2` | Stable |
+| `aitf.identity.delegation.scope_delegated` | string[] | Scopes delegated | `["data:read"]` | Stable |
+| `aitf.identity.delegation.scope_attenuated` | boolean | Scope was reduced | `true` | Stable |
+| `aitf.identity.delegation.result` | string | Delegation result | `"success"`, `"failure"`, `"denied"` | Stable |
+| `aitf.identity.delegation.proof_type` | string | Proof type | `"dpop"`, `"mtls_binding"` | Stable |
+| `aitf.identity.delegation.ttl_seconds` | int | Delegation TTL | `300` | Stable |
+
+### `aitf.identity.trust.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.identity.trust.operation` | string | Trust operation | `"establish"`, `"verify"`, `"revoke_trust"` | Stable |
+| `aitf.identity.trust.peer_agent` | string | Peer agent name | `"agent-writer"` | Stable |
+| `aitf.identity.trust.peer_agent_id` | string | Peer agent ID | `"agent-wrt-003"` | Stable |
+| `aitf.identity.trust.result` | string | Trust result | `"established"`, `"failed"`, `"rejected"` | Stable |
+| `aitf.identity.trust.method` | string | Trust method | `"mtls"`, `"spiffe"`, `"did_vc"` | Stable |
+| `aitf.identity.trust.trust_domain` | string | Trust domain | `"spiffe://company.com"` | Stable |
+| `aitf.identity.trust.cross_domain` | boolean | Cross-domain operation | `false` | Stable |
+| `aitf.identity.trust.trust_level` | string | Trust level | `"basic"`, `"verified"`, `"high"`, `"full"` | Stable |
+| `aitf.identity.trust.protocol` | string | Trust protocol | `"mcp"`, `"a2a"`, `"custom"` | Stable |
+
+### `aitf.identity.session.*`
+
+| Attribute | Type | Description | Example | Status |
+|-----------|------|-------------|---------|--------|
+| `aitf.identity.session.id` | string | Identity session ID | `"isess-xyz789"` | Stable |
+| `aitf.identity.session.operation` | string | Session operation | `"create"`, `"refresh"`, `"terminate"` | Stable |
+| `aitf.identity.session.scope` | string[] | Active session scopes | `["tools:*","data:read"]` | Stable |
+| `aitf.identity.session.expires_at` | string | Session expiration | `"2026-02-16T11:00:00Z"` | Stable |
+| `aitf.identity.session.actions_count` | int | Actions in session | `42` | Stable |
+| `aitf.identity.session.delegations_count` | int | Delegations from session | `3` | Stable |
+| `aitf.identity.session.termination_reason` | string | Termination reason | `"completed"`, `"timeout"`, `"revoked"` | Stable |

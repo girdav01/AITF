@@ -180,6 +180,193 @@
         "aitf.rag.quality.context_relevance": { "type": "number", "minimum": 0, "maximum": 1 },
         "aitf.rag.quality.faithfulness": { "type": "number", "minimum": 0, "maximum": 1 }
       }
+    },
+    "model_ops_attributes": {
+      "type": "object",
+      "properties": {
+        "aitf.model_ops.training.run_id": { "type": "string" },
+        "aitf.model_ops.training.type": {
+          "type": "string",
+          "enum": ["pre_training", "fine_tuning", "rlhf", "dpo", "lora", "qlora", "distillation", "continued_pre_training"]
+        },
+        "aitf.model_ops.training.base_model": { "type": "string" },
+        "aitf.model_ops.training.framework": { "type": "string" },
+        "aitf.model_ops.training.dataset.id": { "type": "string" },
+        "aitf.model_ops.training.dataset.version": { "type": "string" },
+        "aitf.model_ops.training.dataset.size": { "type": "integer", "minimum": 0 },
+        "aitf.model_ops.training.hyperparameters": { "type": "string" },
+        "aitf.model_ops.training.epochs": { "type": "integer", "minimum": 1 },
+        "aitf.model_ops.training.loss_final": { "type": "number" },
+        "aitf.model_ops.training.val_loss_final": { "type": "number" },
+        "aitf.model_ops.training.compute.gpu_type": { "type": "string" },
+        "aitf.model_ops.training.compute.gpu_count": { "type": "integer", "minimum": 1 },
+        "aitf.model_ops.training.compute.gpu_hours": { "type": "number", "minimum": 0 },
+        "aitf.model_ops.training.output_model.id": { "type": "string" },
+        "aitf.model_ops.training.output_model.hash": { "type": "string" },
+        "aitf.model_ops.training.code_commit": { "type": "string" },
+        "aitf.model_ops.training.status": {
+          "type": "string",
+          "enum": ["running", "completed", "failed", "cancelled"]
+        },
+        "aitf.model_ops.evaluation.run_id": { "type": "string" },
+        "aitf.model_ops.evaluation.model_id": { "type": "string" },
+        "aitf.model_ops.evaluation.type": {
+          "type": "string",
+          "enum": ["benchmark", "llm_judge", "human_eval", "safety", "regression", "a_b_test", "red_team", "rag_eval"]
+        },
+        "aitf.model_ops.evaluation.pass": { "type": "boolean" },
+        "aitf.model_ops.evaluation.regression_detected": { "type": "boolean" },
+        "aitf.model_ops.evaluation.metrics": { "type": "string" },
+        "aitf.model_ops.registry.operation": {
+          "type": "string",
+          "enum": ["register", "promote", "demote", "archive", "rollback", "alias_set", "alias_remove", "delete"]
+        },
+        "aitf.model_ops.registry.model_id": { "type": "string" },
+        "aitf.model_ops.registry.stage": {
+          "type": "string",
+          "enum": ["experimental", "staging", "production", "archived"]
+        },
+        "aitf.model_ops.deployment.id": { "type": "string" },
+        "aitf.model_ops.deployment.model_id": { "type": "string" },
+        "aitf.model_ops.deployment.strategy": {
+          "type": "string",
+          "enum": ["rolling", "canary", "blue_green", "shadow", "a_b_test", "immediate"]
+        },
+        "aitf.model_ops.deployment.environment": { "type": "string" },
+        "aitf.model_ops.deployment.canary_percent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "aitf.model_ops.deployment.status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "completed", "failed", "rolled_back"]
+        },
+        "aitf.model_ops.serving.operation": {
+          "type": "string",
+          "enum": ["route", "fallback", "cache_lookup", "cache_store", "circuit_breaker", "load_balance", "rate_limit"]
+        },
+        "aitf.model_ops.serving.route.selected_model": { "type": "string" },
+        "aitf.model_ops.serving.fallback.trigger": {
+          "type": "string",
+          "enum": ["error", "timeout", "rate_limit", "circuit_breaker"]
+        },
+        "aitf.model_ops.serving.cache.hit": { "type": "boolean" },
+        "aitf.model_ops.serving.cache.type": {
+          "type": "string",
+          "enum": ["exact", "semantic", "hybrid"]
+        },
+        "aitf.model_ops.serving.circuit_breaker.state": {
+          "type": "string",
+          "enum": ["closed", "open", "half_open"]
+        },
+        "aitf.model_ops.monitoring.check_type": {
+          "type": "string",
+          "enum": ["data_drift", "prediction_drift", "concept_drift", "embedding_drift", "feature_drift", "performance_degradation", "latency_regression", "error_rate", "cost_anomaly", "throughput", "sla_compliance"]
+        },
+        "aitf.model_ops.monitoring.model_id": { "type": "string" },
+        "aitf.model_ops.monitoring.drift_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "aitf.model_ops.monitoring.drift_type": {
+          "type": "string",
+          "enum": ["data", "prediction", "concept", "embedding", "feature"]
+        },
+        "aitf.model_ops.monitoring.result": {
+          "type": "string",
+          "enum": ["normal", "warning", "alert", "critical"]
+        },
+        "aitf.model_ops.prompt.name": { "type": "string" },
+        "aitf.model_ops.prompt.operation": {
+          "type": "string",
+          "enum": ["create", "update", "promote", "rollback", "evaluate", "a_b_test_start", "a_b_test_end", "deprecate"]
+        },
+        "aitf.model_ops.prompt.version": { "type": "string" },
+        "aitf.model_ops.prompt.label": { "type": "string" }
+      }
+    },
+    "identity_attributes": {
+      "type": "object",
+      "properties": {
+        "aitf.identity.agent_id": { "type": "string" },
+        "aitf.identity.agent_name": { "type": "string" },
+        "aitf.identity.type": {
+          "type": "string",
+          "enum": ["persistent", "ephemeral", "delegated", "federated", "workload"]
+        },
+        "aitf.identity.provider": { "type": "string" },
+        "aitf.identity.owner": { "type": "string" },
+        "aitf.identity.owner_type": {
+          "type": "string",
+          "enum": ["human", "service", "organization"]
+        },
+        "aitf.identity.credential_type": {
+          "type": "string",
+          "enum": ["api_key", "oauth_token", "jwt", "mtls_cert", "spiffe_svid", "did"]
+        },
+        "aitf.identity.status": {
+          "type": "string",
+          "enum": ["active", "suspended", "revoked", "expired"]
+        },
+        "aitf.identity.scope": { "type": "array", "items": { "type": "string" } },
+        "aitf.identity.ttl_seconds": { "type": "integer", "minimum": 0 },
+        "aitf.identity.lifecycle.operation": {
+          "type": "string",
+          "enum": ["create", "register", "activate", "rotate", "suspend", "reactivate", "revoke", "expire", "update"]
+        },
+        "aitf.identity.auth.method": {
+          "type": "string",
+          "enum": ["api_key", "oauth2", "oauth2_pkce", "jwt_bearer", "mtls", "spiffe_svid", "did_vc", "http_signature", "token_exchange", "saml"]
+        },
+        "aitf.identity.auth.result": {
+          "type": "string",
+          "enum": ["success", "failure", "denied", "expired", "revoked"]
+        },
+        "aitf.identity.auth.scope_requested": { "type": "array", "items": { "type": "string" } },
+        "aitf.identity.auth.scope_granted": { "type": "array", "items": { "type": "string" } },
+        "aitf.identity.authz.decision": {
+          "type": "string",
+          "enum": ["allow", "deny", "conditional"]
+        },
+        "aitf.identity.authz.resource": { "type": "string" },
+        "aitf.identity.authz.action": { "type": "string" },
+        "aitf.identity.authz.policy_engine": {
+          "type": "string",
+          "enum": ["opa", "cedar", "casbin", "custom"]
+        },
+        "aitf.identity.authz.risk_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "aitf.identity.delegation.delegator": { "type": "string" },
+        "aitf.identity.delegation.delegatee": { "type": "string" },
+        "aitf.identity.delegation.type": {
+          "type": "string",
+          "enum": ["on_behalf_of", "token_exchange", "credential_forwarding", "impersonation", "capability_grant", "scoped_proxy"]
+        },
+        "aitf.identity.delegation.chain": { "type": "array", "items": { "type": "string" } },
+        "aitf.identity.delegation.chain_depth": { "type": "integer", "minimum": 0 },
+        "aitf.identity.delegation.scope_delegated": { "type": "array", "items": { "type": "string" } },
+        "aitf.identity.delegation.scope_attenuated": { "type": "boolean" },
+        "aitf.identity.delegation.result": {
+          "type": "string",
+          "enum": ["success", "failure", "denied", "expired"]
+        },
+        "aitf.identity.trust.operation": {
+          "type": "string",
+          "enum": ["establish", "verify", "present_credential", "verify_credential", "federation_join", "federation_leave", "boundary_cross", "revoke_trust"]
+        },
+        "aitf.identity.trust.peer_agent": { "type": "string" },
+        "aitf.identity.trust.result": {
+          "type": "string",
+          "enum": ["established", "failed", "rejected", "revoked"]
+        },
+        "aitf.identity.trust.method": {
+          "type": "string",
+          "enum": ["mtls", "spiffe", "did_vc", "http_signature", "pki"]
+        },
+        "aitf.identity.trust.trust_level": {
+          "type": "string",
+          "enum": ["none", "basic", "verified", "high", "full"]
+        },
+        "aitf.identity.trust.cross_domain": { "type": "boolean" },
+        "aitf.identity.session.id": { "type": "string" },
+        "aitf.identity.session.operation": {
+          "type": "string",
+          "enum": ["create", "refresh", "validate", "terminate", "timeout", "hijack_detected"]
+        }
+      }
     }
   }
 }
