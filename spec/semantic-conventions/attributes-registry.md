@@ -8,7 +8,7 @@ All tables use normative requirement levels per [RFC 2119](https://www.rfc-edito
 - **Recommended**: Implementations SHOULD populate this attribute when available.
 - **Optional**: Implementations MAY populate this attribute.
 
-The **Compliance** column maps each attribute to applicable frameworks: MITRE ATLAS, OWASP LLM Top 10, NIST AI RMF, EU AI Act. A dash (`—`) indicates no specific compliance mapping.
+The **Mapping** column maps each attribute to applicable frameworks: MITRE ATLAS, OWASP LLM Top 10, NIST AI RMF, EU AI Act. A dash (`—`) indicates no specific framework mapping.
 
 ---
 
@@ -16,15 +16,15 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `gen_ai.system`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `gen_ai.system` | string | **Required** | AI system provider | NIST AI RMF MAP-1.1 |
 | `gen_ai.operation.name` | string | **Required** | Operation being performed: `"chat"`, `"text_completion"`, `"embeddings"` | NIST AI RMF MAP-1.1 |
 
 ### `gen_ai.request.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `gen_ai.request.model` | string | **Required** | Model identifier | NIST AI RMF MAP-1.1, EU AI Act Art.13 |
 | `gen_ai.request.max_tokens` | int | **Recommended** | Max tokens to generate | NIST AI RMF MEASURE-2.5 |
 | `gen_ai.request.temperature` | double | **Recommended** | Sampling temperature | NIST AI RMF MEASURE-2.5 |
@@ -41,22 +41,22 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `gen_ai.system_prompt.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `gen_ai.system_prompt.hash` | string | **Recommended** | SHA-256 hash of system prompt (enables leak detection without storing content) | OWASP LLM07 (System Prompt Leakage), MITRE ATLAS [AML.T0051](https://atlas.mitre.org/techniques/AML.T0051) |
 
 ### `gen_ai.response.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `gen_ai.response.id` | string | **Recommended** | Provider response ID | NIST AI RMF GOVERN-1.2 |
 | `gen_ai.response.model` | string | **Recommended** | Actual model used (may differ from requested) | NIST AI RMF MAP-1.1, EU AI Act Art.13 |
 | `gen_ai.response.finish_reasons` | string[] | **Recommended** | Finish reasons: `"stop"`, `"tool_calls"`, `"length"` | NIST AI RMF MEASURE-2.5 |
 
 ### `gen_ai.usage.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `gen_ai.usage.input_tokens` | int | **Recommended** | Input/prompt token count | NIST AI RMF MEASURE-2.5 |
 | `gen_ai.usage.output_tokens` | int | **Recommended** | Output/completion token count | NIST AI RMF MEASURE-2.5 |
 | `gen_ai.usage.cached_tokens` | int | **Optional** | Cached/prefix token count | — |
@@ -64,8 +64,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `gen_ai.token.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `gen_ai.token.type` | string | **Optional** | Token type: `"input"`, `"output"` | — |
 
 ---
@@ -74,8 +74,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.agent.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.agent.name` | string | **Required** | Agent name | NIST AI RMF MAP-1.1 |
 | `aitf.agent.id` | string | **Required** | Unique agent instance ID | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
 | `aitf.agent.type` | string | **Recommended** | Agent type: `"conversational"`, `"autonomous"`, `"reactive"` | NIST AI RMF MAP-1.1 |
@@ -89,16 +89,16 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.agent.session.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.agent.session.id` | string | **Required** | Agent session ID | NIST AI RMF GOVERN-1.2 |
 | `aitf.agent.session.turn_count` | int | **Recommended** | Number of turns in session | NIST AI RMF MEASURE-2.5 |
 | `aitf.agent.session.start_time` | string | **Recommended** | Session start ISO 8601 timestamp | EU AI Act Art.12 |
 
 ### `aitf.agent.step.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.agent.step.type` | string | **Required** | Step type: `"planning"`, `"reasoning"`, `"tool_use"`, `"delegation"`, `"response"` | NIST AI RMF MAP-1.1 |
 | `aitf.agent.step.index` | int | **Required** | Step index in sequence | NIST AI RMF GOVERN-1.2 |
 | `aitf.agent.step.thought` | string | **Recommended** | Agent's reasoning/chain-of-thought | OWASP LLM01 (Prompt Injection) |
@@ -107,8 +107,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.agent.delegation.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.agent.delegation.target_agent` | string | **Required** | Delegated-to agent name | OWASP LLM06 (Excessive Agency) |
 | `aitf.agent.delegation.target_agent_id` | string | **Recommended** | Delegated-to agent ID | NIST AI RMF GOVERN-1.2 |
 | `aitf.agent.delegation.reason` | string | **Recommended** | Why delegation occurred | EU AI Act Art.13 (Transparency) |
@@ -116,8 +116,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.agent.team.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.agent.team.name` | string | **Required** | Team name | NIST AI RMF MAP-1.1 |
 | `aitf.agent.team.id` | string | **Recommended** | Team ID | NIST AI RMF GOVERN-1.2 |
 | `aitf.agent.team.topology` | string | **Recommended** | Team topology: `"hierarchical"`, `"peer"`, `"pipeline"`, `"consensus"` | NIST AI RMF MAP-1.1 |
@@ -130,8 +130,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.mcp.server.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.mcp.server.name` | string | **Required** | MCP server name | NIST AI RMF MAP-1.1 |
 | `aitf.mcp.server.version` | string | **Recommended** | MCP server version | NIST AI RMF MAP-1.1 |
 | `aitf.mcp.server.transport` | string | **Required** | Transport type: `"stdio"`, `"sse"`, `"streamable_http"` | MITRE ATLAS [AML.T0040](https://atlas.mitre.org/techniques/AML.T0040) |
@@ -141,8 +141,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.mcp.tool.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.mcp.tool.name` | string | **Required** | Tool name | OWASP LLM06 (Excessive Agency) |
 | `aitf.mcp.tool.server` | string | **Required** | Source MCP server | OWASP LLM06 (Excessive Agency) |
 | `aitf.mcp.tool.input` | string | **Recommended** | JSON input parameters | OWASP LLM06, MITRE ATLAS [AML.T0048](https://atlas.mitre.org/techniques/AML.T0048) |
@@ -155,8 +155,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.mcp.resource.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.mcp.resource.uri` | string | **Required** | Resource URI | MITRE ATLAS [AML.T0040](https://atlas.mitre.org/techniques/AML.T0040) |
 | `aitf.mcp.resource.name` | string | **Recommended** | Resource name | — |
 | `aitf.mcp.resource.mime_type` | string | **Recommended** | MIME type | — |
@@ -164,16 +164,16 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.mcp.prompt.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.mcp.prompt.name` | string | **Required** | Prompt template name | OWASP LLM01 (Prompt Injection) |
 | `aitf.mcp.prompt.arguments` | string | **Recommended** | JSON prompt arguments | OWASP LLM01 |
 | `aitf.mcp.prompt.description` | string | **Optional** | Prompt description | — |
 
 ### `aitf.mcp.sampling.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.mcp.sampling.model` | string | **Recommended** | Requested model for sampling | NIST AI RMF MAP-1.1 |
 | `aitf.mcp.sampling.max_tokens` | int | **Recommended** | Max tokens requested | NIST AI RMF MEASURE-2.5 |
 | `aitf.mcp.sampling.include_context` | string | **Optional** | Context inclusion: `"thisServer"`, `"allServers"` | — |
@@ -184,8 +184,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.skill.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.skill.name` | string | **Required** | Skill name | NIST AI RMF MAP-1.1 |
 | `aitf.skill.id` | string | **Required** | Unique skill ID | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
 | `aitf.skill.version` | string | **Recommended** | Skill version | NIST AI RMF MAP-1.1 |
@@ -208,8 +208,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.rag.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.rag.pipeline.name` | string | **Required** | Pipeline name | NIST AI RMF MAP-1.1 |
 | `aitf.rag.pipeline.stage` | string | **Required** | Current stage: `"retrieve"`, `"rerank"`, `"generate"`, `"evaluate"` | NIST AI RMF MAP-1.1 |
 | `aitf.rag.query` | string | **Recommended** | User query | OWASP LLM01 (Prompt Injection) |
@@ -218,8 +218,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.rag.retrieve.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.rag.retrieve.database` | string | **Required** | Vector database name | NIST AI RMF MAP-1.5 |
 | `aitf.rag.retrieve.index` | string | **Recommended** | Index/collection name | — |
 | `aitf.rag.retrieve.top_k` | int | **Recommended** | Number of results requested | NIST AI RMF MEASURE-2.5 |
@@ -230,8 +230,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.rag.doc.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.rag.doc.id` | string | **Recommended** | Document/chunk identifier | NIST AI RMF MAP-1.5, EU AI Act Art.12 |
 | `aitf.rag.doc.score` | double | **Recommended** | Similarity/relevance score (0.0–1.0) | OWASP LLM08 (Data Leakage), NIST AI RMF MEASURE-2.5 |
 | `aitf.rag.doc.provenance` | string | **Recommended** | Document source/origin URL or identifier | OWASP LLM09, EU AI Act Art.13 (Transparency) |
@@ -239,16 +239,16 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.rag.rerank.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.rag.rerank.model` | string | **Recommended** | Reranking model | NIST AI RMF MAP-1.1 |
 | `aitf.rag.rerank.input_count` | int | **Recommended** | Documents before rerank | NIST AI RMF MEASURE-2.5 |
 | `aitf.rag.rerank.output_count` | int | **Recommended** | Documents after rerank | NIST AI RMF MEASURE-2.5 |
 
 ### `aitf.rag.quality.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.rag.quality.context_relevance` | double | **Optional** | Context relevance score (0–1) | NIST AI RMF MEASURE-2.5 |
 | `aitf.rag.quality.answer_relevance` | double | **Optional** | Answer relevance score (0–1) | NIST AI RMF MEASURE-2.5 |
 | `aitf.rag.quality.faithfulness` | double | **Optional** | Answer faithfulness to context (0–1) | OWASP LLM03, NIST AI RMF MEASURE-2.5 |
@@ -260,8 +260,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.security.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.security.risk_score` | double | **Recommended** | Overall risk score (0–100) | NIST AI RMF MEASURE-2.5, MITRE ATLAS [AML.T0048](https://atlas.mitre.org/techniques/AML.T0048) |
 | `aitf.security.risk_level` | string | **Recommended** | Risk level: `"critical"`, `"high"`, `"medium"`, `"low"`, `"info"` | NIST AI RMF MEASURE-2.5 |
 | `aitf.security.threat_detected` | boolean | **Required** | Whether threat detected | OWASP LLM01–LLM10, MITRE ATLAS [AML.T0048](https://atlas.mitre.org/techniques/AML.T0048) |
@@ -273,8 +273,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.security.guardrail.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.security.guardrail.name` | string | **Required** | Guardrail name | NIST AI RMF GOVERN-1.2 |
 | `aitf.security.guardrail.type` | string | **Required** | Guardrail type: `"input"`, `"output"`, `"both"` | OWASP LLM01, OWASP LLM02 |
 | `aitf.security.guardrail.result` | string | **Required** | Guardrail result: `"pass"`, `"fail"`, `"warn"` | NIST AI RMF MEASURE-2.5 |
@@ -283,8 +283,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.security.pii.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.security.pii.detected` | boolean | **Required** | Whether PII found | OWASP LLM06, EU AI Act Art.10 |
 | `aitf.security.pii.types` | string[] | **Recommended** | Types of PII found: `"email"`, `"phone"`, `"ssn"` | OWASP LLM06, EU AI Act Art.10 |
 | `aitf.security.pii.count` | int | **Recommended** | Number of PII instances | NIST AI RMF MEASURE-2.5 |
@@ -296,8 +296,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.compliance.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.compliance.frameworks` | string[] | **Recommended** | Mapped compliance frameworks | NIST AI RMF GOVERN-1.2, EU AI Act Art.9 |
 | `aitf.compliance.nist_ai_rmf.controls` | string[] | **Optional** | NIST AI RMF controls | NIST AI RMF GOVERN-1.2 |
 | `aitf.compliance.mitre_atlas.techniques` | string[] | **Optional** | MITRE ATLAS techniques | MITRE ATLAS |
@@ -313,8 +313,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.cost.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.cost.input_cost` | double | **Recommended** | Cost for input tokens (USD) | NIST AI RMF MEASURE-2.5 |
 | `aitf.cost.output_cost` | double | **Recommended** | Cost for output tokens (USD) | NIST AI RMF MEASURE-2.5 |
 | `aitf.cost.total_cost` | double | **Recommended** | Total cost (USD) | NIST AI RMF MEASURE-2.5, OWASP LLM10 (Unbounded Consumption) |
@@ -334,8 +334,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.quality.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.quality.hallucination_score` | double | **Optional** | Hallucination score (0–1, lower = better) | OWASP LLM03, NIST AI RMF MEASURE-2.5 |
 | `aitf.quality.confidence` | double | **Optional** | Confidence score (0–1) | NIST AI RMF MEASURE-2.5 |
 | `aitf.quality.factuality` | double | **Optional** | Factual accuracy (0–1) | OWASP LLM03, NIST AI RMF MEASURE-2.5 |
@@ -351,8 +351,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.supply_chain.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.supply_chain.model.source` | string | **Recommended** | Model source: `"huggingface"`, `"openai"`, `"custom"` | MITRE ATLAS [AML.T0040](https://atlas.mitre.org/techniques/AML.T0040), NIST AI RMF MAP-1.5 |
 | `aitf.supply_chain.model.hash` | string | **Recommended** | Model file hash (SHA-256) | MITRE ATLAS [AML.T0040](https://atlas.mitre.org/techniques/AML.T0040), NIST AI RMF GOVERN-1.2 |
 | `aitf.supply_chain.model.license` | string | **Recommended** | Model license | EU AI Act Art.13 (Transparency) |
@@ -368,8 +368,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.memory.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.memory.operation` | string | **Required** | Memory operation: `"store"`, `"retrieve"`, `"update"`, `"delete"` | NIST AI RMF GOVERN-1.2 |
 | `aitf.memory.store` | string | **Recommended** | Memory store type: `"short_term"`, `"long_term"`, `"episodic"`, `"semantic"` | NIST AI RMF MAP-1.1 |
 | `aitf.memory.key` | string | **Recommended** | Memory key | NIST AI RMF GOVERN-1.2 |
@@ -383,8 +383,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.model_ops.training.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.model_ops.training.run_id` | string | **Required** | Training run identifier | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
 | `aitf.model_ops.training.type` | string | **Required** | Training type: `"fine_tuning"`, `"lora"`, `"rlhf"`, `"dpo"` | NIST AI RMF MAP-1.1 |
 | `aitf.model_ops.training.base_model` | string | **Required** | Base/foundation model | NIST AI RMF MAP-1.1, EU AI Act Art.13 |
@@ -410,8 +410,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.model_ops.evaluation.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.model_ops.evaluation.run_id` | string | **Required** | Evaluation run ID | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
 | `aitf.model_ops.evaluation.model_id` | string | **Required** | Model being evaluated | NIST AI RMF GOVERN-1.2 |
 | `aitf.model_ops.evaluation.type` | string | **Required** | Evaluation type: `"benchmark"`, `"llm_judge"`, `"safety"` | NIST AI RMF MEASURE-2.5 |
@@ -426,8 +426,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.model_ops.registry.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.model_ops.registry.operation` | string | **Required** | Registry operation: `"register"`, `"promote"`, `"rollback"` | NIST AI RMF GOVERN-1.2 |
 | `aitf.model_ops.registry.model_id` | string | **Required** | Model identifier | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
 | `aitf.model_ops.registry.model_version` | string | **Required** | Model version | NIST AI RMF GOVERN-1.2 |
@@ -440,8 +440,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.model_ops.deployment.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.model_ops.deployment.id` | string | **Required** | Deployment identifier | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
 | `aitf.model_ops.deployment.model_id` | string | **Required** | Model being deployed | NIST AI RMF GOVERN-1.2 |
 | `aitf.model_ops.deployment.strategy` | string | **Recommended** | Deployment strategy: `"canary"`, `"blue_green"`, `"rolling"` | NIST AI RMF GOVERN-1.2 |
@@ -457,8 +457,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.model_ops.serving.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.model_ops.serving.operation` | string | **Required** | Serving operation: `"route"`, `"fallback"`, `"cache_lookup"` | NIST AI RMF MAP-1.1 |
 | `aitf.model_ops.serving.route.selected_model` | string | **Recommended** | Model selected by router | NIST AI RMF MAP-1.1, EU AI Act Art.13 |
 | `aitf.model_ops.serving.route.reason` | string | **Recommended** | Routing reason: `"cost"`, `"capability"`, `"latency"` | EU AI Act Art.13 (Transparency) |
@@ -474,8 +474,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.model_ops.monitoring.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.model_ops.monitoring.check_type` | string | **Required** | Monitoring check type: `"data_drift"`, `"embedding_drift"` | NIST AI RMF MEASURE-2.5 |
 | `aitf.model_ops.monitoring.model_id` | string | **Required** | Monitored model | NIST AI RMF GOVERN-1.2 |
 | `aitf.model_ops.monitoring.result` | string | **Required** | Check result: `"normal"`, `"warning"`, `"alert"` | NIST AI RMF MEASURE-2.5 |
@@ -488,8 +488,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.model_ops.prompt.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.model_ops.prompt.name` | string | **Required** | Prompt template name | NIST AI RMF GOVERN-1.2 |
 | `aitf.model_ops.prompt.operation` | string | **Required** | Prompt operation: `"create"`, `"promote"`, `"rollback"` | NIST AI RMF GOVERN-1.2 |
 | `aitf.model_ops.prompt.version` | string | **Required** | Prompt version (SemVer) | NIST AI RMF GOVERN-1.2 |
@@ -507,8 +507,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.identity.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.identity.agent_id` | string | **Required** | Agent identity identifier | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
 | `aitf.identity.agent_name` | string | **Required** | Agent name | NIST AI RMF MAP-1.1 |
 | `aitf.identity.type` | string | **Required** | Identity type: `"persistent"`, `"ephemeral"`, `"delegated"`, `"workload"` | NIST AI RMF GOVERN-1.2 |
@@ -524,8 +524,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.identity.lifecycle.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.identity.lifecycle.operation` | string | **Required** | Lifecycle operation: `"create"`, `"rotate"`, `"revoke"`, `"suspend"` | NIST AI RMF GOVERN-1.2 |
 | `aitf.identity.previous_status` | string | **Recommended** | Previous identity status | NIST AI RMF GOVERN-1.2 |
 | `aitf.identity.auto_rotate` | boolean | **Optional** | Auto-rotation enabled | NIST AI RMF GOVERN-1.2 |
@@ -533,8 +533,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.identity.auth.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.identity.auth.method` | string | **Required** | Auth method: `"oauth2_pkce"`, `"spiffe_svid"`, `"mtls"`, `"jwt_bearer"` | MITRE ATLAS [AML.T0048](https://atlas.mitre.org/techniques/AML.T0048) |
 | `aitf.identity.auth.result` | string | **Required** | Auth result: `"success"`, `"failure"`, `"denied"`, `"expired"` | NIST AI RMF GOVERN-1.2 |
 | `aitf.identity.auth.provider` | string | **Recommended** | Auth provider service | NIST AI RMF MAP-1.5 |
@@ -549,8 +549,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.identity.authz.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.identity.authz.decision` | string | **Required** | Authorization decision: `"allow"`, `"deny"`, `"conditional"` | OWASP LLM06 (Excessive Agency), NIST AI RMF GOVERN-1.2 |
 | `aitf.identity.authz.resource` | string | **Required** | Resource accessed | OWASP LLM06 |
 | `aitf.identity.authz.action` | string | **Required** | Action performed: `"read"`, `"write"`, `"execute"` | OWASP LLM06 |
@@ -564,8 +564,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.identity.delegation.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.identity.delegation.delegator` | string | **Required** | Agent delegating authority | OWASP LLM06 (Excessive Agency), NIST AI RMF GOVERN-1.2 |
 | `aitf.identity.delegation.delegator_id` | string | **Required** | Delegator identity ID | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
 | `aitf.identity.delegation.delegatee` | string | **Required** | Agent receiving authority | OWASP LLM06, NIST AI RMF GOVERN-1.2 |
@@ -581,8 +581,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.identity.trust.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.identity.trust.operation` | string | **Required** | Trust operation: `"establish"`, `"verify"`, `"revoke_trust"` | NIST AI RMF GOVERN-1.2 |
 | `aitf.identity.trust.peer_agent` | string | **Required** | Peer agent name | OWASP LLM06 |
 | `aitf.identity.trust.peer_agent_id` | string | **Recommended** | Peer agent ID | NIST AI RMF GOVERN-1.2 |
@@ -595,8 +595,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.identity.session.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.identity.session.id` | string | **Required** | Identity session ID | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
 | `aitf.identity.session.operation` | string | **Required** | Session operation: `"create"`, `"refresh"`, `"terminate"` | NIST AI RMF GOVERN-1.2 |
 | `aitf.identity.session.scope` | string[] | **Recommended** | Active session scopes | OWASP LLM06 (Excessive Agency) |
@@ -611,8 +611,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.asset.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.asset.id` | string | **Required** | Unique asset identifier | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
 | `aitf.asset.name` | string | **Required** | Human-readable asset name | NIST AI RMF MAP-1.1 |
 | `aitf.asset.type` | string | **Required** | Asset type: `"model"`, `"dataset"`, `"prompt_template"`, `"vector_db"`, `"mcp_server"`, `"agent"`, `"pipeline"`, `"guardrail"` | NIST AI RMF MAP-1.1, EU AI Act Art.13 |
@@ -629,8 +629,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.asset.discovery.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.asset.discovery.scope` | string | **Required** | Discovery scope: `"cluster"`, `"namespace"`, `"environment"`, `"organization"` | NIST AI RMF MAP-1.5 |
 | `aitf.asset.discovery.method` | string | **Required** | Discovery method: `"api_scan"`, `"network_scan"`, `"registry_sync"`, `"log_analysis"` | NIST AI RMF MAP-1.5 |
 | `aitf.asset.discovery.assets_found` | int | **Recommended** | Total assets discovered | NIST AI RMF MAP-1.5 |
@@ -640,8 +640,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.asset.audit.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.asset.audit.type` | string | **Required** | Audit type: `"integrity"`, `"compliance"`, `"access_review"`, `"security"`, `"full"` | NIST AI RMF GOVERN-1.2, EU AI Act Art.9 |
 | `aitf.asset.audit.result` | string | **Required** | Audit result: `"pass"`, `"fail"`, `"warning"`, `"not_applicable"` | NIST AI RMF MEASURE-2.5, EU AI Act Art.9 |
 | `aitf.asset.audit.auditor` | string | **Recommended** | Auditor identity | NIST AI RMF GOVERN-1.2 |
@@ -655,8 +655,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.asset.classification.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.asset.classification.framework` | string | **Required** | Classification framework: `"eu_ai_act"`, `"nist_ai_rmf"`, `"internal"` | EU AI Act Art.6, NIST AI RMF MAP-1.1 |
 | `aitf.asset.classification.previous` | string | **Recommended** | Previous risk classification | EU AI Act Art.9 |
 | `aitf.asset.classification.reason` | string | **Recommended** | Classification reason | EU AI Act Art.13 (Transparency) |
@@ -669,8 +669,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.asset.decommission.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.asset.decommission.reason` | string | **Required** | Decommission reason: `"replaced"`, `"deprecated"`, `"security_risk"`, `"compliance"` | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
 | `aitf.asset.decommission.replacement_id` | string | **Recommended** | Replacement asset ID | NIST AI RMF GOVERN-1.2 |
 | `aitf.asset.decommission.data_retention` | string | **Recommended** | Data retention policy: `"purge"`, `"archive"`, `"retain"` | EU AI Act Art.12, NIST AI RMF GOVERN-1.2 |
@@ -682,8 +682,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.drift.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.drift.model_id` | string | **Required** | Model being monitored | NIST AI RMF GOVERN-1.2 |
 | `aitf.drift.type` | string | **Required** | Drift type: `"data_distribution"`, `"concept"`, `"performance"`, `"calibration"`, `"embedding"`, `"feature"` | NIST AI RMF MEASURE-2.5 |
 | `aitf.drift.score` | double | **Required** | Drift magnitude (0.0–1.0) | NIST AI RMF MEASURE-2.5 |
@@ -705,8 +705,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.drift.baseline.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.drift.baseline.operation` | string | **Required** | Baseline operation: `"create"`, `"refresh"`, `"validate"` | NIST AI RMF GOVERN-1.2 |
 | `aitf.drift.baseline.id` | string | **Required** | Baseline identifier | NIST AI RMF GOVERN-1.2 |
 | `aitf.drift.baseline.dataset` | string | **Recommended** | Baseline dataset | NIST AI RMF MAP-1.5 |
@@ -717,8 +717,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.drift.investigation.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.drift.investigation.trigger_id` | string | **Required** | Detection span that triggered investigation | NIST AI RMF GOVERN-1.2 |
 | `aitf.drift.investigation.root_cause` | string | **Recommended** | Identified root cause | NIST AI RMF MEASURE-2.5 |
 | `aitf.drift.investigation.root_cause_category` | string | **Recommended** | Root cause category: `"data_quality"`, `"upstream_change"`, `"seasonal"`, `"adversarial"` | NIST AI RMF MEASURE-2.5, MITRE ATLAS [AML.T0020](https://atlas.mitre.org/techniques/AML.T0020) |
@@ -730,8 +730,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.drift.remediation.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.drift.remediation.action` | string | **Required** | Remediation action: `"retrain"`, `"rollback"`, `"recalibrate"`, `"quarantine"` | NIST AI RMF MEASURE-2.5 |
 | `aitf.drift.remediation.trigger_id` | string | **Required** | Trigger span ID | NIST AI RMF GOVERN-1.2 |
 | `aitf.drift.remediation.automated` | boolean | **Recommended** | Automatically triggered | EU AI Act Art.14 (Human Oversight) |
@@ -747,8 +747,8 @@ The **Compliance** column maps each attribute to applicable frameworks: MITRE AT
 
 ### `aitf.memory.security.*`
 
-| Attribute | Type | Requirement | Description | Compliance |
-|-----------|------|-------------|-------------|------------|
+| Attribute | Type | Requirement | Description | Mapping |
+|-----------|------|-------------|-------------|---------|
 | `aitf.memory.security.content_hash` | string | **Recommended** | Content hash for tamper detection (SHA-256) | MITRE ATLAS [AML.T0020](https://atlas.mitre.org/techniques/AML.T0020), NIST AI RMF GOVERN-1.2 |
 | `aitf.memory.security.content_size` | int | **Optional** | Content size in bytes | — |
 | `aitf.memory.security.integrity_hash` | string | **Recommended** | Expected integrity hash | MITRE ATLAS [AML.T0020](https://atlas.mitre.org/techniques/AML.T0020) |
