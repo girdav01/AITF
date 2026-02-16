@@ -176,7 +176,8 @@
           "type": "object",
           "properties": {
             "controls": { "type": "array", "items": { "type": "string" } },
-            "domain": { "type": "string" }
+            "domain": { "type": "string" },
+            "domains": { "type": "array", "items": { "type": "string" }, "description": "List of AICM domain IDs covered by the mapped controls" }
           }
         }
       }

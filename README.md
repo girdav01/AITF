@@ -1,5 +1,9 @@
 # AITF - AI Telemetry Framework
 
+> **Version 0.1 — Proposal**
+> Proposed by David Girard (TrendAI) to [CoSAI](https://www.coalitionforsafeai.org/) WS2.
+> This is a proposal for discussion and feedback — not a final standard.
+
 **A comprehensive, security-first telemetry framework for AI systems built on OpenTelemetry and OCSF.**
 
 AITF extends OpenTelemetry's GenAI semantic conventions with first-class support for agentic AI, MCP (Model Context Protocol), Skills, multi-agent orchestration, and security/compliance telemetry — bridging the gap between AI observability and cybersecurity.
@@ -372,16 +376,25 @@ AITF extends OTel GenAI with additional namespaces:
 
 ## Compliance Frameworks
 
-AITF automatically maps telemetry events to eight regulatory frameworks:
+AITF automatically maps telemetry events to eight regulatory and security frameworks.
 
-- **NIST AI RMF** — Risk management controls
-- **MITRE ATLAS** — AI attack techniques
-- **ISO/IEC 42001** — AI management system
-- **EU AI Act** — European AI regulation
-- **SOC 2** — Service organization controls
-- **GDPR** — Data protection regulation
-- **CCPA** — California consumer privacy
-- **CSA AICM** — Cloud Security Alliance AI Controls Matrix (243 controls across 18 domains)
+### Framework Coverage
+
+| Framework | Version | AITF Mapped | Total Controls | Coverage |
+|-----------|---------|:-----------:|:--------------:|:--------:|
+| CSA AICM | v1.0.3 | 243 | 243 | **100.0%** |
+| EU AI Act | 2024 | 9 | 15 | **60.0%** |
+| GDPR | 2016/679 | 7 | 20 | **35.0%** |
+| CCPA | CPRA 2023 | 4 | 12 | **33.3%** |
+| ISO/IEC 42001 | 2023 | 12 | 39 | **30.8%** |
+| MITRE ATLAS | 2024 | 7 | 30 | **23.3%** |
+| NIST AI RMF | 1.0 | 16 | 72 | **22.2%** |
+| SOC 2 | TSC 2017 | 7 | 33 | **21.2%** |
+| **Total** | | **305** | **464** | **65.7%** |
+
+> For regulatory frameworks (EU AI Act, GDPR, CCPA), "Total Controls" reflects
+> AI-relevant operational provisions, not all articles in the regulation.
+> See [compliance-mapping.md](spec/ocsf-mapping/compliance-mapping.md) for detailed per-event-type mappings.
 
 ## Requirements Documents
 
