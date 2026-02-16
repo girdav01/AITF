@@ -1,9 +1,10 @@
 """AITF Gemini SDK Instrumentor.
 
-Wraps the ``google-generativeai`` Python SDK with AITF telemetry
-instrumentation. Monkey-patches ``GenerativeModel.generate_content()``,
-``generate_content_async()``, and ``count_tokens()`` to emit
-OpenTelemetry spans enriched with ``gen_ai.*`` and ``aitf.*`` attributes.
+Wraps the Google Gemini Python SDKs with AITF telemetry instrumentation.
+Supports both the new ``google-genai`` SDK (recommended) and the legacy
+``google-generativeai`` SDK. Monkey-patches content generation and token
+counting methods to emit OpenTelemetry spans enriched with ``gen_ai.*``
+and ``aitf.*`` attributes.
 
 Supported features:
     - Synchronous and asynchronous content generation
@@ -14,38 +15,43 @@ Supported features:
     - Google Search grounding metadata
     - Token usage and cost attribution
 
-Usage::
+SDK compatibility:
+    - **google-genai** (>=1.0, recommended): ``google.genai.Client``
+      with ``client.models.generate_content()`` and
+      ``client.aio.models.generate_content()``.
+    - **google-generativeai** (legacy): ``genai.GenerativeModel``
+      with ``model.generate_content()`` and
+      ``model.generate_content_async()``.
+
+Usage (new google-genai SDK)::
 
     from aitf.integrations.google_ai.gemini import GeminiInstrumentor
 
-    # Instrument the SDK (call once at application startup)
     instrumentor = GeminiInstrumentor()
     instrumentor.instrument()
 
-    # Use the SDK as normal -- telemetry is captured automatically
+    from google import genai
+    client = genai.Client(api_key="YOUR_API_KEY")
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents="Explain quantum computing",
+    )
+
+    instrumentor.uninstrument()
+
+Usage (legacy google-generativeai SDK)::
+
+    from aitf.integrations.google_ai.gemini import GeminiInstrumentor
+
+    instrumentor = GeminiInstrumentor()
+    instrumentor.instrument()
+
     import google.generativeai as genai
     genai.configure(api_key="YOUR_API_KEY")
     model = genai.GenerativeModel("gemini-2.0-flash")
-
-    # Synchronous generation
     response = model.generate_content("Explain quantum computing")
 
-    # Streaming
-    for chunk in model.generate_content("Write a poem", stream=True):
-        print(chunk.text, end="")
-
-    # Async generation
-    response = await model.generate_content_async("Translate to French: hello")
-
-    # Function calling
-    tools = [genai.protos.Tool(function_declarations=[...])]
-    model_with_tools = genai.GenerativeModel("gemini-2.0-flash", tools=tools)
-    response = model_with_tools.generate_content("What is the weather?")
-
-    # Token counting
-    count = model.count_tokens("How many tokens is this?")
-
-    # Remove instrumentation
     instrumentor.uninstrument()
 """
 
@@ -86,11 +92,12 @@ _GEMINI_FUNCTION_CALLS = "aitf.google.gemini.function_calls"
 
 
 class GeminiInstrumentor:
-    """Instrumentor for the ``google-generativeai`` Python SDK.
+    """Instrumentor for Google Gemini Python SDKs.
 
-    Wraps ``genai.GenerativeModel.generate_content()``,
-    ``generate_content_async()``, and ``count_tokens()`` to emit
-    OpenTelemetry spans with full ``gen_ai.*`` and ``aitf.*`` attributes.
+    Supports both the new ``google-genai`` SDK (recommended, uses
+    ``google.genai.Client``) and the legacy ``google-generativeai`` SDK
+    (uses ``genai.GenerativeModel``).  The instrumentor tries the new SDK
+    first and falls back to the legacy one.
 
     Args:
         tracer_provider: Optional custom ``TracerProvider``. When *None*,
@@ -101,7 +108,7 @@ class GeminiInstrumentor:
         instrumentor = GeminiInstrumentor()
         instrumentor.instrument()
 
-        # ... application code using google.generativeai ...
+        # ... application code using google.genai or google.generativeai ...
 
         instrumentor.uninstrument()
     """
@@ -110,62 +117,124 @@ class GeminiInstrumentor:
         self._tracer_provider = tracer_provider
         self._tracer: trace.Tracer | None = None
         self._instrumented = False
+        self._sdk_variant: str | None = None  # "google-genai" or "legacy"
 
-        # References to the original (un-patched) methods so we can restore
-        # them in ``uninstrument()``.
+        # Original methods to restore on uninstrument()
         self._original_generate_content: Callable | None = None
         self._original_generate_content_async: Callable | None = None
         self._original_count_tokens: Callable | None = None
+        # New SDK originals
+        self._original_genai_generate: Callable | None = None
+        self._original_genai_aio_generate: Callable | None = None
+        self._original_genai_count_tokens: Callable | None = None
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
     def instrument(self) -> None:
-        """Monkey-patch the Gemini SDK to emit AITF telemetry.
+        """Monkey-patch a Gemini SDK to emit AITF telemetry.
+
+        Tries ``google-genai`` (new SDK) first. If not installed, falls
+        back to ``google-generativeai`` (legacy SDK).
 
         This method is idempotent -- calling it multiple times has no
         additional effect.
 
         Raises:
-            ImportError: If ``google-generativeai`` is not installed.
+            ImportError: If neither Gemini SDK is installed.
         """
         if self._instrumented:
             logger.debug("GeminiInstrumentor is already active; skipping.")
             return
 
-        try:
-            import google.generativeai as genai  # noqa: F811
-        except ImportError as exc:
-            raise ImportError(
-                "The google-generativeai package is required for Gemini "
-                "instrumentation. Install it with: "
-                "pip install google-generativeai"
-            ) from exc
-
         tp = self._tracer_provider or trace.get_tracer_provider()
         self._tracer = tp.get_tracer(_TRACER_NAME)
 
+        # Try new google-genai SDK first (recommended)
+        try:
+            self._instrument_new_sdk()
+            self._sdk_variant = "google-genai"
+            self._instrumented = True
+            logger.info(
+                "GeminiInstrumentor activated (google-genai SDK)."
+            )
+            return
+        except ImportError:
+            pass
+
+        # Fall back to legacy google-generativeai SDK
+        try:
+            self._instrument_legacy_sdk()
+            self._sdk_variant = "legacy"
+            self._instrumented = True
+            logger.info(
+                "GeminiInstrumentor activated (legacy google-generativeai SDK)."
+            )
+            return
+        except ImportError:
+            pass
+
+        raise ImportError(
+            "A Google Gemini SDK is required. Install one of:\n"
+            "  pip install google-genai          # recommended\n"
+            "  pip install google-generativeai   # legacy"
+        )
+
+    def _instrument_new_sdk(self) -> None:
+        """Patch the new ``google-genai`` SDK (``google.genai.Client``)."""
+        from google.genai import models as genai_models
+
+        # Patch Models.generate_content (sync)
+        self._original_genai_generate = genai_models.Models.generate_content
+        genai_models.Models.generate_content = self._wrap_generate_content(
+            self._original_genai_generate,
+        )
+
+        # Patch AsyncModels.generate_content (async)
+        from google.genai import models as _m
+        if hasattr(_m, "AsyncModels"):
+            self._original_genai_aio_generate = (
+                _m.AsyncModels.generate_content
+            )
+            _m.AsyncModels.generate_content = (
+                self._wrap_generate_content_async(
+                    self._original_genai_aio_generate,
+                )
+            )
+
+        # Patch count_tokens
+        if hasattr(genai_models.Models, "count_tokens"):
+            self._original_genai_count_tokens = (
+                genai_models.Models.count_tokens
+            )
+            genai_models.Models.count_tokens = self._wrap_count_tokens(
+                self._original_genai_count_tokens,
+            )
+
+    def _instrument_legacy_sdk(self) -> None:
+        """Patch the legacy ``google-generativeai`` SDK."""
+        import google.generativeai as genai
+
         model_cls = genai.GenerativeModel
 
-        # Store originals
         self._original_generate_content = model_cls.generate_content
-        self._original_generate_content_async = model_cls.generate_content_async
+        self._original_generate_content_async = (
+            model_cls.generate_content_async
+        )
         self._original_count_tokens = model_cls.count_tokens
 
-        # Patch
         model_cls.generate_content = self._wrap_generate_content(
             self._original_generate_content,
         )
-        model_cls.generate_content_async = self._wrap_generate_content_async(
-            self._original_generate_content_async,
+        model_cls.generate_content_async = (
+            self._wrap_generate_content_async(
+                self._original_generate_content_async,
+            )
         )
         model_cls.count_tokens = self._wrap_count_tokens(
             self._original_count_tokens,
         )
-
-        self._instrumented = True
-        logger.info("GeminiInstrumentor activated.")
 
     def uninstrument(self) -> None:
         """Remove all monkey-patches and restore original SDK behaviour.
@@ -175,10 +244,46 @@ class GeminiInstrumentor:
         if not self._instrumented:
             return
 
+        if self._sdk_variant == "google-genai":
+            self._uninstrument_new_sdk()
+        elif self._sdk_variant == "legacy":
+            self._uninstrument_legacy_sdk()
+
+        self._tracer = None
+        self._instrumented = False
+        self._sdk_variant = None
+        logger.info("GeminiInstrumentor deactivated.")
+
+    def _uninstrument_new_sdk(self) -> None:
+        """Restore the new google-genai SDK."""
         try:
-            import google.generativeai as genai  # noqa: F811
+            from google.genai import models as genai_models
         except ImportError:
-            self._instrumented = False
+            return
+
+        if self._original_genai_generate is not None:
+            genai_models.Models.generate_content = (
+                self._original_genai_generate
+            )
+        if self._original_genai_aio_generate is not None:
+            if hasattr(genai_models, "AsyncModels"):
+                genai_models.AsyncModels.generate_content = (
+                    self._original_genai_aio_generate
+                )
+        if self._original_genai_count_tokens is not None:
+            genai_models.Models.count_tokens = (
+                self._original_genai_count_tokens
+            )
+
+        self._original_genai_generate = None
+        self._original_genai_aio_generate = None
+        self._original_genai_count_tokens = None
+
+    def _uninstrument_legacy_sdk(self) -> None:
+        """Restore the legacy google-generativeai SDK."""
+        try:
+            import google.generativeai as genai
+        except ImportError:
             return
 
         model_cls = genai.GenerativeModel
@@ -186,16 +291,15 @@ class GeminiInstrumentor:
         if self._original_generate_content is not None:
             model_cls.generate_content = self._original_generate_content
         if self._original_generate_content_async is not None:
-            model_cls.generate_content_async = self._original_generate_content_async
+            model_cls.generate_content_async = (
+                self._original_generate_content_async
+            )
         if self._original_count_tokens is not None:
             model_cls.count_tokens = self._original_count_tokens
 
         self._original_generate_content = None
         self._original_generate_content_async = None
         self._original_count_tokens = None
-        self._tracer = None
-        self._instrumented = False
-        logger.info("GeminiInstrumentor deactivated.")
 
     @property
     def is_instrumented(self) -> bool:

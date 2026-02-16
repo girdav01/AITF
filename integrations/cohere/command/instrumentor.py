@@ -1,20 +1,31 @@
 """AITF Cohere Command Instrumentor.
 
-Wraps ``cohere.Client().chat()`` and ``cohere.Client().generate()`` with
-OpenTelemetry tracing using AITF semantic conventions. Supports streaming,
-tool use, RAG with connectors, and citation tracking.
+Wraps Cohere SDK chat and generation methods with OpenTelemetry tracing
+using AITF semantic conventions. Supports both the v2 SDK
+(``cohere.ClientV2``, recommended) and the v1 SDK (``cohere.Client``).
 
-Usage::
+Supports streaming, tool use, RAG with connectors, and citation tracking.
 
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import SimpleSpanProcessor, ConsoleSpanExporter
-
-    provider = TracerProvider()
-    provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
+Usage (v2 SDK -- recommended)::
 
     from integrations.cohere.command import CohereCommandInstrumentor
 
-    instrumentor = CohereCommandInstrumentor(tracer_provider=provider)
+    instrumentor = CohereCommandInstrumentor()
+    instrumentor.instrument()
+
+    import cohere
+    client = cohere.ClientV2(api_key="...")
+
+    response = client.chat(
+        model="command-r-plus-08-2024",
+        messages=[{"role": "user", "content": "Explain quantum computing"}],
+    )
+
+Usage (v1 SDK -- legacy)::
+
+    from integrations.cohere.command import CohereCommandInstrumentor
+
+    instrumentor = CohereCommandInstrumentor()
     instrumentor.instrument()
 
     import cohere
@@ -86,26 +97,48 @@ _COHERE_IS_SEARCH_REQUIRED = "aitf.cohere.is_search_required"
 class CohereCommandInstrumentor:
     """Auto-instrumentor for the Cohere Command API.
 
-    Monkey-patches ``cohere.Client.chat``, ``cohere.Client.chat_stream``,
-    and ``cohere.Client.generate`` to emit OpenTelemetry spans with AITF
-    semantic conventions for every invocation.
+    Supports both the Cohere v2 SDK (``cohere.ClientV2``, recommended)
+    and the v1 SDK (``cohere.Client``). The instrumentor patches whichever
+    classes are available.
+
+    v2 SDK methods patched:
+      - ``cohere.ClientV2.chat``
+      - ``cohere.ClientV2.chat_stream``
+
+    v1 SDK methods patched (legacy):
+      - ``cohere.Client.chat``
+      - ``cohere.Client.chat_stream``
+      - ``cohere.Client.generate``
 
     Args:
         tracer_provider: Optional OpenTelemetry TracerProvider. If not
             provided, the global TracerProvider is used.
 
-    Example::
+    Example (v2 SDK -- recommended)::
+
+        instrumentor = CohereCommandInstrumentor()
+        instrumentor.instrument()
+
+        import cohere
+        co = cohere.ClientV2(api_key="YOUR_KEY")
+
+        # This call is now traced automatically
+        response = co.chat(
+            model="command-r-plus-08-2024",
+            messages=[{"role": "user", "content": "Hello"}],
+        )
+
+        instrumentor.uninstrument()
+
+    Example (v1 SDK -- legacy)::
 
         instrumentor = CohereCommandInstrumentor()
         instrumentor.instrument()
 
         import cohere
         co = cohere.Client(api_key="YOUR_KEY")
-
-        # This call is now traced automatically
         response = co.chat(model="command-r-plus", message="Hello")
 
-        # Uninstrument when done
         instrumentor.uninstrument()
     """
 
@@ -116,6 +149,9 @@ class CohereCommandInstrumentor:
         self._original_chat: Any = None
         self._original_chat_stream: Any = None
         self._original_generate: Any = None
+        # v2 SDK originals
+        self._original_v2_chat: Any = None
+        self._original_v2_chat_stream: Any = None
 
     @property
     def is_instrumented(self) -> bool:
@@ -123,12 +159,10 @@ class CohereCommandInstrumentor:
         return self._instrumented
 
     def instrument(self) -> None:
-        """Enable instrumentation by patching ``cohere.Client`` methods.
+        """Enable instrumentation by patching Cohere client methods.
 
-        This method patches:
-          - ``cohere.Client.chat``
-          - ``cohere.Client.chat_stream``
-          - ``cohere.Client.generate``
+        Patches ``cohere.ClientV2`` (v2 SDK) if available, and always
+        patches ``cohere.Client`` (v1 SDK) for backward compatibility.
 
         Raises:
             ImportError: If the ``cohere`` package is not installed.
@@ -148,11 +182,6 @@ class CohereCommandInstrumentor:
         tp = self._tracer_provider or trace.get_tracer_provider()
         self._tracer = tp.get_tracer(_TRACER_NAME)
 
-        # Preserve original methods
-        self._original_chat = cohere.Client.chat
-        self._original_chat_stream = getattr(cohere.Client, "chat_stream", None)
-        self._original_generate = cohere.Client.generate
-
         instrumentor = self
 
         def _instrumented_chat(client_self: Any, *args: Any, **kwargs: Any) -> Any:
@@ -164,6 +193,22 @@ class CohereCommandInstrumentor:
         def _instrumented_generate(client_self: Any, *args: Any, **kwargs: Any) -> Any:
             return instrumentor._trace_generate(client_self, args, kwargs)
 
+        # Patch v2 SDK (ClientV2) if available -- this is the recommended SDK
+        if hasattr(cohere, "ClientV2"):
+            self._original_v2_chat = cohere.ClientV2.chat
+            self._original_v2_chat_stream = getattr(
+                cohere.ClientV2, "chat_stream", None
+            )
+            cohere.ClientV2.chat = _instrumented_chat
+            if self._original_v2_chat_stream is not None:
+                cohere.ClientV2.chat_stream = _instrumented_chat_stream
+            logger.info("Patched cohere.ClientV2 (v2 SDK).")
+
+        # Patch v1 SDK (Client) for backward compatibility
+        self._original_chat = cohere.Client.chat
+        self._original_chat_stream = getattr(cohere.Client, "chat_stream", None)
+        self._original_generate = cohere.Client.generate
+
         cohere.Client.chat = _instrumented_chat
         if self._original_chat_stream is not None:
             cohere.Client.chat_stream = _instrumented_chat_stream
@@ -173,7 +218,7 @@ class CohereCommandInstrumentor:
         logger.info("CohereCommandInstrumentor instrumentation enabled.")
 
     def uninstrument(self) -> None:
-        """Remove instrumentation and restore original ``cohere.Client`` methods."""
+        """Remove instrumentation and restore original Cohere client methods."""
         if not self._instrumented:
             logger.warning("CohereCommandInstrumentor is not currently instrumented.")
             return
@@ -183,6 +228,14 @@ class CohereCommandInstrumentor:
         except ImportError:
             return
 
+        # Restore v2 SDK
+        if hasattr(cohere, "ClientV2"):
+            if self._original_v2_chat is not None:
+                cohere.ClientV2.chat = self._original_v2_chat
+            if self._original_v2_chat_stream is not None:
+                cohere.ClientV2.chat_stream = self._original_v2_chat_stream
+
+        # Restore v1 SDK
         if self._original_chat is not None:
             cohere.Client.chat = self._original_chat
         if self._original_chat_stream is not None:
@@ -190,6 +243,8 @@ class CohereCommandInstrumentor:
         if self._original_generate is not None:
             cohere.Client.generate = self._original_generate
 
+        self._original_v2_chat = None
+        self._original_v2_chat_stream = None
         self._original_chat = None
         self._original_chat_stream = None
         self._original_generate = None

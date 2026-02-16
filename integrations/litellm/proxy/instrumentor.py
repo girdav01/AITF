@@ -454,7 +454,7 @@ class LiteLLMProxyInstrumentor:
     def _patch_budget_manager(self) -> None:
         """Patch budget-related hooks for budget enforcement tracing."""
         try:
-            import litellm.proxy.hooks.budget_alerts as budget_module
+            import litellm.proxy.hooks.max_budget_limiter as budget_module
 
             if hasattr(budget_module, "_PROXY_MaxBudgetLimiter"):
                 cls = budget_module._PROXY_MaxBudgetLimiter
@@ -471,7 +471,7 @@ class LiteLLMProxyInstrumentor:
     def _patch_rate_limiter(self) -> None:
         """Patch rate-limiting hooks for throttling tracing."""
         try:
-            import litellm.proxy.hooks.max_budget_limiter as limiter_module
+            import litellm.proxy.hooks.parallel_request_limiter as limiter_module
 
             if hasattr(limiter_module, "_PROXY_MaxParallelRequestsHandler"):
                 cls = limiter_module._PROXY_MaxParallelRequestsHandler
