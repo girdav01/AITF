@@ -5,6 +5,7 @@ Extends OpenTelemetry GenAI semantic conventions with AITF-specific namespaces.
 """
 
 from aitf.semantic_conventions.attributes import (
+    AIBOMAttributes,
     AgentAttributes,
     ComplianceAttributes,
     CostAttributes,
@@ -31,6 +32,7 @@ __all__ = [
     "CostAttributes",
     "QualityAttributes",
     "SupplyChainAttributes",
+    "AIBOMAttributes",
     "MemoryAttributes",
     "AITFMetrics",
     "AITFResource",
