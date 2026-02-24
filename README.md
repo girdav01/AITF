@@ -457,7 +457,6 @@ AITF automatically maps telemetry events to eight regulatory and security framew
 - **C++ SDK** — High-performance SDK for edge AI and embedded inference systems
 - **OpenTelemetry Collector Processor** — Native AITF processor plugin for the OTel Collector
 - **Kubernetes Operator** — Auto-instrument AI workloads in K8s clusters
-- **AI-BOM Generator** — Automated AI Bill of Materials from telemetry data
 - **Real-time Threat Dashboard** — Pre-built Grafana dashboards for AI security operations
 
 ## Based On
