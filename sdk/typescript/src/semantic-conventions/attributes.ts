@@ -1068,3 +1068,66 @@ export const ACPAttributes = {
     STREAM: "stream",
   },
 } as const;
+
+/**
+ * AITF Agentic Log semantic convention attributes.
+ *
+ * Based on Table 10.1: Agentic log with minimum fields.
+ * These attributes capture the essential security-relevant context
+ * for every action taken by an AI agent.
+ */
+export const AgenticLogAttributes = {
+  /** EventID: A unique identifier for the specific log entry */
+  EVENT_ID: "aitf.agentic_log.event_id",
+
+  /** Timestamp: ISO 8601 formatted timestamp with millisecond precision */
+  TIMESTAMP: "aitf.agentic_log.timestamp",
+
+  /** AgentID: The unique, cryptographically verifiable identity of the agent */
+  AGENT_ID: "aitf.agentic_log.agent_id",
+
+  /** SessionID: A unique ID for the agent's current operational session */
+  SESSION_ID: "aitf.agentic_log.session_id",
+
+  /** GoalID: An identifier for the high-level goal the agent is pursuing */
+  GOAL_ID: "aitf.agentic_log.goal_id",
+
+  /** SubTaskID: The specific, immediate task the agent is performing */
+  SUB_TASK_ID: "aitf.agentic_log.sub_task_id",
+
+  /** ToolUsed: The specific tool, function, or API being invoked */
+  TOOL_USED: "aitf.agentic_log.tool_used",
+
+  /** ToolParameters: Sanitized log of parameters (PII/credentials redacted) */
+  TOOL_PARAMETERS: "aitf.agentic_log.tool_parameters",
+
+  /** Outcome: The result of the action (success, failure, error code) */
+  OUTCOME: "aitf.agentic_log.outcome",
+
+  /** ConfidenceScore: Agent's assessment of how likely the action succeeds */
+  CONFIDENCE_SCORE: "aitf.agentic_log.confidence_score",
+
+  /** AnomalyScore: Score indicating how unusual this action is */
+  ANOMALY_SCORE: "aitf.agentic_log.anomaly_score",
+
+  /** PolicyEvaluation: Record of a check against a security policy engine */
+  POLICY_EVALUATION: "aitf.agentic_log.policy_evaluation",
+
+  /** Outcome values */
+  Outcome: {
+    SUCCESS: "SUCCESS",
+    FAILURE: "FAILURE",
+    ERROR: "ERROR",
+    DENIED: "DENIED",
+    TIMEOUT: "TIMEOUT",
+    PARTIAL: "PARTIAL",
+  },
+
+  /** Policy evaluation result values */
+  PolicyResult: {
+    PASS: "PASS",
+    FAIL: "FAIL",
+    WARN: "WARN",
+    SKIP: "SKIP",
+  },
+} as const;

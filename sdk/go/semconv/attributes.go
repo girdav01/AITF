@@ -817,3 +817,61 @@ const (
 	ACPRunModeAsync = "async"
 	ACPRunModeStream = "stream"
 )
+
+// --- AITF Agentic Log Attributes (Table 10.1 minimal fields) ---
+
+const (
+	// EventID: A unique identifier for the specific log entry
+	AgenticLogEventIDKey = attribute.Key("aitf.agentic_log.event_id")
+
+	// Timestamp: ISO 8601 formatted timestamp with millisecond precision
+	AgenticLogTimestampKey = attribute.Key("aitf.agentic_log.timestamp")
+
+	// AgentID: The unique, cryptographically verifiable identity of the agent
+	AgenticLogAgentIDKey = attribute.Key("aitf.agentic_log.agent_id")
+
+	// SessionID: A unique ID for the agent's current operational session
+	AgenticLogSessionIDKey = attribute.Key("aitf.agentic_log.session_id")
+
+	// GoalID: An identifier for the high-level goal the agent is pursuing
+	AgenticLogGoalIDKey = attribute.Key("aitf.agentic_log.goal_id")
+
+	// SubTaskID: The specific, immediate task the agent is performing
+	AgenticLogSubTaskIDKey = attribute.Key("aitf.agentic_log.sub_task_id")
+
+	// ToolUsed: The specific tool, function, or API being invoked
+	AgenticLogToolUsedKey = attribute.Key("aitf.agentic_log.tool_used")
+
+	// ToolParameters: Sanitized log of parameters (PII/credentials redacted)
+	AgenticLogToolParametersKey = attribute.Key("aitf.agentic_log.tool_parameters")
+
+	// Outcome: The result of the action (success, failure, error code)
+	AgenticLogOutcomeKey = attribute.Key("aitf.agentic_log.outcome")
+
+	// ConfidenceScore: Agent's own assessment of how likely the action succeeds
+	AgenticLogConfidenceScoreKey = attribute.Key("aitf.agentic_log.confidence_score")
+
+	// AnomalyScore: Score indicating how unusual this action is
+	AgenticLogAnomalyScoreKey = attribute.Key("aitf.agentic_log.anomaly_score")
+
+	// PolicyEvaluation: Record of a check against a security policy engine
+	AgenticLogPolicyEvaluationKey = attribute.Key("aitf.agentic_log.policy_evaluation")
+)
+
+// Agentic log outcome values.
+const (
+	AgenticLogOutcomeSuccess = "SUCCESS"
+	AgenticLogOutcomeFailure = "FAILURE"
+	AgenticLogOutcomeError   = "ERROR"
+	AgenticLogOutcomeDenied  = "DENIED"
+	AgenticLogOutcomeTimeout = "TIMEOUT"
+	AgenticLogOutcomePartial = "PARTIAL"
+)
+
+// Agentic log policy evaluation result values.
+const (
+	AgenticLogPolicyPass = "PASS"
+	AgenticLogPolicyFail = "FAIL"
+	AgenticLogPolicyWarn = "WARN"
+	AgenticLogPolicySkip = "SKIP"
+)

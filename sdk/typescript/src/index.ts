@@ -26,6 +26,7 @@ export {
   AssetInventoryAttributes,
   DriftDetectionAttributes,
   MemorySecurityAttributes,
+  AgenticLogAttributes,
 } from "./semantic-conventions/attributes";
 
 export { AITFMetrics } from "./semantic-conventions/metrics";
@@ -134,6 +135,12 @@ export {
   type TraceClassifyOptions,
   type TraceDecommissionOptions,
 } from "./instrumentation/asset-inventory";
+
+export {
+  AgenticLogInstrumentor,
+  AgenticLogEntry,
+  type AgenticLogOptions,
+} from "./instrumentation/agentic-log";
 
 // Processors
 export {
