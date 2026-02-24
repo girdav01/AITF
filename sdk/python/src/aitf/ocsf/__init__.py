@@ -28,6 +28,7 @@ from aitf.ocsf.event_classes import (
 )
 from aitf.ocsf.mapper import OCSFMapper
 from aitf.ocsf.compliance_mapper import ComplianceMapper
+from aitf.ocsf.vendor_mapper import VendorMapper, VendorMapping
 
 __all__ = [
     "OCSFMetadata",
@@ -48,4 +49,6 @@ __all__ = [
     "AIIdentityEvent",
     "OCSFMapper",
     "ComplianceMapper",
+    "VendorMapper",
+    "VendorMapping",
 ]

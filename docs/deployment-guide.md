@@ -54,7 +54,8 @@ A comprehensive guide for deploying the AI Telemetry Framework (AITF) in product
    - [Example 10: AI-BOM Generation](#example-10-ai-bom-generation)
 12. [Environment Configuration](#environment-configuration)
 13. [Log Rotation and Storage](#log-rotation-and-storage)
-14. [Troubleshooting](#troubleshooting)
+14. [Vendor Mapping (Agentic Framework Integration)](#vendor-mapping-agentic-framework-integration)
+15. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -3095,6 +3096,172 @@ volumes:
 | OCSF JSON | ~2 KB | ~2 MB/day | ~200 MB/day |
 | Immutable (with hash chain) | ~2.5 KB | ~2.5 MB/day | ~250 MB/day |
 | CEF syslog | ~500 B | ~500 KB/day | ~50 MB/day |
+
+---
+
+## Vendor Mapping (Agentic Framework Integration)
+
+AITF includes a **vendor mapping** system that lets agentic framework vendors supply declarative JSON mapping files. These files translate vendor-native telemetry attributes into AITF semantic conventions, so spans from LangChain, CrewAI, or any other framework flow through the standard OCSF pipeline without custom code.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Agentic Framework                         │
+│  (LangChain, CrewAI, AutoGen, etc.)                        │
+│                                                             │
+│  Emits OTel spans with vendor-native attributes             │
+│  e.g. crewai.agent.role, ls_provider, litellm.model         │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  VendorMapper                                               │
+│                                                             │
+│  1. Classify span → event type (inference/agent/tool/...)   │
+│  2. Translate vendor attrs → AITF semantic conventions      │
+│  3. Apply defaults, detect provider from model prefix       │
+│                                                             │
+│  Driven by JSON mapping files (no code changes needed)      │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────┐
+│  OCSFMapper → ComplianceMapper → Exporters                  │
+│                                                             │
+│  Standard AITF pipeline: OCSF events, compliance            │
+│  enrichment, and export to SIEM / audit / files             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Built-in Vendor Mappings
+
+| Vendor | File | Event Types | Version |
+|--------|------|-------------|---------|
+| LangChain | `langchain.json` | inference, agent, tool, retrieval, chain | 0.3 |
+| CrewAI | `crewai.json` | inference, agent, tool, delegation | 0.100 |
+
+### Usage
+
+```python
+from aitf.ocsf.vendor_mapper import VendorMapper
+from aitf.ocsf.mapper import OCSFMapper
+from aitf.ocsf.compliance_mapper import ComplianceMapper
+
+# Load all built-in vendor mappings
+vendor_mapper = VendorMapper()
+
+# Or load specific vendors only
+vendor_mapper = VendorMapper(vendors=["langchain"])
+
+# Normalize a vendor span
+result = vendor_mapper.normalize_span(span)
+if result:
+    vendor, event_type, aitf_attrs = result
+    # aitf_attrs now uses standard AITF keys like gen_ai.request.model,
+    # aitf.agent.name, etc. — ready for OCSFMapper
+```
+
+### Loading Custom Vendor Mappings
+
+Vendors or teams can create their own mapping files and load them at runtime:
+
+```python
+# Load from a custom directory
+vendor_mapper = VendorMapper(extra_dirs=[Path("/etc/aitf/vendor_mappings")])
+
+# Or load a single file
+vendor_mapper.load_file("/path/to/custom_vendor.json")
+```
+
+### JSON Mapping File Structure
+
+Each vendor mapping file follows this schema:
+
+```json
+{
+  "vendor": "my-framework",
+  "version": "1.0",
+  "description": "Maps My Framework telemetry to AITF conventions",
+  "homepage": "https://my-framework.dev/docs/telemetry",
+
+  "span_name_patterns": {
+    "inference": ["^MyFramework\\.LLM"],
+    "agent": ["^MyFramework\\.Agent"],
+    "tool": ["^MyFramework\\.Tool"]
+  },
+
+  "attribute_mappings": {
+    "inference": {
+      "vendor_to_aitf": {
+        "myframework.model": "gen_ai.request.model",
+        "myframework.provider": "gen_ai.system",
+        "myframework.tokens.in": "gen_ai.usage.input_tokens",
+        "myframework.tokens.out": "gen_ai.usage.output_tokens"
+      },
+      "ocsf_class_uid": 7001,
+      "ocsf_activity_id_map": {
+        "chat": 1,
+        "embeddings": 3,
+        "default": 1
+      },
+      "defaults": {
+        "gen_ai.operation.name": "chat"
+      }
+    }
+  },
+
+  "provider_detection": {
+    "attribute_keys": ["myframework.provider"],
+    "model_prefix_to_provider": {
+      "gpt-": "openai",
+      "claude-": "anthropic"
+    }
+  },
+
+  "severity_mapping": {
+    "myframework.status": {
+      "success": 1,
+      "error": 4
+    }
+  },
+
+  "metadata": {
+    "ocsf_product": {
+      "name": "My Framework",
+      "vendor_name": "My Company",
+      "version": "1.0"
+    }
+  }
+}
+```
+
+### Full Pipeline Example
+
+```python
+from aitf.ocsf import VendorMapper, OCSFMapper, ComplianceMapper
+
+vendor_mapper = VendorMapper()
+ocsf_mapper = OCSFMapper()
+compliance_mapper = ComplianceMapper(frameworks=["nist_ai_rmf", "eu_ai_act"])
+
+# In your SpanProcessor.on_end():
+def process_span(span):
+    # Step 1: Vendor normalization
+    result = vendor_mapper.normalize_span(span)
+    if result:
+        vendor, event_type, aitf_attrs = result
+
+        # Step 2: Map to OCSF (create a normalized span or use attrs directly)
+        ocsf_event = ocsf_mapper.map_span(normalized_span)
+
+        # Step 3: Compliance enrichment
+        if ocsf_event:
+            enriched = compliance_mapper.enrich_event(ocsf_event, event_type)
+            export_to_siem(enriched.model_dump(exclude_none=True))
+```
+
+For a complete working example, see `examples/vendor_mapping_tracing.py`.
 
 ---
 
