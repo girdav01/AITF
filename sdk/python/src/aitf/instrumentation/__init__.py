@@ -14,6 +14,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from aitf.instrumentation.a2a import A2AInstrumentor
 from aitf.instrumentation.acp import ACPInstrumentor
 from aitf.instrumentation.agent import AgentInstrumentor
+from aitf.instrumentation.agentic_log import AgenticLogInstrumentor
 from aitf.instrumentation.asset_inventory import AssetInventoryInstrumentor
 from aitf.instrumentation.drift_detection import DriftDetectionInstrumentor
 from aitf.instrumentation.identity import IdentityInstrumentor
@@ -48,6 +49,7 @@ class AITFInstrumentor:
         self._drift_detection = DriftDetectionInstrumentor(tracer_provider=tracer_provider)
         self._a2a = A2AInstrumentor(tracer_provider=tracer_provider)
         self._acp = ACPInstrumentor(tracer_provider=tracer_provider)
+        self._agentic_log = AgenticLogInstrumentor(tracer_provider=tracer_provider)
         self._instrumented = False
 
     def instrument_all(self) -> None:
@@ -63,6 +65,7 @@ class AITFInstrumentor:
         self._drift_detection.instrument()
         self._a2a.instrument()
         self._acp.instrument()
+        self._agentic_log.instrument()
         self._instrumented = True
 
     def instrument(
@@ -78,6 +81,7 @@ class AITFInstrumentor:
         drift_detection: bool = False,
         a2a: bool = False,
         acp: bool = False,
+        agentic_log: bool = False,
     ) -> None:
         """Selectively instrument AI components."""
         if llm:
@@ -102,6 +106,8 @@ class AITFInstrumentor:
             self._a2a.instrument()
         if acp:
             self._acp.instrument()
+        if agentic_log:
+            self._agentic_log.instrument()
         self._instrumented = True
 
     def uninstrument_all(self) -> None:
@@ -117,6 +123,7 @@ class AITFInstrumentor:
         self._drift_detection.uninstrument()
         self._a2a.uninstrument()
         self._acp.uninstrument()
+        self._agentic_log.uninstrument()
         self._instrumented = False
 
     @property
@@ -167,6 +174,10 @@ class AITFInstrumentor:
     def acp(self) -> ACPInstrumentor:
         return self._acp
 
+    @property
+    def agentic_log(self) -> AgenticLogInstrumentor:
+        return self._agentic_log
+
 
 __all__ = [
     "AITFInstrumentor",
@@ -181,4 +192,5 @@ __all__ = [
     "DriftDetectionInstrumentor",
     "A2AInstrumentor",
     "ACPInstrumentor",
+    "AgenticLogInstrumentor",
 ]
