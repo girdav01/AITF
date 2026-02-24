@@ -25,7 +25,14 @@ A comprehensive guide for deploying the AI Telemetry Framework (AITF) in product
    - [CostProcessor (Token Cost Tracking)](#costprocessor)
    - [MemoryStateProcessor (Agent Memory Monitoring)](#memorystateprocessor)
 8. [Compliance Frameworks](#compliance-frameworks)
-9. [Data Formats and Transports](#data-formats-and-transports)
+9. [Deployment Architectures](#deployment-architectures)
+   - [Single-Service Direct Export](#single-service-direct-export)
+   - [Multi-Service with OTel Collector](#multi-service-with-otel-collector)
+   - [Kubernetes / Container Orchestration](#kubernetes--container-orchestration)
+   - [Air-Gapped / Offline](#air-gapped--offline)
+   - [Multi-Cloud / Hybrid Cloud](#multi-cloud--hybrid-cloud)
+   - [Edge / On-Device](#edge--on-device)
+10. [Data Formats and Transports](#data-formats-and-transports)
    - [Format Comparison: OCSF vs CEF vs OTLP](#format-comparison-ocsf-vs-cef-vs-otlp)
    - [Transport Protocols](#transport-protocols)
    - [OCSF Native (JSON)](#ocsf-native-json)
@@ -34,7 +41,7 @@ A comprehensive guide for deploying the AI Telemetry Framework (AITF) in product
    - [Format and Transport Decision Matrix](#format-and-transport-decision-matrix)
    - [OpenTelemetry Collector Integration](#opentelemetry-collector-integration)
    - [Hybrid Deployments](#hybrid-deployments)
-10. [Deployment Examples](#deployment-examples)
+11. [Deployment Examples](#deployment-examples)
    - [Example 1: Minimal LLM Monitoring](#example-1-minimal-llm-monitoring)
    - [Example 2: Agent + MCP with SIEM Forwarding](#example-2-agent--mcp-with-siem-forwarding)
    - [Example 3: RAG Pipeline with PII Redaction](#example-3-rag-pipeline-with-pii-redaction)
@@ -45,9 +52,9 @@ A comprehensive guide for deploying the AI Telemetry Framework (AITF) in product
    - [Example 8: Immutable Audit Trail with Verification](#example-8-immutable-audit-trail-with-verification)
    - [Example 9: CEF Syslog to QRadar / Splunk / ArcSight](#example-9-cef-syslog-to-qradar--splunk--arcsight)
    - [Example 10: AI-BOM Generation](#example-10-ai-bom-generation)
-11. [Environment Configuration](#environment-configuration)
-12. [Log Rotation and Storage](#log-rotation-and-storage)
-13. [Troubleshooting](#troubleshooting)
+12. [Environment Configuration](#environment-configuration)
+13. [Log Rotation and Storage](#log-rotation-and-storage)
+14. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -606,6 +613,344 @@ OCSFExporter(
 
 ---
 
+## Deployment Architectures
+
+Six reference architectures for deploying AITF at different scales and constraints.
+
+### Single-Service Direct Export
+
+The simplest topology — one application exports directly to destinations. No intermediary infrastructure required.
+
+```
+┌───────────────────────────────────────────────────────────────┐
+│                    Single AI Service                           │
+│                                                               │
+│    ┌──────────┐  ┌──────────┐  ┌──────────┐                  │
+│    │   LLM    │  │  Agent   │  │   RAG    │  Instrumentors   │
+│    └────┬─────┘  └────┬─────┘  └────┬─────┘                  │
+│         └──────────────┼────────────┘                         │
+│                        │                                      │
+│   ┌────────────┐ TracerProvider ┌────────────┐                │
+│   │  Security  │       │        │    PII     │ Processors     │
+│   │ Processor  │───────┼────────│ Processor  │                │
+│   └────────────┘       │        └────────────┘                │
+│                        │                                      │
+│         ┌──────────────┼──────────────┐                       │
+│         │              │              │                        │
+│    ┌────┴────┐  ┌──────┴─────┐  ┌─────┴──────┐               │
+│    │  OCSF   │  │ Immutable  │  │CEF Syslog  │  Exporters    │
+│    │Exporter │  │Log Exporter│  │ Exporter   │               │
+│    └────┬────┘  └──────┬─────┘  └─────┬──────┘               │
+└─────────┼──────────────┼──────────────┼───────────────────────┘
+          │              │              │
+      HTTPS/File    Append-only     TCP+TLS
+          │           File              │
+          ▼              ▼              ▼
+  ┌──────────────┐ ┌──────────┐ ┌──────────────┐
+  │  SIEM / S3   │ │  Audit   │ │  QRadar /    │
+  │  / JSONL     │ │  Trail   │ │  ArcSight    │
+  └──────────────┘ └──────────┘ └──────────────┘
+```
+
+**Best for:** Single applications, microservices, startups, proof-of-concept.
+
+**Pros:** No infrastructure overhead, simple configuration, immediate results.
+
+**Cons:** Each service manages its own connections, no centralized buffering.
+
+### Multi-Service with OTel Collector
+
+Route telemetry from multiple services through an OpenTelemetry Collector for centralized processing, buffering, and fan-out.
+
+```
+ ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
+ │ Service A│  │ Service B│  │ Service C│  │ Service D│
+ │  (LLM    │  │ (Agent   │  │  (RAG    │  │ (ModelOps│
+ │   API)   │  │  Engine) │  │ Pipeline)│  │  Infra)  │
+ │          │  │          │  │          │  │          │
+ │ AITF SDK │  │ AITF SDK │  │ AITF SDK │  │ AITF SDK │
+ │ + OTLP   │  │ + OTLP   │  │ + OTLP   │  │ + OTLP   │
+ │ Exporter │  │ Exporter │  │ Exporter │  │ Exporter │
+ └─────┬────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘
+       │             │             │              │
+       │    OTLP     │    OTLP     │     OTLP     │
+       │   gRPC      │   gRPC      │    gRPC      │
+       │  :4317      │  :4317      │   :4317      │
+       └─────────────┴──────┬──────┴──────────────┘
+                            │
+                            ▼
+              ┌──────────────────────────┐
+              │    OpenTelemetry         │
+              │      Collector           │
+              │                          │
+              │  ┌────────────────────┐  │
+              │  │ Receivers:         │  │
+              │  │   otlp (gRPC/HTTP) │  │
+              │  └────────┬───────────┘  │
+              │           │              │
+              │  ┌────────┴───────────┐  │
+              │  │ Processors:        │  │
+              │  │   batch            │  │
+              │  │   memory_limiter   │  │
+              │  │   filter           │  │
+              │  └────────┬───────────┘  │
+              │           │              │
+              │  ┌────────┴───────────┐  │
+              │  │ Exporters:         │  │
+              │  │   otlp → Jaeger    │  │
+              │  │   file → JSONL     │  │
+              │  │   otlphttp → SIEM  │  │
+              │  └────────────────────┘  │
+              └──────────┬──┬──┬─────────┘
+                         │  │  │
+            ┌────────────┘  │  └────────────┐
+            │               │               │
+            ▼               ▼               ▼
+     ┌──────────┐    ┌──────────┐    ┌──────────┐
+     │  Jaeger  │    │   JSONL  │    │   SIEM   │
+     │  Tempo   │    │  → S3    │    │ (HTTPS)  │
+     │  (Trace  │    │          │    │          │
+     │   View)  │    │          │    │          │
+     └──────────┘    └──────────┘    └──────────┘
+      ENGINEERING      STORAGE        SECURITY
+```
+
+**Best for:** Microservices, multi-team organizations, medium-to-large scale.
+
+**Pros:** Centralized management, buffering/retry, single point of configuration for destinations.
+
+**Cons:** Additional infrastructure (Collector), single point of failure (mitigate with HA).
+
+**Tip:** Each service can also export OCSF directly alongside OTLP for belt-and-suspenders redundancy.
+
+### Kubernetes / Container Orchestration
+
+Deploy AITF with a DaemonSet or sidecar Collector pattern in Kubernetes.
+
+```
+┌─── Kubernetes Cluster ──────────────────────────────────────────────┐
+│                                                                      │
+│  ┌─── Node 1 ─────────────────────┐  ┌─── Node 2 ──────────────┐   │
+│  │                                 │  │                          │   │
+│  │ ┌─────────┐  ┌─────────┐       │  │ ┌─────────┐             │   │
+│  │ │ Pod:    │  │ Pod:    │       │  │ │ Pod:    │             │   │
+│  │ │ LLM API │  │ Agent   │       │  │ │ RAG Svc │             │   │
+│  │ │ +AITF   │  │ Engine  │       │  │ │ +AITF   │             │   │
+│  │ │ SDK     │  │ +AITF   │       │  │ │ SDK     │             │   │
+│  │ └────┬────┘  └────┬────┘       │  │ └────┬────┘             │   │
+│  │      │  OTLP      │  OTLP      │  │      │  OTLP            │   │
+│  │      └──────┬─────┘            │  │      │                  │   │
+│  │             ▼                   │  │      ▼                  │   │
+│  │ ┌───────────────────────┐       │  │ ┌──────────────────┐    │   │
+│  │ │ DaemonSet: OTel       │       │  │ │ DaemonSet: OTel  │    │   │
+│  │ │ Collector (per node)  │       │  │ │ Collector        │    │   │
+│  │ └───────────┬───────────┘       │  │ └────────┬─────────┘    │   │
+│  └─────────────┼───────────────────┘  └──────────┼──────────────┘   │
+│                │                                  │                  │
+│                └──────────┬───────────────────────┘                  │
+│                           │  OTLP                                    │
+│                           ▼                                          │
+│             ┌─────────────────────────────┐                          │
+│             │ Deployment: OTel Collector  │                          │
+│             │ Gateway (centralized)       │                          │
+│             │                             │                          │
+│             │ + batch + memory_limiter    │                          │
+│             │ + aitf-ocsf-processor       │                          │
+│             └──────────┬──┬───────────────┘                          │
+│                        │  │                                          │
+│  ┌─── Persistent ──┐   │  │                                          │
+│  │ Volume:         │   │  │                                          │
+│  │ /var/log/aitf/  │◄──┘  │                                          │
+│  │ immutable_audit │      │                                          │
+│  │ .jsonl          │      │                                          │
+│  └─────────────────┘      │                                          │
+└───────────────────────────┼──────────────────────────────────────────┘
+                            │
+                   HTTPS / TCP+TLS
+                            │
+               ┌────────────┴────────────┐
+               ▼                         ▼
+       ┌──────────────┐          ┌──────────────┐
+       │   Cloud SIEM │          │   Grafana    │
+       │ (AWS SecLake │          │   Tempo /    │
+       │  / Splunk)   │          │   Jaeger     │
+       └──────────────┘          └──────────────┘
+         SECURITY                  ENGINEERING
+```
+
+**Best for:** Cloud-native deployments, container-based AI platforms.
+
+**Pros:** Auto-scaling, node-level collection, Kubernetes-native health checks.
+
+**Cons:** Higher infrastructure complexity, requires Collector Helm chart.
+
+### Air-Gapped / Offline
+
+For environments with no external network access — all telemetry stays local.
+
+```
+┌─── Air-Gapped Environment (no internet) ──────────────────────────┐
+│                                                                    │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐               │
+│  │  AI Service │  │  AI Service │  │  AI Service │               │
+│  │     (A)     │  │     (B)     │  │     (C)     │               │
+│  │  AITF SDK   │  │  AITF SDK   │  │  AITF SDK   │               │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘               │
+│         │                │                │                       │
+│    File I/O         File I/O         File I/O                     │
+│   (JSONL)           (JSONL)          (JSONL)                      │
+│         │                │                │                       │
+│         ▼                ▼                ▼                       │
+│  ┌─────────────────────────────────────────────────┐              │
+│  │           Shared NFS / CIFS Mount               │              │
+│  │                                                 │              │
+│  │  /mnt/aitf/                                     │              │
+│  │  ├── service-a/ocsf_events.jsonl                │              │
+│  │  ├── service-b/ocsf_events.jsonl                │              │
+│  │  ├── service-c/ocsf_events.jsonl                │              │
+│  │  └── audit/immutable_audit.jsonl (hash-chained) │              │
+│  └──────────────────────┬──────────────────────────┘              │
+│                         │                                         │
+│              ┌──────────┴──────────┐                              │
+│              │                     │                              │
+│              ▼                     ▼                              │
+│  ┌───────────────────┐  ┌───────────────────┐                    │
+│  │  On-Premises SIEM │  │  Audit Verifier   │                    │
+│  │  (file ingestion) │  │  (cron job)       │                    │
+│  │                   │  │                   │                    │
+│  │  Splunk UF reads  │  │  ImmutableLog     │                    │
+│  │  JSONL files      │  │  Verifier.verify()│                    │
+│  └───────────────────┘  └───────────────────┘                    │
+│                                                                   │
+│  Optional: periodic sneakernet                                    │
+│  ┌─────────────────────────┐                                      │
+│  │  USB / external drive   │    ┌──────────────────────────┐      │
+│  │  export for off-site    │───►│ Off-site archive /       │      │
+│  │  compliance archive     │    │ compliance data room     │      │
+│  └─────────────────────────┘    └──────────────────────────┘      │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+**Best for:** Government, defense, classified environments, SCIF deployments.
+
+**Pros:** No network dependency, complete data sovereignty, works with immutable log verification.
+
+**Cons:** No real-time SIEM alerting (batch only), manual export for off-site archive.
+
+### Multi-Cloud / Hybrid Cloud
+
+Deploy across AWS, Azure, and GCP with region-specific exporters.
+
+```
+┌─── AWS (us-east-1) ──────────┐  ┌─── Azure (westeurope) ────────┐
+│                               │  │                                │
+│  ┌──────────┐  ┌──────────┐  │  │  ┌──────────┐  ┌──────────┐   │
+│  │ ECS Task │  │ Lambda   │  │  │  │  AKS Pod │  │  ACA     │   │
+│  │ LLM API  │  │ Agent    │  │  │  │  RAG Svc │  │  Service │   │
+│  │ +AITF    │  │ +AITF    │  │  │  │  +AITF   │  │  +AITF   │   │
+│  └─────┬────┘  └────┬─────┘  │  │  └────┬─────┘  └────┬─────┘   │
+│        └──────┬─────┘        │  │       └──────┬──────┘          │
+│               │              │  │              │                 │
+│               ▼              │  │              ▼                 │
+│  ┌──────────────────────┐    │  │  ┌──────────────────────┐      │
+│  │ OCSF → AWS Security  │    │  │  │ OCSF → Azure        │      │
+│  │         Lake         │    │  │  │   Sentinel (OCSF)   │      │
+│  │                      │    │  │  │                      │      │
+│  │ Immutable Log → S3   │    │  │  │ Immutable Log →     │      │
+│  │ (Glacier, Object     │    │  │  │ Azure Immutable Blob│      │
+│  │  Lock)               │    │  │  │ Storage             │      │
+│  └──────────────────────┘    │  │  └──────────────────────┘      │
+│                               │  │                                │
+│  CEF → on-prem SIEM ─────────┼──┼──── CEF → on-prem SIEM ───┐   │
+└───────────────────────────────┘  └────────────────────────────┘   │
+                                                                    │
+  ┌─── GCP (europe-west1) ─────┐                                    │
+  │                             │                                    │
+  │  ┌──────────┐               │                                    │
+  │  │ GKE Pod  │               │                                    │
+  │  │ ModelOps │               │                                    │
+  │  │ +AITF    │               │                                    │
+  │  └─────┬────┘               │                                    │
+  │        │                    │                                    │
+  │        ▼                    │                                    │
+  │  ┌──────────────────────┐   │                                    │
+  │  │ OCSF → Chronicle     │   │                                    │
+  │  │ OTLP → Cloud Trace   │   │                                    │
+  │  │                      │   │                                    │
+  │  │ CEF → on-prem SIEM ──┼───┼────────────────────────────────────┘
+  │  └──────────────────────┘   │            │
+  └─────────────────────────────┘            ▼
+                                    ┌──────────────────┐
+                                    │   Centralized    │
+                                    │   On-Prem SIEM   │
+                                    │   (ArcSight /    │
+                                    │    QRadar)       │
+                                    │                  │
+                                    │   Aggregated     │
+                                    │   CEF from all   │
+                                    │   clouds         │
+                                    └──────────────────┘
+```
+
+**Best for:** Enterprises with multi-cloud workloads, data residency requirements (EU AI Act).
+
+**Pros:** Per-region compliance (GDPR data stays in EU), cloud-native SIEM per provider, unified view via CEF.
+
+**Cons:** Multiple configurations to maintain, cross-cloud networking complexity.
+
+### Edge / On-Device
+
+Lightweight AITF deployment for edge AI inference (IoT, mobile, embedded).
+
+```
+┌─── Edge Device (Raspberry Pi / Jetson / Mobile) ─────────────────┐
+│                                                                   │
+│  ┌────────────────────────────────────────────┐                   │
+│  │           Local AI Model                   │                   │
+│  │         (Ollama / llama.cpp)               │                   │
+│  └──────────────────┬─────────────────────────┘                   │
+│                     │                                             │
+│  ┌──────────────────┴─────────────────────────┐                   │
+│  │        AITF SDK (lightweight)              │                   │
+│  │                                            │                   │
+│  │  instrument(llm=True)                      │                   │
+│  │                                            │                   │
+│  │  ┌──────────────┐  ┌────────────────────┐  │                   │
+│  │  │ OCSF File    │  │ Immutable Log      │  │                   │
+│  │  │ Exporter     │  │ Exporter           │  │                   │
+│  │  │ (local JSONL)│  │ (local audit)      │  │                   │
+│  │  └──────┬───────┘  └────────┬───────────┘  │                   │
+│  └─────────┼───────────────────┼──────────────┘                   │
+│            │                   │                                  │
+│            ▼                   ▼                                  │
+│  ┌──────────────┐  ┌──────────────────┐                           │
+│  │ /data/aitf/  │  │ /data/aitf/      │                           │
+│  │ events.jsonl │  │ audit.jsonl      │                           │
+│  └──────┬───────┘  └────────┬─────────┘                           │
+└─────────┼──────────────────┼──────────────────────────────────────┘
+          │                  │
+          └────────┬─────────┘
+                   │
+            When connected:
+            batch upload via
+            HTTPS or sync
+                   │
+                   ▼
+          ┌──────────────────┐
+          │  Cloud SIEM /    │
+          │  Central OCSF    │
+          │  Aggregator      │
+          └──────────────────┘
+```
+
+**Best for:** IoT AI, on-device inference, intermittent connectivity, edge inference appliances.
+
+**Pros:** No network required for local audit, batch sync when connected, minimal resource usage.
+
+**Cons:** Delayed visibility (not real-time), local storage constraints.
+
+---
+
 ## Data Formats and Transports
 
 AITF produces telemetry in multiple formats and delivers it over multiple transports. This section explains when and why to use each combination.
@@ -1025,6 +1370,39 @@ Most production environments use multiple formats simultaneously. Here are commo
 
 Use OCSF for security/compliance teams and OTLP for engineering/observability teams.
 
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        AI Application + AITF SDK                     │
+│                                                                      │
+│   ┌────────────┐  ┌────────────┐  ┌────────────┐                    │
+│   │   LLM      │  │   Agent    │  │   MCP      │                    │
+│   │ Instrumentor│  │ Instrumentor│  │ Instrumentor│                    │
+│   └──────┬─────┘  └──────┬─────┘  └──────┬─────┘                    │
+│          └───────────────┼───────────────┘                           │
+│                          │                                           │
+│                   TracerProvider                                      │
+│                          │                                           │
+│          ┌───────────────┼──────────────────┐                        │
+│          │               │                  │                        │
+│   ┌──────┴─────┐  ┌──────┴─────┐  ┌────────┴───────┐                │
+│   │   OTLP     │  │   OCSF     │  │  Immutable Log │                │
+│   │  Exporter  │  │  Exporter  │  │   Exporter     │                │
+│   └──────┬─────┘  └──────┬─────┘  └────────┬───────┘                │
+└──────────┼───────────────┼─────────────────┼────────────────────────┘
+           │               │                 │
+     gRPC/HTTP        HTTPS POST        Append-only
+     (OTLP)           (JSON)            File I/O
+           │               │                 │
+           ▼               ▼                 ▼
+    ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+    │   Grafana    │ │ AWS Security │ │ /var/log/aitf│
+    │   Tempo /    │ │    Lake /    │ │ /audit.jsonl │
+    │   Jaeger     │ │ Splunk OCSF  │ │  (SHA-256    │
+    │              │ │              │ │   chained)   │
+    │  ENGINEERING │ │   SECURITY   │ │  COMPLIANCE  │
+    └──────────────┘ └──────────────┘ └──────────────┘
+```
+
 ```python
 provider = TracerProvider()
 
@@ -1055,6 +1433,35 @@ provider.add_span_processor(BatchSpanProcessor(
 
 Route to both legacy (CEF) and modern (OCSF) SIEMs during migration.
 
+```
+┌─────────────────────────────────────────────────────┐
+│              AI Application + AITF SDK               │
+│                                                      │
+│                   TracerProvider                      │
+│                        │                             │
+│            ┌───────────┴───────────┐                 │
+│            │                       │                 │
+│     ┌──────┴──────┐       ┌───────┴──────┐          │
+│     │ CEF Syslog  │       │     OCSF     │          │
+│     │  Exporter   │       │   Exporter   │          │
+│     └──────┬──────┘       └───────┬──────┘          │
+└────────────┼──────────────────────┼─────────────────┘
+             │                      │
+      TCP + TLS               HTTPS POST
+      (CEF 0)                 (OCSF JSON)
+      port 6514               /api/v2/ingest
+             │                      │
+             ▼                      ▼
+      ┌──────────────┐      ┌──────────────┐
+      │              │      │              │
+      │   QRadar /   │      │ AWS Security │
+      │  ArcSight /  │      │    Lake /    │
+      │  LogRhythm   │      │   Splunk     │
+      │              │      │    OCSF      │
+      │ LEGACY SIEM  │      │ MODERN SIEM  │
+      └──────────────┘      └──────────────┘
+```
+
 ```python
 provider = TracerProvider()
 
@@ -1081,6 +1488,41 @@ provider.add_span_processor(BatchSpanProcessor(
 **Pattern C: Full Stack (OTLP + OCSF + CEF + Immutable Log)**
 
 Maximum coverage for large enterprises.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                         AI Application + AITF SDK                            │
+│                                                                              │
+│                          TracerProvider                                       │
+│                               │                                              │
+│        ┌──────────────────────┼──────────────────────┐                       │
+│        │                      │                      │                       │
+│  ┌─────┴──────┐    ┌─────────┴─────────┐    ┌───────┴───────┐               │
+│  │  Security  │    │      PII          │    │     Cost      │ Processors    │
+│  │  Processor │    │    Processor      │    │   Processor   │               │
+│  └─────┬──────┘    └─────────┬─────────┘    └───────┬───────┘               │
+│        └──────────────────────┼──────────────────────┘                       │
+│                               │                                              │
+│     ┌─────────┬───────────────┼───────────────┬──────────┐                   │
+│     │         │               │               │          │                   │
+│  ┌──┴───┐ ┌──┴──────┐ ┌──────┴─────┐ ┌───────┴──┐ ┌─────┴─────┐            │
+│  │ OTLP │ │  OCSF   │ │ CEF Syslog │ │Immutable │ │OCSF File  │ Exporters  │
+│  │Export │ │HTTP Exp │ │  Exporter  │ │Log Export│ │ Exporter  │            │
+│  └──┬───┘ └──┬──────┘ └──────┬─────┘ └───────┬──┘ └─────┬─────┘            │
+└─────┼────────┼───────────────┼───────────────┼──────────┼───────────────────┘
+      │        │               │               │          │
+  gRPC/HTTP  HTTPS         TCP+TLS        File I/O    File I/O
+   (OTLP)   (JSON)        (CEF 0)       (SHA-256)    (JSONL)
+      │        │               │               │          │
+      ▼        ▼               ▼               ▼          ▼
+┌─────────┐ ┌─────────┐ ┌──────────┐ ┌────────────┐ ┌────────────┐
+│ OTel    │ │  OCSF   │ │ Legacy   │ │ Compliance │ │   Local    │
+│Collector│ │  SIEM   │ │  SIEM    │ │   Audit    │ │  Backup    │
+│→Jaeger  │ │ (REST)  │ │(ArcSight)│ │   Trail    │ │  (→ S3)    │
+│→Tempo   │ │         │ │          │ │            │ │            │
+│ENGINEER │ │SECURITY │ │ LEGACY   │ │ COMPLIANCE │ │ FORENSICS  │
+└─────────┘ └─────────┘ └──────────┘ └────────────┘ └────────────┘
+```
 
 ```python
 provider = TracerProvider()
@@ -1130,6 +1572,39 @@ provider.add_span_processor(BatchSpanProcessor(
 ### Example 1: Minimal LLM Monitoring
 
 The simplest production setup — trace LLM calls with security checks, cost tracking, and OCSF export.
+
+```
+┌──────────────────────────────────────────────────┐
+│              AI Chatbot / API Service             │
+│                                                   │
+│  ┌────────────────┐                               │
+│  │ LLMInstrumentor│                               │
+│  └───────┬────────┘                               │
+│          │                                        │
+│   TracerProvider                                  │
+│          │                                        │
+│   ┌──────┴──────┐  ┌──────────┐                   │
+│   │  Security   │  │   Cost   │  SpanProcessors   │
+│   │  Processor  │  │ Processor│                   │
+│   └──────┬──────┘  └────┬─────┘                   │
+│          └───────┬───────┘                        │
+│                  │                                │
+│          ┌───────┴──────┐                         │
+│          │     OCSF     │  Exporter               │
+│          │   Exporter   │                         │
+│          └───────┬──────┘                         │
+└──────────────────┼────────────────────────────────┘
+                   │
+              File I/O
+               (JSONL)
+                   │
+                   ▼
+           ┌──────────────┐
+           │ /var/log/aitf│
+           │ /llm_events  │
+           │   .jsonl     │
+           └──────────────┘
+```
 
 ```python
 """Minimal LLM monitoring with security and cost tracking."""
@@ -1199,6 +1674,47 @@ with aitf.llm.trace_inference(
 ### Example 2: Agent + MCP with SIEM Forwarding
 
 Trace agent sessions with MCP tool calls, forwarding to a SIEM via CEF syslog.
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                      AI Agent Service                              │
+│                                                                    │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐                            │
+│  │  Agent  │  │  LLM    │  │  MCP    │  Instrumentors              │
+│  └────┬────┘  └────┬────┘  └────┬────┘                            │
+│       └─────────────┼───────────┘                                 │
+│                     │                                              │
+│              TracerProvider                                        │
+│                     │                                              │
+│              ┌──────┴──────┐                                       │
+│              │  Security   │  SpanProcessor                        │
+│              │  Processor  │                                       │
+│              └──────┬──────┘                                       │
+│           ┌─────────┴─────────┐                                    │
+│           │                   │                                    │
+│    ┌──────┴──────┐    ┌───────┴──────┐                             │
+│    │    OCSF     │    │  CEF Syslog  │  Exporters                  │
+│    │  Exporter   │    │  Exporter    │                             │
+│    └──────┬──────┘    └───────┬──────┘                             │
+└───────────┼───────────────────┼────────────────────────────────────┘
+            │                   │
+       File I/O            TCP + TLS
+       (JSONL)             (CEF 0)
+            │               port 6514
+            │                   │
+            ▼                   ▼
+    ┌──────────────┐    ┌──────────────┐
+    │  Local OCSF  │    │   QRadar /   │
+    │   Forensics  │    │   Splunk     │
+    │    File      │    │   (SIEM)     │
+    └──────────────┘    └──────┬───────┘
+                               │
+                        ┌──────┴───────┐
+                        │  SOC Analyst │
+                        │  Dashboard   │
+                        │  + Alerts    │
+                        └──────────────┘
+```
 
 ```python
 """Agent + MCP tracing with CEF syslog to SIEM."""
@@ -1300,6 +1816,46 @@ with aitf.agent.trace_session(
 
 Trace a full RAG pipeline with PII detection and redaction to prevent sensitive data from reaching the model or logs.
 
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                     RAG Service                                   │
+│                                                                   │
+│  User Query                                                       │
+│      │                                                            │
+│      ▼                                                            │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐          │
+│  │ Embed    │→ │ Retrieve │→ │ Rerank   │→ │ Generate │          │
+│  │ (LLM)   │  │ (Vector) │  │ (Model)  │  │ (LLM)   │          │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘          │
+│       ↑              ↑             ↑              ↑               │
+│  ┌────┴──────────────┴─────────────┴──────────────┴────┐          │
+│  │           RAGInstrumentor + LLMInstrumentor         │          │
+│  └──────────────────────────┬──────────────────────────┘          │
+│                             │                                     │
+│                      TracerProvider                               │
+│                             │                                     │
+│       ┌─────────────────────┼─────────────────┐                   │
+│       │                     │                 │                   │
+│  ┌────┴─────┐    ┌──────────┴──┐    ┌─────────┴───┐              │
+│  │   PII    │    │    Cost     │    │    OCSF     │              │
+│  │Processor │    │  Processor  │    │  Exporter   │              │
+│  │(redact)  │    │             │    │             │              │
+│  │          │    │             │    │  + GDPR     │              │
+│  │ email →  │    │ tracks per  │    │  + CCPA     │              │
+│  │[REDACTED]│    │ pipeline    │    │  enrichment │              │
+│  └──────────┘    └─────────────┘    └──────┬──────┘              │
+└────────────────────────────────────────────┼─────────────────────┘
+                                             │
+                                        File I/O
+                                         (JSONL)
+                                             │
+                                             ▼
+                                     ┌──────────────┐
+                                     │  OCSF Events │
+                                     │  (PII-free)  │
+                                     └──────────────┘
+```
+
 ```python
 """RAG pipeline with PII redaction and quality tracking."""
 
@@ -1389,6 +1945,49 @@ with aitf.rag.trace_pipeline(
 ### Example 4: Full Production Stack
 
 A complete production deployment with all processors, multiple exporters, and selective instrumentation.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                     Enterprise AI Platform                                    │
+│                                                                               │
+│  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐   │
+│  │ LLM  │ │Agent │ │ MCP  │ │ RAG  │ │Skills│ │Model │ │Ident.│ │Asset │   │
+│  └──┬───┘ └──┬───┘ └──┬───┘ └──┬───┘ └──┬───┘ └──┬───┘ └──┬───┘ └──┬───┘   │
+│     └────────┴────────┴────────┴────────┴────────┴────────┴────────┘        │
+│                                    │                                         │
+│                             TracerProvider                                    │
+│                                    │                                         │
+│          ┌─────────────────────────┼─────────────────────────┐               │
+│          │                         │                         │               │
+│   ┌──────┴──────┐  ┌──────────────┴──────────┐  ┌───────────┴───┐           │
+│   │   Security  │  │         PII             │  │     Cost      │           │
+│   │  Processor  │  │      Processor          │  │   Processor   │           │
+│   │ (OWASP Top  │  │   (redact email,        │  │  ($10K budget │           │
+│   │  10 detect) │  │    SSN, API keys)       │  │   per month)  │           │
+│   └──────┬──────┘  └────────────┬────────────┘  └───────┬───────┘           │
+│          └──────────────────────┼────────────────────────┘                   │
+│                                 │                                            │
+│    ┌────────────┬───────────────┼───────────────┬────────────┐               │
+│    │            │               │               │            │               │
+│ ┌──┴─────┐ ┌───┴──────┐ ┌─────┴──────┐ ┌──────┴────┐ ┌─────┴─────┐         │
+│ │  OCSF  │ │   OCSF   │ │ Immutable  │ │CEF Syslog │ │   OTLP    │Exporters│
+│ │ HTTPS  │ │  File    │ │Log Exporter│ │ Exporter  │ │ Exporter  │         │
+│ └──┬─────┘ └───┬──────┘ └─────┬──────┘ └──────┬────┘ └─────┬─────┘         │
+└────┼───────────┼──────────────┼───────────────┼────────────┼────────────────┘
+     │           │              │               │            │
+  HTTPS       JSONL         Append         TCP+TLS       gRPC
+  POST        File          Only           CEF           OTLP
+     │           │           File              │            │
+     ▼           ▼              ▼               ▼            ▼
+┌─────────┐ ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│  OCSF   │ │  Local  │ │ Tamper-  │ │ ArcSight │ │  OTel    │
+│  SIEM   │ │ Backup  │ │ Evident  │ │    /     │ │Collector │
+│  (REST  │ │ (→ S3)  │ │  Audit   │ │ QRadar   │ │ → Tempo  │
+│   API)  │ │         │ │   Log    │ │          │ │ → Jaeger │
+└─────────┘ └─────────┘ └──────────┘ └──────────┘ └──────────┘
+  SECURITY   FORENSICS   COMPLIANCE    LEGACY       ENGINEER
+    TEAM                   AUDIT        SIEM          TEAM
+```
 
 ```python
 """Full production deployment with defense-in-depth telemetry."""
@@ -1511,6 +2110,57 @@ with aitf.agent.trace_session(
 
 Trace a hierarchical multi-agent team with structured agentic log entries (Table 10.1).
 
+```
+                        ┌───────────────────────┐
+                        │    trace_team          │
+                        │  "supply-chain-team"   │
+                        │  topology=hierarchical │
+                        └───────────┬───────────┘
+                                    │
+                        ┌───────────┴───────────┐
+                        │   Manager Agent       │
+                        │  trace_session        │
+                        │  framework="crewai"   │
+                        └───────────┬───────────┘
+                                    │
+                     ┌──────────────┼──────────────┐
+                     │  delegate()  │  delegate()   │
+                     ▼              │              ▼
+         ┌───────────────────┐     │   ┌───────────────────┐
+         │  Researcher Agent │     │   │   Writer Agent    │
+         │  trace_session    │     │   │  trace_session    │
+         └─────────┬─────────┘     │   └─────────┬─────────┘
+                   │               │             │
+         ┌─────────┴─────────┐     │   ┌─────────┴─────────┐
+         │  step("tool_use") │     │   │ step("response")  │
+         │         │         │     │   │        │          │
+         │  ┌──────┴──────┐  │     │   │  ┌─────┴──────┐   │
+         │  │ agentic_log │  │     │   │  │ LLM trace  │   │
+         │  │  log_action │  │     │   │  │ inference  │   │
+         │  │ goal_id,    │  │     │   │  │ gpt-4o     │   │
+         │  │ tool_used,  │  │     │   │  └────────────┘   │
+         │  │ anomaly_    │  │     │   └────────────────────┘
+         │  │ score=0.05  │  │     │
+         │  └─────────────┘  │     │
+         └───────────────────┘     │
+                                   │
+                            TracerProvider
+                                   │
+                            ┌──────┴──────┐
+                            │    OCSF     │
+                            │  Exporter   │
+                            └──────┬──────┘
+                                   │
+                                   ▼
+                           ┌──────────────┐
+                           │ OCSF Events: │
+                           │ 7002 Agent   │
+                           │ 7003 Tool    │
+                           │ (+ agentic   │
+                           │  log attrs)  │
+                           └──────────────┘
+```
+
 ```python
 """Multi-agent team with agentic logging for SOC observability."""
 
@@ -1613,6 +2263,53 @@ with aitf.agent.trace_team(
 ### Example 6: Model Operations Lifecycle
 
 Trace the full model lifecycle from training through deployment and monitoring.
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     Model Operations Pipeline                            │
+│                                                                          │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐           │
+│  │ Training │ →  │  Eval    │ →  │ Registry │ →  │  Deploy  │           │
+│  │  (LoRA)  │    │(benchmark│    │(register,│    │ (canary) │           │
+│  │          │    │ + judge) │    │ promote) │    │          │           │
+│  └──────────┘    └──────────┘    └──────────┘    └──────────┘           │
+│       │               │              │                │                  │
+│       │               │              │                │                  │
+│       └───────────────┴──────────────┴────────────────┘                  │
+│                                │                                         │
+│                                ▼                                         │
+│  ┌──────────────────────────────────────────────────────────────┐        │
+│  │                    Serving Layer                              │        │
+│  │                                                              │        │
+│  │   ┌──────────┐    ┌──────────┐    ┌──────────┐              │        │
+│  │   │  Route   │ →  │ Fallback │    │  Cache   │              │        │
+│  │   │(select   │    │(timeout →│    │(semantic │              │        │
+│  │   │ model)   │    │ gpt-4o)  │    │ lookup)  │              │        │
+│  │   └──────────┘    └──────────┘    └──────────┘              │        │
+│  └──────────────────────────────────────────────────────────────┘        │
+│                                │                                         │
+│                                ▼                                         │
+│  ┌──────────────────────────────────────────────────────────────┐        │
+│  │                   Monitoring Layer                            │        │
+│  │                                                              │        │
+│  │   ┌──────────┐    ┌──────────┐    ┌──────────┐              │        │
+│  │   │Performnce│    │  Drift   │    │   SLA    │              │        │
+│  │   │  Check   │    │Detection │    │  Check   │              │        │
+│  │   └──────────┘    └──────────┘    └──────────┘              │        │
+│  └──────────────────────────────────────────────────────────────┘        │
+│                                                                          │
+│       All above instrumented via ModelOpsInstrumentor                    │
+│                           │                                              │
+│                    TracerProvider → OCSF Exporter                         │
+└──────────────────────────┬──────────────────────────────────────────────┘
+                           │
+                           ▼
+                  ┌────────────────┐
+                  │  OCSF Events   │
+                  │  7009 ModelOps  │
+                  │  + compliance  │
+                  └────────────────┘
+```
 
 ```python
 """Model operations lifecycle tracing."""
@@ -1735,6 +2432,61 @@ with aitf.model_ops.trace_monitoring_check(
 
 Trace shadow AI discovery scans (e.g., from [AIDisco](https://github.com/girdav01/AIDisco)) and convert results into AITF asset inventory telemetry.
 
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                    AIDisco + AITF Integration                          │
+│                                                                        │
+│  ┌─────────────────────────────────────────────────────────┐           │
+│  │                     AIDisco Scanner                      │           │
+│  │                                                         │           │
+│  │  file_scan → GitHub Copilot, Cursor, LM Studio          │           │
+│  │  process_scan → Ollama (pid 4419, port 11434)           │           │
+│  │  container_scan → Open WebUI, text-gen-webui, n8n       │           │
+│  │                                                         │           │
+│  │  Output: JSON results file                              │           │
+│  └──────────────────────────┬──────────────────────────────┘           │
+│                             │                                          │
+│                             ▼                                          │
+│  ┌──────────────────────────────────────────────────────────┐          │
+│  │              AssetInventoryInstrumentor                   │          │
+│  │                                                          │          │
+│  │  trace_discover (scope=environment)                      │          │
+│  │      │                                                   │          │
+│  │      ├── trace_register (per asset)                      │          │
+│  │      │     ├── KNOWN  → env=production, owner=it-approved│          │
+│  │      │     └── SHADOW → env=shadow, owner=unassigned     │          │
+│  │      │                                                   │          │
+│  │      ├── trace_classify (shadow assets only)             │          │
+│  │      │     └── EU AI Act risk: high_risk / limited_risk  │          │
+│  │      │                                                   │          │
+│  │      └── trace_audit (per asset)                         │          │
+│  │            ├── Known → PASS (compliant)                  │          │
+│  │            └── Shadow → FAIL (non_compliant, risk=85)    │          │
+│  └──────────────────────────┬───────────────────────────────┘          │
+│                             │                                          │
+│                      TracerProvider → OCSF Exporter                     │
+└─────────────────────────────┬──────────────────────────────────────────┘
+                              │
+                              ▼
+                    ┌────────────────────┐
+                    │   OCSF Events:     │
+                    │   701002 Discovery  │
+                    │   701001 Register   │
+                    │   701007 Shadow     │
+                    │   701004 Classify   │
+                    │   701003 Audit      │
+                    └─────────┬──────────┘
+                              │
+                  ┌───────────┴───────────┐
+                  ▼                       ▼
+          ┌──────────────┐       ┌──────────────┐
+          │ SIEM Alert:  │       │ Compliance   │
+          │ "5 shadow AI │       │  Report:     │
+          │  assets on   │       │ non_compliant│
+          │  dev-042"    │       │  assets      │
+          └──────────────┘       └──────────────┘
+```
+
 ```python
 """Shadow AI discovery — converting scan results to AITF telemetry."""
 
@@ -1815,6 +2567,90 @@ with aitf.asset_inventory.trace_discover(
 
 Set up an immutable audit log and verify its integrity.
 
+```
+                         Hash Chain Structure
+                         ════════════════════
+
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  Entry 0 (Genesis)                                              │
+  │  seq: 0                                                         │
+  │  prev_hash: 000000000000000000000000000000000000000000000000...  │
+  │  hash: a1b2c3d4... ← SHA-256(seq|time|prev_hash|event_json)    │
+  │  event: { class_uid: 7001, ... }                                │
+  └──────────────────────┬──────────────────────────────────────────┘
+                         │ hash chain
+                         ▼
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  Entry 1                                                        │
+  │  seq: 1                                                         │
+  │  prev_hash: a1b2c3d4... ← must match Entry 0's hash            │
+  │  hash: e5f6g7h8...                                              │
+  │  event: { class_uid: 7002, ... }                                │
+  └──────────────────────┬──────────────────────────────────────────┘
+                         │ hash chain
+                         ▼
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  Entry 2                                                        │
+  │  seq: 2                                                         │
+  │  prev_hash: e5f6g7h8... ← must match Entry 1's hash            │
+  │  hash: i9j0k1l2...                                              │
+  │  event: { class_uid: 7001, ... }                                │
+  └─────────────────────────────────────────────────────────────────┘
+                         │
+                        ...
+
+  ┌─────────────────────────────────────────────────────────────────┐
+  │                    Tamper Detection                              │
+  │                                                                 │
+  │  If ANY entry is modified:                                      │
+  │    → Its hash changes                                           │
+  │    → Next entry's prev_hash no longer matches                   │
+  │    → ImmutableLogVerifier.verify() returns valid=False          │
+  │                                                                 │
+  │  ┌───────┐  ┌───────┐  ┌───────┐  ┌───────┐  ┌───────┐        │
+  │  │ E0 ✓ │→ │ E1 ✓ │→ │ E2 ✗ │→ │ E3 ✗ │→ │ E4 ✗ │        │
+  │  └───────┘  └───────┘  └───┬───┘  └───────┘  └───────┘        │
+  │                          TAMPERED                               │
+  │                   All subsequent entries invalid                 │
+  └─────────────────────────────────────────────────────────────────┘
+
+
+              Deployment Architecture
+              ═══════════════════════
+
+  ┌────────────────────────────────────────────────────────┐
+  │               AI Application                           │
+  │                                                        │
+  │  TracerProvider                                        │
+  │       │                                                │
+  │  ┌────┴──────────────┐                                 │
+  │  │ ImmutableLog      │                                 │
+  │  │ Exporter          │                                 │
+  │  │ file_permissions  │                                 │
+  │  │ = 0o600           │                                 │
+  │  └────┬──────────────┘                                 │
+  └───────┼────────────────────────────────────────────────┘
+          │ Append-only (O_APPEND)
+          │ fsync after every batch
+          ▼
+  ┌──────────────────┐     ┌────────────────────────┐
+  │ immutable_audit  │     │  Periodic Verification │
+  │     .jsonl       │ ←── │  (cron / monitoring)   │
+  │                  │     │                        │
+  │ 0o600 perms      │     │  ImmutableLogVerifier  │
+  │ (owner r/w only) │     │  .verify()             │
+  └────────┬─────────┘     └────────────────────────┘
+           │
+           │  Archive rotated files
+           ▼
+  ┌──────────────────┐
+  │  S3 Glacier /    │
+  │  Azure Immutable │
+  │  Blob Storage    │
+  │  (long-term)     │
+  └──────────────────┘
+```
+
 ```python
 """Immutable audit trail with periodic integrity verification."""
 
@@ -1889,6 +2725,42 @@ else:
 ### Example 9: CEF Syslog to QRadar / Splunk / ArcSight
 
 Platform-specific CEF syslog configurations for major SIEMs.
+
+```
+┌────────────────────────────┐
+│  AI Application + AITF SDK │
+│                            │
+│  CEFSyslogExporter(s)      │
+│       │  │  │  │  │        │
+└───────┼──┼──┼──┼──┼────────┘
+        │  │  │  │  │
+        │  │  │  │  └──── UDP:9000 ──────────► ┌────────────────┐
+        │  │  │  │         (CEF)                │    Elastic     │
+        │  │  │  │                              │   (Filebeat    │
+        │  │  │  │                              │   CEF module)  │
+        │  │  │  │                              └────────────────┘
+        │  │  │  │
+        │  │  │  └─────── TCP+TLS:6514 ──────► ┌────────────────┐
+        │  │  │            (CEF)                │  Trend Vision  │
+        │  │  │                                 │      One       │
+        │  │  │                                 │(Service Gatway)│
+        │  │  │                                 └────────────────┘
+        │  │  │
+        │  │  └────────── TCP+TLS:6514 ──────► ┌────────────────┐
+        │  │               (CEF)                │   ArcSight     │
+        │  │                                    │(SmartConnector)│
+        │  │                                    └────────────────┘
+        │  │
+        │  └───────────── TCP+TLS:5514 ──────► ┌────────────────┐
+        │                  (CEF)                │    Splunk      │
+        │                                       │ (syslog input) │
+        │                                       └────────────────┘
+        │
+        └──────────────── TCP:514 ───────────► ┌────────────────┐
+                           (CEF)                │    QRadar      │
+                                                │  (syslog src)  │
+                                                └────────────────┘
+```
 
 ```python
 """CEF syslog configurations for different SIEM platforms."""
@@ -1987,6 +2859,50 @@ LAST 24 HOURS
 ### Example 10: AI-BOM Generation
 
 Generate an AI Bill of Materials for model supply chain transparency.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    AI-BOM Generation                              │
+│                                                                   │
+│  ┌────────────────────────────────────────────────────┐           │
+│  │                 AIBOMGenerator                      │           │
+│  │                                                    │           │
+│  │  create_bom("cs-llama-70b-lora-v3")               │           │
+│  │       │                                            │           │
+│  │       ├── add_component("Llama-3.1-70B")          │           │
+│  │       │     type: base_model                       │           │
+│  │       │     license: Llama 3.1 Community           │           │
+│  │       │     supplier: Meta                         │           │
+│  │       │                                            │           │
+│  │       ├── add_component("customer-support-v3")    │           │
+│  │       │     type: training_data                    │           │
+│  │       │     license: Proprietary                   │           │
+│  │       │     supplier: InnovaCorp Data Team         │           │
+│  │       │                                            │           │
+│  │       └── add_component("PyTorch")                │           │
+│  │             type: framework                        │           │
+│  │             license: BSD-3-Clause                  │           │
+│  │             supplier: Meta                         │           │
+│  │                                                    │           │
+│  │  export_bom(format="json")                        │           │
+│  └──────────────────────┬─────────────────────────────┘           │
+│                         │                                         │
+│                         ▼                                         │
+│  ┌──────────────────────────────────────────────────────┐         │
+│  │              OCSF Supply Chain Event (7006)           │         │
+│  │                                                      │         │
+│  │  type_uid: 700603 (AI-BOM Generation)                │         │
+│  │  ai_bom_id: "bom-cs-llama-70b-v3"                   │         │
+│  │  ai_bom_components: [base_model, training_data, ...]│         │
+│  │  model_source: "InnovaCorp ML Team"                  │         │
+│  │  model_hash: "sha256:9f86d081..."                    │         │
+│  │  model_signed: true                                  │         │
+│  │  verification_result: "pass"                         │         │
+│  └──────────────────────────────────────────────────────┘         │
+│                                                                   │
+│  Compliance: NIST MAP-5.2, EU AI Act Art 15, CSA STA-16           │
+└──────────────────────────────────────────────────────────────────┘
+```
 
 ```python
 """AI-BOM generation for supply chain transparency."""
