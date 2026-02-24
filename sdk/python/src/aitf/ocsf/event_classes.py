@@ -125,6 +125,9 @@ class AISupplyChainEvent(AIBaseEvent):
     verification_result: str | None = None  # "pass", "fail", "unknown"
     ai_bom_id: str | None = None
     ai_bom_components: str | None = None  # JSON
+    ai_bom_format: str | None = None  # "aitf", "cyclonedx", "spdx"
+    ai_bom_component_count: int | None = None
+    ai_bom_vulnerability_count: int | None = None
 
 
 class AIGovernanceEvent(AIBaseEvent):

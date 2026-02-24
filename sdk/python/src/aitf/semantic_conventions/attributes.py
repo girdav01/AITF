@@ -441,6 +441,63 @@ class SupplyChainAttributes:
     AI_BOM_COMPONENTS = "aitf.supply_chain.ai_bom.components"
 
 
+class AIBOMAttributes:
+    """AITF AI Bill of Materials semantic convention attributes."""
+
+    # BOM document attributes
+    BOM_ID = "aitf.ai_bom.id"
+    BOM_VERSION = "aitf.ai_bom.version"
+    BOM_FORMAT = "aitf.ai_bom.format"
+    BOM_GENERATED_AT = "aitf.ai_bom.generated_at"
+    BOM_GENERATOR = "aitf.ai_bom.generator"
+    BOM_GENERATOR_VERSION = "aitf.ai_bom.generator_version"
+
+    # Component attributes
+    COMPONENT_TYPE = "aitf.ai_bom.component.type"
+    COMPONENT_NAME = "aitf.ai_bom.component.name"
+    COMPONENT_VERSION = "aitf.ai_bom.component.version"
+    COMPONENT_PROVIDER = "aitf.ai_bom.component.provider"
+    COMPONENT_HASH = "aitf.ai_bom.component.hash"
+    COMPONENT_LICENSE = "aitf.ai_bom.component.license"
+    COMPONENT_SOURCE = "aitf.ai_bom.component.source"
+
+    # Dependency attributes
+    DEPENDENCY_COUNT = "aitf.ai_bom.dependency.count"
+    DEPENDENCY_DIRECT_COUNT = "aitf.ai_bom.dependency.direct_count"
+    DEPENDENCY_TRANSITIVE_COUNT = "aitf.ai_bom.dependency.transitive_count"
+
+    # Vulnerability attributes
+    VULNERABILITY_COUNT = "aitf.ai_bom.vulnerability.count"
+    VULNERABILITY_CRITICAL = "aitf.ai_bom.vulnerability.critical"
+    VULNERABILITY_HIGH = "aitf.ai_bom.vulnerability.high"
+
+    # Provenance attributes
+    PROVENANCE_VERIFIED = "aitf.ai_bom.provenance.verified"
+    PROVENANCE_SIGNED = "aitf.ai_bom.provenance.signed"
+    PROVENANCE_SIGNER = "aitf.ai_bom.provenance.signer"
+
+    # Component type values
+    class ComponentType:
+        MODEL = "model"
+        DATASET = "dataset"
+        FRAMEWORK = "framework"
+        RUNTIME = "runtime"
+        TOOL = "tool"
+        PLUGIN = "plugin"
+        PROMPT_TEMPLATE = "prompt_template"
+        GUARDRAIL = "guardrail"
+        VECTOR_DB = "vector_db"
+        EMBEDDING_MODEL = "embedding_model"
+        MCP_SERVER = "mcp_server"
+        AGENT = "agent"
+
+    # BOM format values
+    class Format:
+        AITF = "aitf"
+        CYCLONEDX = "cyclonedx"
+        SPDX = "spdx"
+
+
 class MemoryAttributes:
     """AITF Memory semantic convention attributes."""
 

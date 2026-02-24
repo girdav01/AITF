@@ -7,5 +7,6 @@ built on OpenTelemetry and OCSF.
 __version__ = "1.0.0"
 
 from aitf.instrumentation import AITFInstrumentor
+from aitf.generators import AIBOMGenerator
 
-__all__ = ["AITFInstrumentor", "__version__"]
+__all__ = ["AITFInstrumentor", "AIBOMGenerator", "__version__"]
