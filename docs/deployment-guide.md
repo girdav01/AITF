@@ -2,6 +2,8 @@
 
 A comprehensive guide for deploying the AI Telemetry Framework (AITF) in production environments. Covers installation, configuration, exporter setup, security processors, SIEM integration, and end-to-end architecture examples.
 
+> **Try it interactively:** Open the [AITF Google Colab notebook](../examples/aitf_colab_demo.ipynb) to explore the full pipeline — OCSF mapping, vendor mapping (LangChain/CrewAI), compliance frameworks, agentic logs, and AI-BOM generation — without installing anything locally.
+
 ---
 
 ## Table of Contents
@@ -108,6 +110,8 @@ pip install -e ".[all]"
 ---
 
 ## Quick Start
+
+> **No local setup?** Try the [AITF Google Colab notebook](../examples/aitf_colab_demo.ipynb) for a fully interactive walkthrough.
 
 The fastest path to working telemetry — instrument everything, export to a local file:
 
