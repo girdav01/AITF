@@ -93,7 +93,14 @@ class LLMInstrumentor:
             attributes[GenAIAttributes.REQUEST_TOOLS] = json.dumps(
                 [{"name": t.get("name", "")} for t in tools]
             )
+        # Validate extra attributes to prevent namespace pollution
+        _ALLOWED_VALUE_TYPES = (str, int, float, bool)
+        _MAX_ATTR_KEY_LEN = 128
         for key, value in kwargs.items():
+            if len(key) > _MAX_ATTR_KEY_LEN:
+                continue
+            if not isinstance(value, _ALLOWED_VALUE_TYPES):
+                continue
             attr_key = f"gen_ai.request.{key}"
             attributes[attr_key] = value
 

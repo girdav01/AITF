@@ -63,6 +63,10 @@ _GENESIS_HASH = "0" * 64
 # Maximum file size before rotation (1 GB)
 _MAX_FILE_SIZE_BYTES = 1024 * 1024 * 1024
 
+# Maximum file size to read during chain resume (100 MB)
+# Prevents DoS if a very large file is placed at the log path
+_MAX_RESUME_FILE_SIZE = 100 * 1024 * 1024
+
 
 def _compute_entry_hash(
     seq: int,
@@ -101,7 +105,7 @@ class ImmutableLogExporter(SpanExporter):
         rotate_on_size: bool = True,
         file_permissions: int = 0o600,
     ) -> None:
-        self._log_file = Path(log_file).resolve()
+        self._log_file = self._validate_log_path(log_file)
         self._rotate_on_size = rotate_on_size
         self._file_permissions = file_permissions
         self._mapper = OCSFMapper()
@@ -119,9 +123,36 @@ class ImmutableLogExporter(SpanExporter):
         # Resume chain from existing log file
         self._resume_chain()
 
+    @staticmethod
+    def _validate_log_path(log_file: str) -> Path:
+        """Validate the log file path to prevent path traversal.
+
+        Rejects any path containing '..' components, which could be
+        used to escape the intended directory.
+        """
+        raw_path = Path(log_file)
+
+        if ".." in raw_path.parts:
+            raise ValueError(
+                f"Path traversal detected in log path: {log_file!r} "
+                f"contains '..' component"
+            )
+
+        return raw_path.resolve()
+
     def _resume_chain(self) -> None:
         """Resume hash chain from existing log file if present."""
         if not self._log_file.exists():
+            return
+
+        # Guard against resuming from an excessively large file (DoS)
+        file_size = self._log_file.stat().st_size
+        if file_size > _MAX_RESUME_FILE_SIZE:
+            logger.warning(
+                "Log file %s is too large to resume (%d bytes > %d). "
+                "Starting fresh chain.",
+                self._log_file, file_size, _MAX_RESUME_FILE_SIZE,
+            )
             return
 
         try:

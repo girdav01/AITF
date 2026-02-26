@@ -66,7 +66,8 @@ JAILBREAK_PATTERNS = [
 ]
 
 SYSTEM_PROMPT_LEAK_PATTERNS = [
-    re.compile(r"(show|reveal|display|print|output|repeat)\s+(your\s+)?(system\s+)?prompt", re.IGNORECASE),
+    # Bounded quantifier {0,30} allows natural language like "show me your system prompt"
+    re.compile(r"(show|reveal|display|print|output|repeat)\s+[^\n]{0,30}(system\s+)?prompt", re.IGNORECASE),
     re.compile(r"what\s+(are|is)\s+your\s+(system\s+)?(instructions|prompt|rules)", re.IGNORECASE),
     re.compile(r"(beginning|start)\s+of\s+(your|the)\s+(conversation|system)", re.IGNORECASE),
 ]

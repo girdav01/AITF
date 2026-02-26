@@ -185,7 +185,14 @@ class AgentSession:
             AgentAttributes.STEP_TYPE: step_type,
             AgentAttributes.STEP_INDEX: self._step_count,
         }
+        # Validate extra attributes to prevent namespace pollution
+        _ALLOWED_VALUE_TYPES = (str, int, float, bool)
+        _MAX_ATTR_KEY_LEN = 128
         for key, value in kwargs.items():
+            if len(key) > _MAX_ATTR_KEY_LEN:
+                continue
+            if not isinstance(value, _ALLOWED_VALUE_TYPES):
+                continue
             attr_key = f"aitf.agent.step.{key}"
             attributes[attr_key] = value
 

@@ -66,28 +66,19 @@ def _validate_endpoint(endpoint: str, api_key: str | None = None) -> str:
 def _validate_output_path(output_file: str) -> Path:
     """Validate output file path to prevent path traversal.
 
-    Resolves the path and ensures it doesn't traverse outside
-    the expected parent directory (the original path's parent or CWD).
+    Rejects any path containing '..' components, which could be used
+    to escape the intended directory.
     """
     raw_path = Path(output_file)
-    resolved = raw_path.resolve()
 
-    # Determine the expected parent: the raw path's parent resolved, or CWD
-    if raw_path.is_absolute():
-        expected_parent = raw_path.parent.resolve()
-    else:
-        expected_parent = Path.cwd().resolve()
-
-    # Verify the resolved path is under the expected parent directory
-    try:
-        resolved.relative_to(expected_parent)
-    except ValueError:
+    # Reject paths with '..' components to prevent traversal
+    if ".." in raw_path.parts:
         raise ValueError(
             f"Path traversal detected in output path: {output_file!r} "
-            f"resolves to {resolved} which is outside {expected_parent}"
+            f"contains '..' component"
         )
 
-    return resolved
+    return raw_path.resolve()
 
 
 class OCSFExporter(SpanExporter):
@@ -129,6 +120,7 @@ class OCSFExporter(SpanExporter):
         self._compliance_mapper = ComplianceMapper(frameworks=compliance_frameworks)
         self._event_count = 0
         self._lock = threading.Lock()
+        self._file_lock = threading.Lock()
 
         # Validate and create output file path
         if output_file:
@@ -173,20 +165,21 @@ class OCSFExporter(SpanExporter):
 
     def _export_to_file(self, events: list[dict[str, Any]]) -> None:
         """Write OCSF events to JSONL file with size limit enforcement."""
-        output_path = Path(self._output_file)
+        with self._file_lock:
+            output_path = Path(self._output_file)
 
-        # Check file size to prevent unbounded growth
-        if output_path.exists() and output_path.stat().st_size > _MAX_FILE_SIZE_BYTES:
-            logger.warning(
-                "OCSF output file exceeds %d bytes, rotating",
-                _MAX_FILE_SIZE_BYTES,
-            )
-            rotated = output_path.with_suffix(".jsonl.old")
-            output_path.rename(rotated)
+            # Check file size to prevent unbounded growth
+            if output_path.exists() and output_path.stat().st_size > _MAX_FILE_SIZE_BYTES:
+                logger.warning(
+                    "OCSF output file exceeds %d bytes, rotating",
+                    _MAX_FILE_SIZE_BYTES,
+                )
+                rotated = output_path.with_suffix(".jsonl.old")
+                output_path.rename(rotated)
 
-        with open(self._output_file, "a") as f:
-            for event in events:
-                f.write(json.dumps(event, default=str) + "\n")
+            with open(self._output_file, "a") as f:
+                for event in events:
+                    f.write(json.dumps(event, default=str) + "\n")
 
     def _export_to_endpoint(self, events: list[dict[str, Any]]) -> None:
         """Send OCSF events to HTTP endpoint with TLS enforcement."""

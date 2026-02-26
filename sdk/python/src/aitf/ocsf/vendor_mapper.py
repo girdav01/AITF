@@ -26,18 +26,24 @@ Usage:
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Any
 
 from opentelemetry.sdk.trace import ReadableSpan
 
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
 _MAPPINGS_DIR = Path(__file__).parent / "vendor_mappings"
+
+# Security limits for vendor-supplied regex patterns (ReDoS prevention)
+_MAX_PATTERN_LENGTH = 500
+_MAX_PATTERNS_PER_EVENT_TYPE = 50
 
 
 # ---------------------------------------------------------------------------
@@ -53,12 +59,28 @@ class VendorMapping:
         self.description: str = data.get("description", "")
         self.homepage: str = data.get("homepage", "")
 
-        # Pre-compile span-name regexes, grouped by event type
+        # Pre-compile span-name regexes with safety validation
         raw_patterns: dict[str, list[str]] = data.get("span_name_patterns", {})
-        self.span_name_patterns: dict[str, list[re.Pattern[str]]] = {
-            event_type: [re.compile(p) for p in patterns]
-            for event_type, patterns in raw_patterns.items()
-        }
+        self.span_name_patterns: dict[str, list[re.Pattern[str]]] = {}
+        for event_type, patterns in raw_patterns.items():
+            compiled: list[re.Pattern[str]] = []
+            for p in patterns[:_MAX_PATTERNS_PER_EVENT_TYPE]:
+                if len(p) > _MAX_PATTERN_LENGTH:
+                    logger.warning(
+                        "Skipping oversized regex pattern (%d chars) in "
+                        "vendor %s event type %s",
+                        len(p), data.get("vendor", "?"), event_type,
+                    )
+                    continue
+                try:
+                    compiled.append(re.compile(p))
+                except re.error as exc:
+                    logger.warning(
+                        "Skipping invalid regex pattern in vendor %s "
+                        "event type %s: %s",
+                        data.get("vendor", "?"), event_type, exc,
+                    )
+            self.span_name_patterns[event_type] = compiled
 
         self.attribute_mappings: dict[str, dict[str, Any]] = data.get(
             "attribute_mappings", {}
@@ -317,11 +339,18 @@ class VendorMapper:
         for path in sorted(directory.glob("*.json")):
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
-                continue  # skip invalid files silently
+            except (json.JSONDecodeError, OSError) as exc:
+                logger.warning(
+                    "Skipping invalid vendor mapping file %s: %s", path, exc
+                )
+                continue
 
             vendor_name = data.get("vendor")
             if not vendor_name:
+                logger.warning(
+                    "Skipping vendor mapping file %s: missing 'vendor' key",
+                    path,
+                )
                 continue
             if vendors is not None and vendor_name not in vendors:
                 continue

@@ -57,7 +57,8 @@ A comprehensive guide for deploying the AI Telemetry Framework (AITF) in product
 12. [Environment Configuration](#environment-configuration)
 13. [Log Rotation and Storage](#log-rotation-and-storage)
 14. [Vendor Mapping (Agentic Framework Integration)](#vendor-mapping-agentic-framework-integration)
-15. [Troubleshooting](#troubleshooting)
+15. [Security Hardening](#security-hardening)
+16. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -3266,6 +3267,66 @@ def process_span(span):
 ```
 
 For a complete working example, see `examples/vendor_mapping_tracing.py`.
+
+---
+
+## Security Hardening
+
+The AITF SDK implements multiple layers of security hardening to protect against common attack patterns in telemetry pipelines.
+
+### Input Validation
+
+| Protection | Implementation | Affected Modules |
+|-----------|----------------|------------------|
+| Content length limits | `_MAX_CONTENT_LENGTH = 100,000` chars | SecurityProcessor, PIIProcessor |
+| Token count bounds | `_MAX_TOKENS = 10,000,000` | CostProcessor |
+| Score clamping | Confidence and anomaly scores clamped to [0.0, 1.0] | AgenticLogInstrumentor |
+| Attribute type validation | Only `str`, `int`, `float`, `bool` accepted for extra kwargs | LLMInstrumentor, AgentSession |
+| Attribute key length | Max 128 character attribute keys | LLMInstrumentor, AgentSession |
+
+### ReDoS Prevention
+
+All regex patterns in the SDK use bounded quantifiers to prevent Regular Expression Denial of Service:
+
+- **Security patterns**: `[^\n]{0,200}` instead of `.*`; `[^)]{0,500}` instead of `(.*)`
+- **PII patterns**: Explicit digit repetition instead of nested quantifiers
+- **Vendor patterns**: Max pattern length (`500` chars), max patterns per event type (`50`), invalid regex rejected at load time
+
+### Path Traversal Protection
+
+File-based exporters reject any path containing `..` components:
+
+```python
+# These paths are rejected:
+OCSFExporter(output_file="/var/log/../../etc/passwd")     # ValueError
+ImmutableLogExporter(log_file="/tmp/logs/../../../secret")  # ValueError
+
+# These paths are accepted:
+OCSFExporter(output_file="/var/log/aitf/events.jsonl")     # OK
+ImmutableLogExporter(log_file="./audit.jsonl")              # OK
+```
+
+### Thread Safety
+
+All mutable shared state is protected by `threading.Lock`:
+
+- **CostProcessor**: `_total_cost` accumulator
+- **MemoryStateProcessor**: Session state, events, snapshots
+- **AIBOMGenerator**: Component registry, span count
+- **OCSFExporter**: File write operations (separate `_file_lock`)
+
+### Network Security
+
+- HTTPS enforced for remote endpoints when API keys are present (except localhost)
+- TLS verification enabled by default for CEF syslog connections
+- HMAC-SHA256 with random instance keys for PII hash mode
+
+### DoS Prevention
+
+- Immutable log resume skips files larger than 100 MB
+- Memory state processor enforces max events (`10,000`) and max snapshots (`1,000`)
+- AI-BOM generator enforces max components (`10,000`)
+- OCSF exporter rotates files at 1 GB
 
 ---
 
