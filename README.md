@@ -367,8 +367,9 @@ AITF/
 │   │   │   ├── processors/            # Security, PII, Compliance, Cost, Memory
 │   │   │   ├── generators/            # AI-BOM generator
 │   │   │   ├── exporters/             # OCSF, Immutable Log, CEF Syslog
-│   │   │   └── ocsf/                  # OCSF schema, mapper, vendor mappings
-│   │   └── tests/                     # Test suite (214 tests)
+│   │   │   │   └── ocsf/                  # OCSF schema, mapper, vendor mappings
+│   │   │       └── vendor_mappings/   # LangChain, CrewAI, OpenRouter JSON
+│   │   └── tests/                     # Test suite (235 tests)
 │   ├── go/                            # Go SDK
 │   │   ├── semconv/                   # Attribute constants & metrics
 │   │   ├── instrumentation/           # LLM, Agent, MCP, RAG, Skills
@@ -392,6 +393,7 @@ AITF/
 │   ├── agentic_log_tracing.py         # Agentic log (Table 10.1) example
 │   ├── ai_bom_generation.py           # AI-BOM generation example
 │   ├── vendor_mapping_tracing.py      # Vendor mapping pipeline example
+│   ├── openrouter_tracing.py         # OpenRouter multi-provider routing example
 │   ├── aitf_colab_demo.ipynb          # Interactive Google Colab notebook
 │   ├── siem-forwarding/               # SIEM integration examples
 │   │   ├── aws_security_lake.py       # AWS Security Lake (OCSF native)
