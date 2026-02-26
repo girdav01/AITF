@@ -1,8 +1,21 @@
-"""AITF Example: Basic LLM Tracing.
+"""AITF Example: Basic LLM Tracing — Customer Support Chatbot.
 
-Demonstrates how to trace LLM inference operations with AITF,
-including cost tracking and security processing.
+Demonstrates how AITF instruments a realistic multi-turn chatbot.  The
+simulated ``ChatBot`` class mirrors what you would build with the OpenAI
+or Anthropic SDK; AITF wraps every inference call so that every prompt,
+completion, token count, latency, and cost is captured as an OCSF event
+ready for your SIEM.
+
+Run:
+    pip install opentelemetry-sdk aitf
+    python basic_llm_tracing.py
 """
+
+from __future__ import annotations
+
+import random
+import time
+from dataclasses import dataclass, field
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -13,113 +26,247 @@ from aitf.processors.cost_processor import CostProcessor
 from aitf.processors.security_processor import SecurityProcessor
 from aitf.exporters.ocsf_exporter import OCSFExporter
 
-# --- Setup ---
 
-# Create TracerProvider with AITF processors
+# ────────────────────────────────────────────────────────────────────
+# 1. Simulated LLM client (stands in for openai.ChatCompletion, etc.)
+# ────────────────────────────────────────────────────────────────────
+
+@dataclass
+class Message:
+    role: str          # "system" | "user" | "assistant"
+    content: str
+
+
+@dataclass
+class ChatResponse:
+    """Mirrors an OpenAI-style chat completion response."""
+    id: str
+    model: str
+    content: str
+    finish_reason: str = "stop"
+    input_tokens: int = 0
+    output_tokens: int = 0
+    latency_ms: float = 0.0
+
+
+# Pre-canned responses for the demo (keyed by keyword in the user message)
+_RESPONSES = {
+    "refund": (
+        "I can help with your refund!  Our policy allows returns within 30 "
+        "days of purchase.  Could you share your order number so I can look "
+        "it up?"
+    ),
+    "order": (
+        "I found order #ORD-88421.  It shipped on Feb 20 via FedEx and is "
+        "currently in transit.  Expected delivery is Feb 28.  Would you like "
+        "me to send you the tracking link?"
+    ),
+    "tracking": (
+        "Here is your tracking link: https://track.example.com/FX-98234\n"
+        "The package is at the Memphis hub as of this morning."
+    ),
+}
+_DEFAULT_RESPONSE = (
+    "Thanks for reaching out!  I'm the Acme Support Bot — I can help with "
+    "orders, refunds, and shipping.  What can I do for you today?"
+)
+
+
+def _simulate_llm_call(
+    messages: list[Message], model: str = "gpt-4o"
+) -> ChatResponse:
+    """Pretend to call an LLM API.  Returns a canned response and fake metrics."""
+    user_msg = next(
+        (m.content for m in reversed(messages) if m.role == "user"), ""
+    )
+    # Pick a response based on keyword matching
+    reply = _DEFAULT_RESPONSE
+    for keyword, text in _RESPONSES.items():
+        if keyword in user_msg.lower():
+            reply = text
+            break
+
+    input_tokens = sum(len(m.content.split()) * 2 for m in messages)
+    output_tokens = len(reply.split()) * 2
+    latency = random.uniform(400, 1200)
+    time.sleep(latency / 5000)  # tiny sleep so spans have real duration
+
+    return ChatResponse(
+        id=f"chatcmpl-{random.randint(100000, 999999)}",
+        model=model,
+        content=reply,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        latency_ms=latency,
+    )
+
+
+# ────────────────────────────────────────────────────────────────────
+# 2. Chatbot with conversation history
+# ────────────────────────────────────────────────────────────────────
+
+class ChatBot:
+    """A simple multi-turn customer-support chatbot."""
+
+    SYSTEM_PROMPT = (
+        "You are the Acme Corp support assistant.  Be helpful, concise, and "
+        "professional.  If you cannot answer a question, offer to escalate to "
+        "a human agent."
+    )
+
+    def __init__(self, model: str = "gpt-4o"):
+        self.model = model
+        self.history: list[Message] = [
+            Message(role="system", content=self.SYSTEM_PROMPT),
+        ]
+
+    def chat(self, user_input: str) -> str:
+        """Send a message and return the assistant's reply."""
+        self.history.append(Message(role="user", content=user_input))
+        response = _simulate_llm_call(self.history, model=self.model)
+        self.history.append(Message(role="assistant", content=response.content))
+        return response
+
+
+# ────────────────────────────────────────────────────────────────────
+# 3. AITF Setup — wire up processors, exporters, and the instrumentor
+# ────────────────────────────────────────────────────────────────────
+
 provider = TracerProvider()
 
-# Add security processor (detects OWASP LLM Top 10 threats)
+# Security processor — watches every prompt for OWASP LLM Top 10 threats
 provider.add_span_processor(SecurityProcessor(
     detect_prompt_injection=True,
     detect_jailbreak=True,
     detect_data_exfiltration=True,
 ))
 
-# Add cost processor (tracks token costs)
+# Cost processor — tracks per-project token spend against a budget
 provider.add_span_processor(CostProcessor(
-    default_project="demo-app",
-    budget_limit=10.0,  # $10 budget
+    default_project="acme-support-bot",
+    budget_limit=50.0,  # $50 daily budget
 ))
 
-# Add OCSF exporter (exports to SIEM-compatible format)
+# OCSF exporter — produces SIEM-ready JSONL files
 ocsf_exporter = OCSFExporter(
     output_file="/tmp/aitf_ocsf_events.jsonl",
     compliance_frameworks=["nist_ai_rmf", "mitre_atlas", "eu_ai_act"],
 )
 provider.add_span_processor(SimpleSpanProcessor(ocsf_exporter))
-
-# Also export to console for demo
 provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
 
 trace.set_tracer_provider(provider)
 
-# --- Tracing LLM Calls ---
-
 llm = LLMInstrumentor(tracer_provider=provider)
 llm.instrument()
 
-# Example 1: Basic chat completion
-print("=== Example 1: Basic Chat Completion ===\n")
 
-with llm.trace_inference(
-    model="gpt-4o",
-    system="openai",
-    operation="chat",
-    temperature=0.7,
-    max_tokens=1000,
-) as span:
-    # Simulate LLM call
-    span.set_prompt("Explain the AITF framework in 3 sentences.")
-    # ... actual API call would go here ...
-    span.set_completion(
-        "AITF is a security-first telemetry framework for AI systems. "
-        "It extends OpenTelemetry GenAI with native MCP, agent, and skills support. "
-        "Every event is mapped to OCSF for SIEM/XDR integration."
-    )
-    span.set_response(
-        response_id="chatcmpl-abc123",
-        model="gpt-4o",
-        finish_reasons=["stop"],
-    )
-    span.set_usage(input_tokens=25, output_tokens=45)
-    span.set_cost(input_cost=0.0000625, output_cost=0.00045)
-    span.set_latency(total_ms=850.0, tokens_per_second=52.9)
+# ────────────────────────────────────────────────────────────────────
+# 4. Run the chatbot — every LLM call is automatically traced
+# ────────────────────────────────────────────────────────────────────
 
-# Example 2: Streaming with tool calls
-print("\n=== Example 2: Streaming with Tool Calls ===\n")
+# Pricing per 1M tokens (same ballpark as real GPT-4o pricing)
+INPUT_COST_PER_TOKEN = 2.50 / 1_000_000
+OUTPUT_COST_PER_TOKEN = 10.00 / 1_000_000
 
-with llm.trace_inference(
-    model="claude-sonnet-4-5-20250929",
-    system="anthropic",
-    operation="chat",
-    stream=True,
-    max_tokens=4096,
-    tools=[{"name": "search", "description": "Search the web"}],
-) as span:
-    span.set_prompt("Search for the latest AI telemetry standards.")
-    span.mark_first_token()  # First token received
-    span.set_tool_call(
-        name="search",
-        call_id="call_001",
-        arguments='{"query": "AI telemetry standards 2026"}',
-    )
-    span.set_tool_result(
-        name="search",
-        call_id="call_001",
-        result='[{"title": "AITF v1.0", "url": "..."}]',
-    )
-    span.set_completion("Based on my search, the latest standards include...")
-    span.set_response(
-        response_id="msg_xyz789",
-        model="claude-sonnet-4-5-20250929",
-        finish_reasons=["end_turn"],
-    )
-    span.set_usage(input_tokens=150, output_tokens=300)
-    span.set_cost(input_cost=0.00045, output_cost=0.0045)
+bot = ChatBot(model="gpt-4o")
 
-# Example 3: Embeddings
-print("\n=== Example 3: Embeddings ===\n")
+# Simulate a realistic multi-turn support conversation
+conversation = [
+    "Hi, I'd like to check on my order status.",
+    "My order number is ORD-88421.",
+    "Can you send me the tracking link?",
+]
 
+print("=" * 70)
+print("  Acme Corp Customer Support — Chatbot Demo with AITF Tracing")
+print("=" * 70)
+
+for turn, user_msg in enumerate(conversation, 1):
+    print(f"\n--- Turn {turn} ---")
+    print(f"  Customer: {user_msg}")
+
+    # ── Wrap the LLM call with AITF tracing ──
+    with llm.trace_inference(
+        model=bot.model,
+        system="openai",
+        operation="chat",
+        temperature=0.4,
+        max_tokens=1024,
+    ) as span:
+        # Build the prompt from conversation history (what goes to the model)
+        span.set_prompt(
+            "\n".join(f"[{m.role}] {m.content}" for m in bot.history)
+            + f"\n[user] {user_msg}"
+        )
+
+        # ── Actual LLM call ──
+        response = bot.chat(user_msg)
+
+        # ── Record what came back ──
+        span.set_completion(response.content)
+        span.set_response(
+            response_id=response.id,
+            model=response.model,
+            finish_reasons=[response.finish_reason],
+        )
+        span.set_usage(
+            input_tokens=response.input_tokens,
+            output_tokens=response.output_tokens,
+        )
+        span.set_cost(
+            input_cost=response.input_tokens * INPUT_COST_PER_TOKEN,
+            output_cost=response.output_tokens * OUTPUT_COST_PER_TOKEN,
+        )
+        span.set_latency(
+            total_ms=response.latency_ms,
+            tokens_per_second=response.output_tokens / (response.latency_ms / 1000),
+        )
+
+    print(f"  Bot:      {response.content}")
+    print(f"  (tokens: {response.input_tokens} in / {response.output_tokens} out, "
+          f"{response.latency_ms:.0f} ms)")
+
+
+# ────────────────────────────────────────────────────────────────────
+# 5. Embeddings — trace a query embedding (used before vector search)
+# ────────────────────────────────────────────────────────────────────
+
+print(f"\n{'=' * 70}")
+print("  Embedding a support query for knowledge-base lookup")
+print("=" * 70)
+
+query = "How do I return a damaged item?"
 with llm.trace_inference(
     model="text-embedding-3-small",
     system="openai",
     operation="embeddings",
 ) as span:
-    span.set_prompt("AITF AI Telemetry Framework")
-    span.set_usage(input_tokens=5)
-    span.set_cost(input_cost=0.0000001)
-    span.set_latency(total_ms=120.0)
+    span.set_prompt(query)
+    # Simulate embedding call
+    time.sleep(0.05)
+    fake_tokens = len(query.split()) * 2
+    span.set_usage(input_tokens=fake_tokens)
+    span.set_cost(input_cost=fake_tokens * (0.02 / 1_000_000))
+    span.set_latency(total_ms=85.0)
 
-# Print summary
-print(f"\nOCSF events exported: {ocsf_exporter.event_count}")
-print("Events written to: /tmp/aitf_ocsf_events.jsonl")
+print(f"  Query:  \"{query}\"")
+print(f"  Model:  text-embedding-3-small")
+print(f"  Tokens: {fake_tokens}")
+
+
+# ────────────────────────────────────────────────────────────────────
+# Summary
+# ────────────────────────────────────────────────────────────────────
+
+print(f"\n{'=' * 70}")
+print("  Summary")
+print("=" * 70)
+print(f"  Conversation turns:   {len(conversation)}")
+print(f"  OCSF events exported: {ocsf_exporter.event_count}")
+print(f"  Events written to:    /tmp/aitf_ocsf_events.jsonl")
+print(f"\n  Every LLM call is now an OCSF 7001 event containing:")
+print(f"    - Model, provider, prompt/completion content")
+print(f"    - Token counts, cost, and latency")
+print(f"    - NIST AI RMF + EU AI Act + MITRE ATLAS compliance controls")
+print(f"    - OWASP LLM Top 10 security scan results")
