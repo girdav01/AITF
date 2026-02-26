@@ -321,15 +321,79 @@
         }
       ]
     },
+    "AIDataRetrievalEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/AIBaseEvent" },
+        {
+          "type": "object",
+          "required": ["database_name", "database_type"],
+          "properties": {
+            "class_uid": { "const": 7004 },
+            "database_name": { "type": "string" },
+            "database_type": { "type": "string" },
+            "query": { "type": "string" },
+            "top_k": { "type": "integer" },
+            "results_count": { "type": "integer", "minimum": 0 },
+            "min_score": { "type": "number" },
+            "max_score": { "type": "number" },
+            "filter": { "type": "string" },
+            "embedding_model": { "type": "string" },
+            "pipeline_name": { "type": "string" },
+            "pipeline_stage": { "type": "string" }
+          }
+        }
+      ]
+    },
     "AISecurityFindingEvent": {
       "allOf": [
         { "$ref": "#/definitions/AIBaseEvent" },
         {
           "type": "object",
-          "required": ["finding_type", "risk_level", "risk_score", "confidence", "blocked"],
+          "required": ["finding"],
           "properties": {
             "class_uid": { "const": 7005 },
             "finding": { "$ref": "#/definitions/AISecurityFinding" }
+          }
+        }
+      ]
+    },
+    "AISupplyChainEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/AIBaseEvent" },
+        {
+          "type": "object",
+          "required": ["model_source"],
+          "properties": {
+            "class_uid": { "const": 7006 },
+            "model_source": { "type": "string" },
+            "model_hash": { "type": "string" },
+            "model_license": { "type": "string" },
+            "model_signed": { "type": "boolean" },
+            "model_signer": { "type": "string" },
+            "verification_result": {
+              "type": "string",
+              "enum": ["pass", "fail", "unknown"]
+            },
+            "ai_bom_id": { "type": "string" },
+            "ai_bom_components": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "AIGovernanceEvent": {
+      "allOf": [
+        { "$ref": "#/definitions/AIBaseEvent" },
+        {
+          "type": "object",
+          "properties": {
+            "class_uid": { "const": 7007 },
+            "frameworks": { "type": "array", "items": { "type": "string" } },
+            "controls": { "type": "string" },
+            "event_type": { "type": "string" },
+            "violation_detected": { "type": "boolean" },
+            "violation_severity": { "type": "string" },
+            "remediation": { "type": "string" },
+            "audit_id": { "type": "string" }
           }
         }
       ]

@@ -215,6 +215,8 @@ export {
   type AISupplyChainEvent,
   type AIGovernanceEvent,
   type AIIdentityEvent,
+  type AIModelOpsEvent,
+  type AIAssetInventoryEvent,
   createModelInferenceEvent,
   createAgentActivityEvent,
   createToolExecutionEvent,
@@ -223,6 +225,8 @@ export {
   createSupplyChainEvent,
   createGovernanceEvent,
   createIdentityEvent,
+  createModelOpsEvent,
+  createAssetInventoryEvent,
 } from "./ocsf/event-classes";
 
 // OCSF Mappers

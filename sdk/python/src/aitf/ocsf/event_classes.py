@@ -1,8 +1,8 @@
 """AITF OCSF Category 7 Event Classes.
 
-Defines all eight AI event classes for OCSF integration.
+Defines all ten AI event classes (7001-7010) for OCSF integration.
 Based on event classes from the AITelemetry project, extended
-for AITF with MCP, Skills, and enhanced agent support.
+for AITF with MCP, Skills, ModelOps, Asset Inventory, and enhanced agent support.
 """
 
 from __future__ import annotations
@@ -159,3 +159,74 @@ class AIIdentityEvent(AIBaseEvent):
     credential_type: str | None = None
     delegation_chain: list[str] = Field(default_factory=list)
     scope: str | None = None
+
+
+class AIModelOpsEvent(AIBaseEvent):
+    """OCSF Class 7009: AI Model Operations.
+
+    Represents model lifecycle operations: training, evaluation,
+    deployment, serving, and monitoring.
+    """
+    class_uid: int = AIClassUID.MODEL_OPS
+    operation_type: str  # "training", "evaluation", "deployment", "serving", "monitoring", "prompt"
+    model_id: str | None = None
+    run_id: str | None = None
+    framework: str | None = None
+    status: str | None = None
+    # Training-specific
+    training_type: str | None = None
+    base_model: str | None = None
+    dataset_id: str | None = None
+    epochs: int | None = None
+    loss_final: float | None = None
+    output_model_id: str | None = None
+    # Evaluation-specific
+    evaluation_type: str | None = None
+    metrics: str | None = None  # JSON
+    passed: bool | None = None
+    # Deployment-specific
+    deployment_id: str | None = None
+    strategy: str | None = None
+    environment: str | None = None
+    endpoint: str | None = None
+    # Serving-specific
+    selected_model: str | None = None
+    fallback_chain: str | None = None  # JSON
+    cache_hit: bool | None = None
+    # Monitoring-specific
+    check_type: str | None = None
+    drift_score: float | None = None
+    drift_type: str | None = None
+    action_triggered: str | None = None
+
+
+class AIAssetInventoryEvent(AIBaseEvent):
+    """OCSF Class 7010: AI Asset Inventory.
+
+    Represents AI asset lifecycle events: registration, discovery,
+    audit, classification, and decommissioning.
+    """
+    class_uid: int = AIClassUID.ASSET_INVENTORY
+    operation_type: str  # "register", "discover", "audit", "classify", "decommission"
+    asset_id: str | None = None
+    asset_name: str | None = None
+    asset_type: str | None = None
+    asset_version: str | None = None
+    owner: str | None = None
+    deployment_environment: str | None = None
+    risk_classification: str | None = None
+    # Discovery-specific
+    discovery_scope: str | None = None
+    discovery_method: str | None = None
+    assets_found: int | None = None
+    new_assets: int | None = None
+    shadow_assets: int | None = None
+    # Audit-specific
+    audit_type: str | None = None
+    audit_result: str | None = None
+    audit_framework: str | None = None
+    audit_findings: str | None = None  # JSON
+    # Classification-specific
+    classification_framework: str | None = None
+    previous_classification: str | None = None
+    classification_reason: str | None = None

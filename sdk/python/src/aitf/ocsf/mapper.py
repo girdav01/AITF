@@ -1,8 +1,9 @@
 """AITF OCSF Mapper.
 
-Maps OpenTelemetry spans to OCSF Category 7 AI events.
+Maps OpenTelemetry spans to OCSF Category 7 AI events (7001-7010).
 Based on the OCSF mapper from the AITelemetry project, enhanced
-for AITF with MCP, Skills, and extended agent support.
+for AITF with MCP, Skills, Identity, ModelOps, Asset Inventory,
+and extended agent support.
 """
 
 from __future__ import annotations
@@ -14,9 +15,14 @@ from opentelemetry.sdk.trace import ReadableSpan
 
 from aitf.ocsf.event_classes import (
     AIAgentActivityEvent,
+    AIAssetInventoryEvent,
     AIDataRetrievalEvent,
+    AIGovernanceEvent,
+    AIIdentityEvent,
     AIModelInferenceEvent,
+    AIModelOpsEvent,
     AISecurityFindingEvent,
+    AISupplyChainEvent,
     AIToolExecutionEvent,
 )
 from aitf.ocsf.schema import (
@@ -33,13 +39,19 @@ from aitf.ocsf.schema import (
 )
 from aitf.semantic_conventions.attributes import (
     AgentAttributes,
+    AssetInventoryAttributes,
+    ComplianceAttributes,
     CostAttributes,
+    DriftDetectionAttributes,
     GenAIAttributes,
+    IdentityAttributes,
     LatencyAttributes,
     MCPAttributes,
+    ModelOpsAttributes,
     RAGAttributes,
     SecurityAttributes,
     SkillAttributes,
+    SupplyChainAttributes,
 )
 
 
@@ -57,7 +69,8 @@ class OCSFMapper:
         """Map an OTel span to an OCSF event.
 
         Returns the appropriate OCSF event class or None if the span
-        is not an AI-related span.
+        is not an AI-related span.  Covers all 10 AITF OCSF classes
+        (7001-7010).
         """
         name = span.name or ""
         attrs = dict(span.attributes or {})
@@ -73,6 +86,16 @@ class OCSFMapper:
             return self._map_data_retrieval(span, attrs)
         elif self._is_security_span(name, attrs):
             return self._map_security_finding(span, attrs)
+        elif self._is_supply_chain_span(name, attrs):
+            return self._map_supply_chain(span, attrs)
+        elif self._is_governance_span(name, attrs):
+            return self._map_governance(span, attrs)
+        elif self._is_identity_span(name, attrs):
+            return self._map_identity(span, attrs)
+        elif self._is_model_ops_span(name, attrs):
+            return self._map_model_ops(span, attrs)
+        elif self._is_asset_inventory_span(name, attrs):
+            return self._map_asset_inventory(span, attrs)
 
         return None
 
@@ -283,6 +306,287 @@ class OCSFMapper:
             finding=finding,
             severity_id=severity_map.get(finding.risk_level, OCSFSeverity.MEDIUM),
             message=span.name or f"security.{finding.finding_type}",
+            time=_span_time(span),
+        )
+
+    # ── Supply Chain (7006) ───────────────────────────────────────────
+
+    def _is_supply_chain_span(self, name: str, attrs: dict) -> bool:
+        return (
+            name.startswith("supply_chain.")
+            or SupplyChainAttributes.MODEL_SOURCE in attrs
+        )
+
+    def _map_supply_chain(self, span: ReadableSpan, attrs: dict) -> AISupplyChainEvent:
+        """Map supply chain span to OCSF 7006."""
+        name = span.name or ""
+
+        # Activity: 1=verify, 2=audit, 3=sign, 4=validate
+        if "verify" in name or "validate" in name:
+            activity_id = 1
+        elif "audit" in name:
+            activity_id = 2
+        elif "sign" in name:
+            activity_id = 3
+        else:
+            activity_id = 99
+
+        return AISupplyChainEvent(
+            activity_id=activity_id,
+            model_source=str(attrs.get(SupplyChainAttributes.MODEL_SOURCE, "unknown")),
+            model_hash=_opt_str(attrs.get(SupplyChainAttributes.MODEL_HASH)),
+            model_license=_opt_str(attrs.get(SupplyChainAttributes.MODEL_LICENSE)),
+            model_signed=bool(attrs.get(SupplyChainAttributes.MODEL_SIGNED, False)),
+            model_signer=_opt_str(attrs.get(SupplyChainAttributes.MODEL_SIGNER)),
+            ai_bom_id=_opt_str(attrs.get(SupplyChainAttributes.AI_BOM_ID)),
+            ai_bom_components=_opt_str(attrs.get(SupplyChainAttributes.AI_BOM_COMPONENTS)),
+            message=name or "supply_chain.event",
+            time=_span_time(span),
+        )
+
+    # ── Governance (7007) ─────────────────────────────────────────────
+
+    def _is_governance_span(self, name: str, attrs: dict) -> bool:
+        return (
+            name.startswith("governance.")
+            or name.startswith("compliance.")
+            or ComplianceAttributes.FRAMEWORKS in attrs
+        )
+
+    def _map_governance(self, span: ReadableSpan, attrs: dict) -> AIGovernanceEvent:
+        """Map governance/compliance span to OCSF 7007."""
+        name = span.name or ""
+
+        # Activity: 1=audit, 2=assessment, 3=violation, 4=remediation
+        if "audit" in name:
+            activity_id = 1
+        elif "assess" in name or "check" in name:
+            activity_id = 2
+        elif "violat" in name:
+            activity_id = 3
+        elif "remedia" in name:
+            activity_id = 4
+        else:
+            activity_id = 99
+
+        frameworks_raw = attrs.get(ComplianceAttributes.FRAMEWORKS)
+        frameworks: list[str] = []
+        if isinstance(frameworks_raw, (list, tuple)):
+            frameworks = [str(f) for f in frameworks_raw]
+        elif frameworks_raw is not None:
+            frameworks = [str(frameworks_raw)]
+
+        return AIGovernanceEvent(
+            activity_id=activity_id,
+            frameworks=frameworks,
+            event_type=name.split(".")[-1] if "." in name else name,
+            message=name or "governance.event",
+            time=_span_time(span),
+        )
+
+    # ── Identity (7008) ───────────────────────────────────────────────
+
+    def _is_identity_span(self, name: str, attrs: dict) -> bool:
+        return (
+            name.startswith("identity.")
+            or IdentityAttributes.AGENT_ID in attrs
+        )
+
+    def _map_identity(self, span: ReadableSpan, attrs: dict) -> AIIdentityEvent:
+        """Map identity span to OCSF 7008."""
+        name = span.name or ""
+
+        # Activity: 1=authenticate, 2=authorize, 3=delegate, 4=trust, 5=lifecycle, 6=session
+        if "auth " in name or ".auth " in name:
+            activity_id = 1
+        elif "authz" in name:
+            activity_id = 2
+        elif "delegate" in name:
+            activity_id = 3
+        elif "trust" in name:
+            activity_id = 4
+        elif "lifecycle" in name:
+            activity_id = 5
+        elif "session" in name:
+            activity_id = 6
+        else:
+            activity_id = 99
+
+        auth_method = str(attrs.get(IdentityAttributes.AUTH_METHOD, "unknown"))
+        auth_result = str(attrs.get(IdentityAttributes.AUTH_RESULT, "unknown"))
+
+        # Build delegation chain
+        chain_raw = attrs.get(IdentityAttributes.DELEGATION_CHAIN)
+        delegation_chain: list[str] = []
+        if isinstance(chain_raw, (list, tuple)):
+            delegation_chain = [str(c) for c in chain_raw]
+
+        return AIIdentityEvent(
+            activity_id=activity_id,
+            agent_name=str(attrs.get(IdentityAttributes.AGENT_NAME, "unknown")),
+            agent_id=str(attrs.get(IdentityAttributes.AGENT_ID, "unknown")),
+            auth_method=auth_method,
+            auth_result=auth_result,
+            credential_type=_opt_str(attrs.get(IdentityAttributes.CREDENTIAL_TYPE)),
+            delegation_chain=delegation_chain,
+            scope=_opt_str(attrs.get(IdentityAttributes.SCOPE)),
+            message=name or "identity.event",
+            time=_span_time(span),
+        )
+
+    # ── Model Operations (7009) ───────────────────────────────────────
+
+    def _is_model_ops_span(self, name: str, attrs: dict) -> bool:
+        return (
+            name.startswith("model_ops.")
+            or name.startswith("drift.")
+            or ModelOpsAttributes.TRAINING_RUN_ID in attrs
+            or ModelOpsAttributes.EVALUATION_RUN_ID in attrs
+            or ModelOpsAttributes.DEPLOYMENT_ID in attrs
+            or DriftDetectionAttributes.MODEL_ID in attrs
+        )
+
+    def _map_model_ops(self, span: ReadableSpan, attrs: dict) -> AIModelOpsEvent:
+        """Map model operations / drift detection span to OCSF 7009."""
+        name = span.name or ""
+
+        # Determine operation type and activity
+        if name.startswith("model_ops.training") or ModelOpsAttributes.TRAINING_RUN_ID in attrs:
+            operation_type = "training"
+            activity_id = 1  # Train
+        elif name.startswith("model_ops.evaluation") or ModelOpsAttributes.EVALUATION_RUN_ID in attrs:
+            operation_type = "evaluation"
+            activity_id = 2  # Evaluate
+        elif name.startswith("model_ops.registry"):
+            operation_type = "registry"
+            activity_id = 3  # Register
+        elif name.startswith("model_ops.deployment") or ModelOpsAttributes.DEPLOYMENT_ID in attrs:
+            operation_type = "deployment"
+            activity_id = 4  # Deploy
+        elif name.startswith("model_ops.serving"):
+            operation_type = "serving"
+            activity_id = 5  # Serve
+        elif name.startswith("model_ops.monitoring"):
+            operation_type = "monitoring"
+            activity_id = 6  # Monitor
+        elif name.startswith("model_ops.prompt"):
+            operation_type = "prompt"
+            activity_id = 7  # Prompt Management
+        elif name.startswith("drift.") or DriftDetectionAttributes.MODEL_ID in attrs:
+            operation_type = "monitoring"
+            activity_id = 6  # Monitor (drift is a monitoring concern)
+        else:
+            operation_type = "unknown"
+            activity_id = 99
+
+        # Extract model ID from various attribute sources
+        model_id = _opt_str(
+            attrs.get(ModelOpsAttributes.TRAINING_BASE_MODEL)
+            or attrs.get(ModelOpsAttributes.EVALUATION_MODEL_ID)
+            or attrs.get(ModelOpsAttributes.DEPLOYMENT_MODEL_ID)
+            or attrs.get(ModelOpsAttributes.REGISTRY_MODEL_ID)
+            or attrs.get(DriftDetectionAttributes.MODEL_ID)
+        )
+
+        # Extract run ID
+        run_id = _opt_str(
+            attrs.get(ModelOpsAttributes.TRAINING_RUN_ID)
+            or attrs.get(ModelOpsAttributes.EVALUATION_RUN_ID)
+        )
+
+        return AIModelOpsEvent(
+            activity_id=activity_id,
+            operation_type=operation_type,
+            model_id=model_id,
+            run_id=run_id,
+            status=_opt_str(attrs.get(ModelOpsAttributes.TRAINING_STATUS) or attrs.get(ModelOpsAttributes.DEPLOYMENT_STATUS)),
+            # Training
+            training_type=_opt_str(attrs.get(ModelOpsAttributes.TRAINING_TYPE)),
+            base_model=_opt_str(attrs.get(ModelOpsAttributes.TRAINING_BASE_MODEL)),
+            dataset_id=_opt_str(attrs.get(ModelOpsAttributes.TRAINING_DATASET_ID)),
+            epochs=_opt_int(attrs.get(ModelOpsAttributes.TRAINING_EPOCHS)),
+            loss_final=_opt_float(attrs.get(ModelOpsAttributes.TRAINING_LOSS_FINAL)),
+            output_model_id=_opt_str(attrs.get(ModelOpsAttributes.TRAINING_OUTPUT_MODEL_ID)),
+            # Evaluation
+            evaluation_type=_opt_str(attrs.get(ModelOpsAttributes.EVALUATION_TYPE)),
+            metrics=_opt_str(attrs.get(ModelOpsAttributes.EVALUATION_METRICS)),
+            passed=_opt_bool(attrs.get(ModelOpsAttributes.EVALUATION_PASS)),
+            # Deployment
+            deployment_id=_opt_str(attrs.get(ModelOpsAttributes.DEPLOYMENT_ID)),
+            strategy=_opt_str(attrs.get(ModelOpsAttributes.DEPLOYMENT_STRATEGY)),
+            environment=_opt_str(attrs.get(ModelOpsAttributes.DEPLOYMENT_ENVIRONMENT)),
+            endpoint=_opt_str(attrs.get(ModelOpsAttributes.DEPLOYMENT_ENDPOINT)),
+            # Serving
+            selected_model=_opt_str(attrs.get(ModelOpsAttributes.SERVING_ROUTE_SELECTED_MODEL)),
+            fallback_chain=_opt_str(attrs.get(ModelOpsAttributes.SERVING_FALLBACK_CHAIN)),
+            cache_hit=_opt_bool(attrs.get(ModelOpsAttributes.SERVING_CACHE_HIT)),
+            # Monitoring / Drift
+            check_type=_opt_str(attrs.get(ModelOpsAttributes.MONITORING_CHECK_TYPE) or attrs.get(DriftDetectionAttributes.TYPE)),
+            drift_score=_opt_float(attrs.get(ModelOpsAttributes.MONITORING_DRIFT_SCORE) or attrs.get(DriftDetectionAttributes.SCORE)),
+            drift_type=_opt_str(attrs.get(ModelOpsAttributes.MONITORING_DRIFT_TYPE) or attrs.get(DriftDetectionAttributes.TYPE)),
+            action_triggered=_opt_str(attrs.get(ModelOpsAttributes.MONITORING_ACTION_TRIGGERED) or attrs.get(DriftDetectionAttributes.ACTION_TRIGGERED)),
+            message=name or f"model_ops.{operation_type}",
+            time=_span_time(span),
+        )
+
+    # ── Asset Inventory (7010) ────────────────────────────────────────
+
+    def _is_asset_inventory_span(self, name: str, attrs: dict) -> bool:
+        return (
+            name.startswith("asset.")
+            or AssetInventoryAttributes.ID in attrs
+        )
+
+    def _map_asset_inventory(self, span: ReadableSpan, attrs: dict) -> AIAssetInventoryEvent:
+        """Map asset inventory span to OCSF 7010."""
+        name = span.name or ""
+
+        # Activity: 1=register, 2=discover, 3=audit, 4=classify, 5=decommission
+        if "register" in name:
+            operation_type = "register"
+            activity_id = 1
+        elif "discover" in name:
+            operation_type = "discover"
+            activity_id = 2
+        elif "audit" in name:
+            operation_type = "audit"
+            activity_id = 3
+        elif "classify" in name:
+            operation_type = "classify"
+            activity_id = 4
+        elif "decommission" in name:
+            operation_type = "decommission"
+            activity_id = 5
+        else:
+            operation_type = "unknown"
+            activity_id = 99
+
+        return AIAssetInventoryEvent(
+            activity_id=activity_id,
+            operation_type=operation_type,
+            asset_id=_opt_str(attrs.get(AssetInventoryAttributes.ID)),
+            asset_name=_opt_str(attrs.get(AssetInventoryAttributes.NAME)),
+            asset_type=_opt_str(attrs.get(AssetInventoryAttributes.TYPE)),
+            asset_version=_opt_str(attrs.get(AssetInventoryAttributes.VERSION)),
+            owner=_opt_str(attrs.get(AssetInventoryAttributes.OWNER)),
+            deployment_environment=_opt_str(attrs.get(AssetInventoryAttributes.DEPLOYMENT_ENVIRONMENT)),
+            risk_classification=_opt_str(attrs.get(AssetInventoryAttributes.RISK_CLASSIFICATION)),
+            # Discovery
+            discovery_scope=_opt_str(attrs.get(AssetInventoryAttributes.DISCOVERY_SCOPE)),
+            discovery_method=_opt_str(attrs.get(AssetInventoryAttributes.DISCOVERY_METHOD)),
+            assets_found=_opt_int(attrs.get(AssetInventoryAttributes.DISCOVERY_ASSETS_FOUND)),
+            new_assets=_opt_int(attrs.get(AssetInventoryAttributes.DISCOVERY_NEW_ASSETS)),
+            shadow_assets=_opt_int(attrs.get(AssetInventoryAttributes.DISCOVERY_SHADOW_ASSETS)),
+            # Audit
+            audit_type=_opt_str(attrs.get(AssetInventoryAttributes.AUDIT_TYPE)),
+            audit_result=_opt_str(attrs.get(AssetInventoryAttributes.AUDIT_RESULT)),
+            audit_framework=_opt_str(attrs.get(AssetInventoryAttributes.AUDIT_FRAMEWORK)),
+            audit_findings=_opt_str(attrs.get(AssetInventoryAttributes.AUDIT_FINDINGS)),
+            # Classification
+            classification_framework=_opt_str(attrs.get(AssetInventoryAttributes.CLASSIFICATION_FRAMEWORK)),
+            previous_classification=_opt_str(attrs.get(AssetInventoryAttributes.CLASSIFICATION_PREVIOUS)),
+            classification_reason=_opt_str(attrs.get(AssetInventoryAttributes.CLASSIFICATION_REASON)),
+            message=name or f"asset.{operation_type}",
             time=_span_time(span),
         )
 

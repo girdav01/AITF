@@ -1,9 +1,9 @@
 /**
  * AITF OCSF Category 7 Event Classes.
  *
- * Defines all eight AI event classes for OCSF integration.
+ * Defines all ten AI event classes (7001-7010) for OCSF integration.
  * Based on event classes from the AITelemetry project, extended
- * for AITF with MCP, Skills, and enhanced agent support.
+ * for AITF with MCP, Skills, ModelOps, Asset Inventory, and enhanced agent support.
  */
 
 import {
@@ -123,6 +123,59 @@ export interface AIIdentityEvent extends AIBaseEvent {
   scope?: string;
 }
 
+/** OCSF Class 7009: AI Model Operations. */
+export interface AIModelOpsEvent extends AIBaseEvent {
+  operation_type: string; // "training", "evaluation", "deployment", "serving", "monitoring", "prompt"
+  model_id?: string;
+  run_id?: string;
+  framework?: string;
+  status?: string;
+  training_type?: string;
+  base_model?: string;
+  dataset_id?: string;
+  epochs?: number;
+  loss_final?: number;
+  output_model_id?: string;
+  evaluation_type?: string;
+  metrics?: string; // JSON
+  passed?: boolean;
+  deployment_id?: string;
+  strategy?: string;
+  environment?: string;
+  endpoint?: string;
+  selected_model?: string;
+  fallback_chain?: string; // JSON
+  cache_hit?: boolean;
+  check_type?: string;
+  drift_score?: number;
+  drift_type?: string;
+  action_triggered?: string;
+}
+
+/** OCSF Class 7010: AI Asset Inventory. */
+export interface AIAssetInventoryEvent extends AIBaseEvent {
+  operation_type: string; // "register", "discover", "audit", "classify", "decommission"
+  asset_id?: string;
+  asset_name?: string;
+  asset_type?: string;
+  asset_version?: string;
+  owner?: string;
+  deployment_environment?: string;
+  risk_classification?: string;
+  discovery_scope?: string;
+  discovery_method?: string;
+  assets_found?: number;
+  new_assets?: number;
+  shadow_assets?: number;
+  audit_type?: string;
+  audit_result?: string;
+  audit_framework?: string;
+  audit_findings?: string; // JSON
+  classification_framework?: string;
+  previous_classification?: string;
+  classification_reason?: string;
+}
+
 // --- Validation Helpers ---
 
 /** Valid OCSF Category 7 class UIDs. */
@@ -135,6 +188,8 @@ const VALID_CLASS_UIDS = new Set([
   AIClassUID.SUPPLY_CHAIN,
   AIClassUID.GOVERNANCE,
   AIClassUID.IDENTITY,
+  AIClassUID.MODEL_OPS,
+  AIClassUID.ASSET_INVENTORY,
 ]);
 
 /** The fixed category_uid for all AITF AI events. */
@@ -495,5 +550,137 @@ export function createIdentityEvent(
     credential_type: options.credentialType,
     delegation_chain: options.delegationChain ?? [],
     scope: options.scope,
+  };
+}
+
+/** Create a Model Operations event. */
+export function createModelOpsEvent(
+  options: {
+    operationType: string;
+    modelId?: string;
+    runId?: string;
+    framework?: string;
+    status?: string;
+    trainingType?: string;
+    baseModel?: string;
+    datasetId?: string;
+    epochs?: number;
+    lossFinal?: number;
+    outputModelId?: string;
+    evaluationType?: string;
+    metrics?: string;
+    passed?: boolean;
+    deploymentId?: string;
+    strategy?: string;
+    environment?: string;
+    endpoint?: string;
+    selectedModel?: string;
+    fallbackChain?: string;
+    cacheHit?: boolean;
+    checkType?: string;
+    driftScore?: number;
+    driftType?: string;
+    actionTriggered?: string;
+    activityId?: number;
+    message?: string;
+    time?: string;
+  }
+): AIModelOpsEvent {
+  requireString(options.operationType, "operationType", "createModelOpsEvent");
+  const base = createBaseEvent(AIClassUID.MODEL_OPS, {
+    activity_id: options.activityId,
+    message: options.message,
+    time: options.time,
+  });
+  validateBaseFields(base, "createModelOpsEvent");
+
+  return {
+    ...base,
+    operation_type: options.operationType,
+    model_id: options.modelId,
+    run_id: options.runId,
+    framework: options.framework,
+    status: options.status,
+    training_type: options.trainingType,
+    base_model: options.baseModel,
+    dataset_id: options.datasetId,
+    epochs: options.epochs,
+    loss_final: options.lossFinal,
+    output_model_id: options.outputModelId,
+    evaluation_type: options.evaluationType,
+    metrics: options.metrics,
+    passed: options.passed,
+    deployment_id: options.deploymentId,
+    strategy: options.strategy,
+    environment: options.environment,
+    endpoint: options.endpoint,
+    selected_model: options.selectedModel,
+    fallback_chain: options.fallbackChain,
+    cache_hit: options.cacheHit,
+    check_type: options.checkType,
+    drift_score: options.driftScore,
+    drift_type: options.driftType,
+    action_triggered: options.actionTriggered,
+  };
+}
+
+/** Create an Asset Inventory event. */
+export function createAssetInventoryEvent(
+  options: {
+    operationType: string;
+    assetId?: string;
+    assetName?: string;
+    assetType?: string;
+    assetVersion?: string;
+    owner?: string;
+    deploymentEnvironment?: string;
+    riskClassification?: string;
+    discoveryScope?: string;
+    discoveryMethod?: string;
+    assetsFound?: number;
+    newAssets?: number;
+    shadowAssets?: number;
+    auditType?: string;
+    auditResult?: string;
+    auditFramework?: string;
+    auditFindings?: string;
+    classificationFramework?: string;
+    previousClassification?: string;
+    classificationReason?: string;
+    activityId?: number;
+    message?: string;
+    time?: string;
+  }
+): AIAssetInventoryEvent {
+  requireString(options.operationType, "operationType", "createAssetInventoryEvent");
+  const base = createBaseEvent(AIClassUID.ASSET_INVENTORY, {
+    activity_id: options.activityId,
+    message: options.message,
+    time: options.time,
+  });
+  validateBaseFields(base, "createAssetInventoryEvent");
+
+  return {
+    ...base,
+    operation_type: options.operationType,
+    asset_id: options.assetId,
+    asset_name: options.assetName,
+    asset_type: options.assetType,
+    asset_version: options.assetVersion,
+    owner: options.owner,
+    deployment_environment: options.deploymentEnvironment,
+    risk_classification: options.riskClassification,
+    discovery_scope: options.discoveryScope,
+    discovery_method: options.discoveryMethod,
+    assets_found: options.assetsFound,
+    new_assets: options.newAssets,
+    shadow_assets: options.shadowAssets,
+    audit_type: options.auditType,
+    audit_result: options.auditResult,
+    audit_framework: options.auditFramework,
+    audit_findings: options.auditFindings,
+    classification_framework: options.classificationFramework,
+    previous_classification: options.previousClassification,
+    classification_reason: options.classificationReason,
   };
 }
