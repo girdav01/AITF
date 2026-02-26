@@ -248,6 +248,55 @@ const exporter = new OCSFExporter({
 });
 ```
 
+## Vendor & Framework Integrations
+
+AITF includes JSON-driven vendor mappings that automatically normalize telemetry from popular AI frameworks and routing services into AITF semantic conventions and OCSF events. No code changes required — just point AITF at your existing telemetry.
+
+| Integration | Type | Vendor Mapping | Example |
+|-------------|------|:-:|---------|
+| **LangChain / LangSmith** | Framework | [`langchain.json`](sdk/python/src/aitf/ocsf/vendor_mappings/langchain.json) | [`vendor_mapping_tracing.py`](examples/vendor_mapping_tracing.py) |
+| **CrewAI** | Multi-Agent Framework | [`crewai.json`](sdk/python/src/aitf/ocsf/vendor_mappings/crewai.json) | [`vendor_mapping_tracing.py`](examples/vendor_mapping_tracing.py) |
+| **OpenRouter** | LLM Routing Service | [`openrouter.json`](sdk/python/src/aitf/ocsf/vendor_mappings/openrouter.json) | [`openrouter_tracing.py`](examples/openrouter_tracing.py) |
+
+### How Vendor Mappings Work
+
+```
+Your App (LangChain / CrewAI / OpenRouter telemetry)
+     │
+     ▼
+VendorMapper ──▶ Reads vendor JSON mapping
+     │              ├─ Classify spans by name patterns
+     │              ├─ Translate vendor attributes → AITF/OTel conventions
+     │              └─ Detect underlying LLM provider from model names
+     ▼
+AITF Normalized Spans (gen_ai.*, aitf.*)
+     │
+     ▼
+OCSFMapper ──▶ OCSF Category 7 events → SIEM/XDR
+```
+
+Each vendor mapping JSON defines:
+- **Span name patterns** — regex rules to classify spans (inference, agent, tool, retrieval)
+- **Attribute mappings** — vendor-native → AITF/OTel semantic conventions
+- **Provider detection** — infer the underlying LLM provider from model names (e.g., `anthropic/claude-*` → `anthropic`)
+- **OCSF class/activity** — map to the correct OCSF event class and activity ID
+- **Severity mapping** — translate vendor status codes to OCSF severity levels
+
+### Adding Your Own Vendor
+
+Create a JSON file following the schema and load it:
+
+```python
+from aitf.ocsf.vendor_mapper import VendorMapper
+
+mapper = VendorMapper()
+mapper.load_mapping("/path/to/my-vendor.json")
+
+# Classify and normalize spans
+span_type = mapper.classify_span("openrouter", "chat anthropic/claude-sonnet-4-5-20250929")
+normalized = mapper.normalize("openrouter", "inference", vendor_attributes)
+```
+
 ## SIEM & XDR Integrations
 
 AITF includes proposed forwarding examples for major security platforms (experimental — not production-ready):
