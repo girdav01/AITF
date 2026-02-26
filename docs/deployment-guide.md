@@ -3145,6 +3145,7 @@ AITF includes a **vendor mapping** system that lets agentic framework vendors su
 |--------|------|-------------|---------|
 | LangChain | `langchain.json` | inference, agent, tool, retrieval, chain | 0.3 |
 | CrewAI | `crewai.json` | inference, agent, tool, delegation | 0.100 |
+| OpenRouter | `openrouter.json` | inference | 1.0 |
 
 ### Usage
 
