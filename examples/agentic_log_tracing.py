@@ -1,11 +1,24 @@
-"""AITF Example: Agentic Log Tracing (Table 10.1 Minimal Fields).
+"""AITF Example: Agentic Log Tracing — DevOps Incident Response Agent.
 
-Demonstrates how to create structured agentic log entries that capture
-security-relevant context for every action taken by an AI agent.
+Demonstrates structured agentic log entries (Table 10.1 minimal fields)
+in the context of a realistic DevOps incident-response scenario:
 
-Based on Table 10.1: Agentic log with minimum fields, using the
-Logi-Agent example from the specification.
+    A production alert fires for high CPU on the payments service.
+    An autonomous agent investigates, identifies the root cause (a
+    runaway database query), applies a fix, and verifies recovery —
+    each action logged with goal, tool, outcome, confidence, anomaly
+    score, and policy evaluation for full security audit.
+
+Run:
+    pip install opentelemetry-sdk aitf
+    python agentic_log_tracing.py
 """
+
+from __future__ import annotations
+
+import json
+import random
+import time
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -15,166 +28,347 @@ from aitf.instrumentation.agentic_log import AgenticLogInstrumentor
 from aitf.instrumentation.agent import AgentInstrumentor
 from aitf.exporters.ocsf_exporter import OCSFExporter
 
-# --- Setup ---
+
+# ────────────────────────────────────────────────────────────────────
+# 1. Simulated DevOps tools
+# ────────────────────────────────────────────────────────────────────
+
+def check_service_health(service: str) -> dict:
+    """Simulate a health check against Kubernetes."""
+    time.sleep(0.05)
+    return {
+        "service": service,
+        "status": "degraded",
+        "cpu_pct": 94.2,
+        "memory_pct": 67.1,
+        "error_rate": 12.4,
+        "p99_latency_ms": 3400,
+        "replicas": {"desired": 3, "ready": 2},
+    }
+
+
+def query_logs(service: str, window: str = "15m") -> list[dict]:
+    """Simulate a log query (Datadog / Splunk style)."""
+    time.sleep(0.05)
+    return [
+        {"ts": "2026-02-26T14:32:01Z", "level": "ERROR",
+         "msg": "QueryTimeout: SELECT * FROM transactions WHERE status='pending' exceeded 30s"},
+        {"ts": "2026-02-26T14:32:15Z", "level": "ERROR",
+         "msg": "ConnectionPool exhausted: 50/50 connections in use"},
+        {"ts": "2026-02-26T14:32:30Z", "level": "WARN",
+         "msg": "CPU throttling detected on pod payments-7b4f9c-xk2p"},
+    ]
+
+
+def run_db_explain(query: str) -> dict:
+    """Simulate running EXPLAIN on a slow query."""
+    time.sleep(0.05)
+    return {
+        "query": query,
+        "plan": "Seq Scan on transactions (rows=2.4M, cost=184200)",
+        "suggestion": "Add index on (status, created_at) to avoid full table scan",
+        "estimated_improvement": "~98% reduction in query time",
+    }
+
+
+def apply_hotfix(action: str, params: dict) -> dict:
+    """Simulate applying an operational hotfix."""
+    time.sleep(0.1)
+    return {"action": action, "params": params, "result": "applied", "rollback_id": "rb-20260226-001"}
+
+
+def verify_recovery(service: str) -> dict:
+    """Simulate a post-fix health check."""
+    time.sleep(0.05)
+    return {
+        "service": service,
+        "status": "healthy",
+        "cpu_pct": 28.5,
+        "error_rate": 0.1,
+        "p99_latency_ms": 180,
+        "replicas": {"desired": 3, "ready": 3},
+    }
+
+
+# ────────────────────────────────────────────────────────────────────
+# 2. AITF Setup
+# ────────────────────────────────────────────────────────────────────
 
 provider = TracerProvider()
 provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
-provider.add_span_processor(SimpleSpanProcessor(OCSFExporter(
+ocsf_exporter = OCSFExporter(
     output_file="/tmp/aitf_agentic_log_events.jsonl",
     compliance_frameworks=["nist_ai_rmf", "eu_ai_act"],
-)))
+)
+provider.add_span_processor(SimpleSpanProcessor(ocsf_exporter))
 trace.set_tracer_provider(provider)
 
 agentic_log = AgenticLogInstrumentor(tracer_provider=provider)
 agent_instr = AgentInstrumentor(tracer_provider=provider)
 
-# --- Example 1: Basic Agentic Log Entry (Logi-Agent from Table 10.1) ---
+AGENT_ID = "agent-devops-responder-prod-001"
+SESSION_ID = f"sess-{random.randint(100000, 999999)}"
+GOAL_ID = "goal-resolve-payments-cpu-alert"
 
-print("=== Example 1: Logi-Agent Log Entry (Table 10.1) ===\n")
 
-with agentic_log.log_action(
-    agent_id="agent-innovacorp-logicore-prod-042",
-    session_id="sess-f0a1b2",
-    event_id="e-44b1c8f0",
-) as entry:
-    # GoalID: The single most important field for security context
-    entry.set_goal_id("goal-resolve-port-congestion-sg")
+# ────────────────────────────────────────────────────────────────────
+# 3. Incident Response Scenario
+# ────────────────────────────────────────────────────────────────────
 
-    # SubTaskID: Granular context for the specific action
-    entry.set_sub_task_id("task-find-all-trucking-vendor")
-
-    # ToolUsed: Pinpoints the exact capability being used
-    entry.set_tool_used("mcp.server.github.list_tools")
-
-    # ToolParameters: Sanitized (PII/credentials redacted)
-    entry.set_tool_parameters({"repo": "innovacorp logistics-tools"})
-
-    # Outcome: Basic operational monitoring
-    entry.set_outcome("SUCCESS")
-
-    # ConfidenceScore: A sudden drop can indicate a poisoned environment
-    entry.set_confidence_score(0.92)
-
-    # AnomalyScore: The primary input for automated alerting
-    entry.set_anomaly_score(0.15)
-
-    # PolicyEvaluation: Proactive compliance and guardrail enforcement
-    entry.set_policy_evaluation({
-        "policy": "max_spend",
-        "shipment": True,
-        "result": "PASS",
-    })
-
-print(f"  Event ID: {entry.event_id}")
-print(f"  Timestamp: {entry.timestamp}")
-
-# --- Example 2: Agentic Log within Agent Session ---
-
-print("\n=== Example 2: Agentic Log within Agent Session ===\n")
+print("=" * 70)
+print("  DevOps Incident Response Agent — with Agentic Log Tracing")
+print("=" * 70)
+print(f"\n  ALERT: payments-service CPU at 94% — error rate 12.4%")
+print(f"  Agent: {AGENT_ID}")
+print(f"  Session: {SESSION_ID}")
+print(f"  Goal: {GOAL_ID}\n")
 
 with agent_instr.trace_session(
-    agent_name="supply-chain-optimizer",
-    agent_id="agent-innovacorp-sco-prod-007",
+    agent_name="devops-responder",
+    agent_id=AGENT_ID,
     framework="custom",
-    description="Optimizes supply chain routes and vendor selection",
+    description="Autonomous incident response for production alerts",
 ) as session:
 
-    # Step 1: Planning - logged with agentic log
-    with session.step("planning") as step:
-        step.set_thought("Need to analyze port congestion data")
+    # ── Action 1: Check service health ───────────────────────────
+    print("  Action 1: Checking service health …")
+    with session.step("tool_use") as step:
+        step.set_action("check_service_health(payments-service)")
 
         with agentic_log.log_action(
-            agent_id="agent-innovacorp-sco-prod-007",
-            session_id="sess-d3e4f5",
-            goal_id="goal-optimize-asia-pacific-routes",
-            sub_task_id="task-analyze-port-congestion",
-            tool_used="internal.analytics.port_status",
-            tool_parameters={"region": "asia-pacific", "ports": ["SGSIN", "CNSHA"]},
-            confidence_score=0.88,
-        ) as log_entry:
-            log_entry.set_outcome("SUCCESS")
-            log_entry.set_anomaly_score(0.05)
-            log_entry.set_policy_evaluation({
-                "policy": "data_access_scope",
+            agent_id=AGENT_ID,
+            session_id=SESSION_ID,
+            goal_id=GOAL_ID,
+            sub_task_id="task-check-health",
+            tool_used="k8s.health_check",
+            tool_parameters={"service": "payments-service", "namespace": "production"},
+            confidence_score=0.95,
+        ) as entry:
+            health = check_service_health("payments-service")
+            entry.set_outcome("SUCCESS")
+            entry.set_anomaly_score(0.10)
+            entry.set_policy_evaluation({
+                "policy": "read_only_monitoring",
                 "result": "PASS",
             })
 
-    # Step 2: Tool Use - with higher anomaly score
+        step.set_observation(
+            f"CPU={health['cpu_pct']}%, errors={health['error_rate']}%, "
+            f"p99={health['p99_latency_ms']}ms, replicas={health['replicas']}"
+        )
+
+    print(f"    Status: {health['status']}, CPU: {health['cpu_pct']}%")
+    print(f"    Error rate: {health['error_rate']}%, P99: {health['p99_latency_ms']}ms")
+
+    # ── Action 2: Query recent logs ──────────────────────────────
+    print("\n  Action 2: Querying recent logs …")
     with session.step("tool_use") as step:
-        step.set_action("query vendor database")
+        step.set_action("query_logs(payments-service, 15m)")
 
         with agentic_log.log_action(
-            agent_id="agent-innovacorp-sco-prod-007",
-            session_id="sess-d3e4f5",
-            goal_id="goal-optimize-asia-pacific-routes",
-            sub_task_id="task-query-vendor-pricing",
-            tool_used="mcp.server.vendor-db.query",
+            agent_id=AGENT_ID,
+            session_id=SESSION_ID,
+            goal_id=GOAL_ID,
+            sub_task_id="task-query-logs",
+            tool_used="datadog.logs.query",
             tool_parameters={
-                "query_type": "pricing",
-                "vendor_category": "trucking",
-                "region": "singapore",
+                "service": "payments-service",
+                "window": "15m",
+                "level": "ERROR,WARN",
             },
-            confidence_score=0.75,
-        ) as log_entry:
-            log_entry.set_outcome("SUCCESS")
-            # Higher anomaly: this agent doesn't usually query pricing
-            log_entry.set_anomaly_score(0.45)
-            log_entry.set_policy_evaluation({
-                "policy": "vendor_data_access",
+            confidence_score=0.90,
+        ) as entry:
+            logs = query_logs("payments-service")
+            entry.set_outcome("SUCCESS")
+            entry.set_anomaly_score(0.08)
+            entry.set_policy_evaluation({
+                "policy": "log_read_access",
+                "result": "PASS",
+            })
+
+        step.set_observation(f"Found {len(logs)} relevant log entries")
+
+    for log in logs:
+        print(f"    [{log['level']}] {log['msg'][:70]}…")
+
+    # ── Action 3: Analyze the slow query ─────────────────────────
+    print("\n  Action 3: Running EXPLAIN on slow query …")
+    with session.step("reasoning") as step:
+        step.set_thought(
+            "Logs show a QueryTimeout on `SELECT * FROM transactions WHERE "
+            "status='pending'`.  This is likely a full table scan on the "
+            "2.4M-row transactions table.  Let me run EXPLAIN to confirm."
+        )
+
+        with agentic_log.log_action(
+            agent_id=AGENT_ID,
+            session_id=SESSION_ID,
+            goal_id=GOAL_ID,
+            sub_task_id="task-explain-query",
+            tool_used="postgres.explain",
+            tool_parameters={
+                "query": "SELECT * FROM transactions WHERE status='pending'",
+                "database": "payments_prod",
+            },
+            confidence_score=0.85,
+        ) as entry:
+            explain = run_db_explain("SELECT * FROM transactions WHERE status='pending'")
+            entry.set_outcome("SUCCESS")
+            # Slightly elevated anomaly: running EXPLAIN on prod is unusual
+            entry.set_anomaly_score(0.25)
+            entry.set_policy_evaluation({
+                "policy": "db_read_access",
+                "result": "PASS",
+                "note": "EXPLAIN is read-only, allowed",
+            })
+
+    print(f"    Plan: {explain['plan']}")
+    print(f"    Fix:  {explain['suggestion']}")
+
+    # ── Action 4: Apply hotfix — kill slow queries + add index ───
+    print("\n  Action 4: Applying hotfix (kill slow queries) …")
+    with session.step("tool_use") as step:
+        step.set_action("apply_hotfix: kill_slow_queries + create_index")
+
+        # Sub-action 4a: Kill running slow queries
+        with agentic_log.log_action(
+            agent_id=AGENT_ID,
+            session_id=SESSION_ID,
+            goal_id=GOAL_ID,
+            sub_task_id="task-kill-slow-queries",
+            tool_used="postgres.pg_terminate_backend",
+            tool_parameters={
+                "query_pattern": "SELECT * FROM transactions WHERE status='pending'",
+                "min_duration": "30s",
+            },
+            confidence_score=0.78,
+        ) as entry:
+            fix1 = apply_hotfix("kill_slow_queries", {"min_duration": "30s"})
+            entry.set_outcome("SUCCESS")
+            # Higher anomaly: this is a write operation on production
+            entry.set_anomaly_score(0.55)
+            entry.set_policy_evaluation({
+                "policy": "prod_write_access",
                 "result": "WARN",
-                "reason": "Agent accessing pricing data outside normal pattern",
+                "reason": "Write action on production DB — requires incident ticket",
+                "incident_ticket": "INC-2026-4421",
             })
 
-        step.set_observation("Retrieved pricing for 12 trucking vendors")
+        print(f"    Killed slow queries (rollback: {fix1['rollback_id']})")
 
-    # Step 3: Denied action - policy blocks
+        # Sub-action 4b: Create missing index
+        with agentic_log.log_action(
+            agent_id=AGENT_ID,
+            session_id=SESSION_ID,
+            goal_id=GOAL_ID,
+            sub_task_id="task-create-index",
+            tool_used="postgres.create_index",
+            tool_parameters={
+                "table": "transactions",
+                "columns": ["status", "created_at"],
+                "concurrently": True,
+            },
+            confidence_score=0.72,
+        ) as entry:
+            fix2 = apply_hotfix("create_index", {
+                "table": "transactions",
+                "columns": ["status", "created_at"],
+            })
+            entry.set_outcome("SUCCESS")
+            # High anomaly: DDL on production
+            entry.set_anomaly_score(0.70)
+            entry.set_policy_evaluation({
+                "policy": "prod_ddl_access",
+                "result": "WARN",
+                "reason": "DDL change on production — requires approval within 15min",
+                "approval_deadline": "2026-02-26T14:50:00Z",
+            })
+
+        step.set_observation("Hotfix applied: slow queries killed + index created")
+        print(f"    Created index on transactions(status, created_at)")
+
+    # ── Action 5: Verify recovery ────────────────────────────────
+    print("\n  Action 5: Verifying recovery …")
     with session.step("tool_use") as step:
-        step.set_action("attempt to modify vendor contract")
+        step.set_action("verify_recovery(payments-service)")
 
         with agentic_log.log_action(
-            agent_id="agent-innovacorp-sco-prod-007",
-            session_id="sess-d3e4f5",
-            goal_id="goal-optimize-asia-pacific-routes",
-            sub_task_id="task-update-vendor-contract",
-            tool_used="mcp.server.vendor-db.update_contract",
-            tool_parameters={
-                "vendor_id": "VENDOR-TRK-042",
-                "field": "rate_per_km",
-            },
-        ) as log_entry:
-            log_entry.set_outcome("DENIED")
-            log_entry.set_confidence_score(0.30)
-            log_entry.set_anomaly_score(0.85)
-            log_entry.set_policy_evaluation({
-                "policy": "write_access_contract",
-                "result": "FAIL",
-                "reason": "Agent lacks write permissions to vendor contracts",
+            agent_id=AGENT_ID,
+            session_id=SESSION_ID,
+            goal_id=GOAL_ID,
+            sub_task_id="task-verify-recovery",
+            tool_used="k8s.health_check",
+            tool_parameters={"service": "payments-service", "post_fix": True},
+            confidence_score=0.98,
+        ) as entry:
+            recovery = verify_recovery("payments-service")
+            entry.set_outcome("SUCCESS")
+            entry.set_anomaly_score(0.02)
+            entry.set_policy_evaluation({
+                "policy": "read_only_monitoring",
+                "result": "PASS",
             })
 
-        step.set_observation("Action denied by policy engine")
-        step.set_status("denied")
+        step.set_observation(
+            f"Service healthy: CPU={recovery['cpu_pct']}%, "
+            f"errors={recovery['error_rate']}%, p99={recovery['p99_latency_ms']}ms"
+        )
+        step.set_status("success")
 
-# --- Example 3: Using kwargs for concise logging ---
+    print(f"    Status: {recovery['status']}")
+    print(f"    CPU: {recovery['cpu_pct']}% (was {health['cpu_pct']}%)")
+    print(f"    Error rate: {recovery['error_rate']}% (was {health['error_rate']}%)")
+    print(f"    P99 latency: {recovery['p99_latency_ms']}ms (was {health['p99_latency_ms']}ms)")
 
-print("\n=== Example 3: Concise Log Entry with kwargs ===\n")
+
+# ────────────────────────────────────────────────────────────────────
+# 4. Example: Blocked action (agent tries something it shouldn't)
+# ────────────────────────────────────────────────────────────────────
+
+print(f"\n{'=' * 70}")
+print("  Example 2: Policy-Blocked Action")
+print("=" * 70)
+
+print("\n  Agent attempts to drop the slow-query cache table …")
 
 with agentic_log.log_action(
-    agent_id="agent-monitoring-sentinel-001",
-    session_id="sess-g6h7i8",
-    goal_id="goal-continuous-security-scan",
-    sub_task_id="task-scan-api-endpoints",
-    tool_used="security.scanner.api_audit",
-    tool_parameters={"target": "api.internal.innovacorp.com", "scan_type": "full"},
-    confidence_score=0.99,
-    anomaly_score=0.02,
+    agent_id=AGENT_ID,
+    session_id=SESSION_ID,
+    goal_id=GOAL_ID,
+    sub_task_id="task-drop-cache-table",
+    tool_used="postgres.drop_table",
+    tool_parameters={"table": "query_cache", "cascade": True},
 ) as entry:
-    entry.set_outcome("SUCCESS")
+    entry.set_outcome("DENIED")
+    entry.set_confidence_score(0.40)
+    entry.set_anomaly_score(0.92)
     entry.set_policy_evaluation({
-        "policy": "scheduled_scan",
-        "result": "PASS",
+        "policy": "destructive_operations",
+        "result": "FAIL",
+        "reason": "DROP TABLE is permanently destructive — requires human approval",
+        "escalated_to": "oncall@acme.corp",
     })
 
-print(f"  Event ID: {entry.event_id}")
-print(f"  Timestamp: {entry.timestamp}")
+print(f"  Outcome: DENIED")
+print(f"  Anomaly: 0.92 (would trigger SIEM alert)")
+print(f"  Policy:  destructive_operations → FAIL")
+print(f"  Action:  Escalated to oncall@acme.corp")
 
-print("\nAgentic log tracing complete. Events at /tmp/aitf_agentic_log_events.jsonl")
+
+# ────────────────────────────────────────────────────────────────────
+# Summary
+# ────────────────────────────────────────────────────────────────────
+
+print(f"\n{'=' * 70}")
+print("  Summary")
+print("=" * 70)
+print(f"  Incident:          payments-service CPU spike")
+print(f"  Root cause:        Missing index → full table scan → connection pool exhaustion")
+print(f"  Resolution:        Killed slow queries + created index")
+print(f"  Recovery:          CPU {health['cpu_pct']}% → {recovery['cpu_pct']}%")
+print(f"  Agentic log entries: 7 (6 SUCCESS + 1 DENIED)")
+print(f"  Policy evaluations:  7 (5 PASS + 1 WARN + 1 FAIL)")
+print(f"  OCSF events:         {ocsf_exporter.event_count}")
+print(f"  Events at:           /tmp/aitf_agentic_log_events.jsonl")
+print(f"\n  Every action is logged with goal_id, tool, outcome, confidence,")
+print(f"  anomaly score, and policy evaluation — ready for SIEM correlation.")
