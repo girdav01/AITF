@@ -9,6 +9,10 @@ in the context of a realistic DevOps incident-response scenario:
     each action logged with goal, tool, outcome, confidence, anomaly
     score, and policy evaluation for full security audit.
 
+All spans are exportable as both OTel traces (OTLP → Jaeger/Tempo) and
+OCSF security events (→ SIEM/XDR).  See ``dual_pipeline_tracing.py``
+for dual-pipeline setup.
+
 Run:
     pip install opentelemetry-sdk aitf
     python agentic_log_tracing.py

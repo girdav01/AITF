@@ -14,6 +14,10 @@ Each call flows through the OpenRouter vendor mapping:
     App Code → OpenRouter API → VendorMapper → OCSFMapper → SIEM
     (openrouter.* attrs)       (JSON-driven)   (OCSF 7001)
 
+All spans are exportable as both OTel traces (OTLP → Jaeger/Tempo) and
+OCSF security events (→ SIEM/XDR).  See ``dual_pipeline_tracing.py``
+for dual-pipeline setup.
+
 Run:
     pip install opentelemetry-sdk aitf
     python openrouter_tracing.py

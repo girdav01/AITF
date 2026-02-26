@@ -9,6 +9,10 @@ Demonstrates MCP (Model Context Protocol) tracing in a realistic scenario:
     generates a review and posts comments — with every MCP operation
     fully traced for security audit.
 
+All spans are exportable as both OTel traces (OTLP → Jaeger/Tempo) and
+OCSF security events (→ SIEM/XDR).  See ``dual_pipeline_tracing.py``
+for dual-pipeline setup.
+
 Run:
     pip install opentelemetry-sdk aitf
     python mcp_tracing.py

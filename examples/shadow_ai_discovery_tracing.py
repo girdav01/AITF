@@ -25,6 +25,10 @@ OCSF events emitted:
   701007  Shadow Asset Detected – per unregistered asset
   701004  Risk Classification   – when risk is assessed
   701003  Asset Audit           – per asset audit
+
+All spans are exportable as both OTel traces (OTLP → Jaeger/Tempo) and
+OCSF security events (→ SIEM/XDR).  See ``dual_pipeline_tracing.py``
+for dual-pipeline setup.
 """
 
 from __future__ import annotations

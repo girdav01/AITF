@@ -3,8 +3,13 @@
 Demonstrates how AITF instruments a realistic multi-turn chatbot.  The
 simulated ``ChatBot`` class mirrors what you would build with the OpenAI
 or Anthropic SDK; AITF wraps every inference call so that every prompt,
-completion, token count, latency, and cost is captured as an OCSF event
-ready for your SIEM.
+completion, token count, latency, and cost is captured as **both** an
+OTel trace span (for observability) and an OCSF event (for SIEM).
+
+Pipeline options (set via AITF_PIPELINE env var):
+  - "dual"  → OTLP to Jaeger/Tempo AND OCSF to SIEM (default)
+  - "otel"  → OTLP only (observability)
+  - "ocsf"  → OCSF only (security/SIEM)
 
 Run:
     pip install opentelemetry-sdk aitf
@@ -13,6 +18,7 @@ Run:
 
 from __future__ import annotations
 
+import os
 import random
 import time
 from dataclasses import dataclass, field
@@ -22,6 +28,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import SimpleSpanProcessor, ConsoleSpanExporter
 
 from aitf.instrumentation.llm import LLMInstrumentor
+from aitf.pipeline import DualPipelineProvider
 from aitf.processors.cost_processor import CostProcessor
 from aitf.processors.security_processor import SecurityProcessor
 from aitf.exporters.ocsf_exporter import OCSFExporter
@@ -129,10 +136,37 @@ class ChatBot:
 
 
 # ────────────────────────────────────────────────────────────────────
-# 3. AITF Setup — wire up processors, exporters, and the instrumentor
+# 3. AITF Setup — dual pipeline: OTel (observability) + OCSF (security)
 # ────────────────────────────────────────────────────────────────────
+#
+# AITF supports three pipeline modes from the same instrumentation:
+#   "dual" → OTLP to Jaeger/Tempo AND OCSF to SIEM (recommended)
+#   "otel" → OTLP only (observability)
+#   "ocsf" → OCSF only (security/SIEM)
+#
+pipeline_mode = os.environ.get("AITF_PIPELINE", "ocsf")
 
-provider = TracerProvider()
+if pipeline_mode == "dual":
+    # ── Dual pipeline: OTel traces + OCSF security events ──
+    pipeline = DualPipelineProvider(
+        otlp_endpoint=os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"),
+        ocsf_output_file="/tmp/aitf_ocsf_events.jsonl",
+        compliance_frameworks=["nist_ai_rmf", "mitre_atlas", "eu_ai_act"],
+        service_name="acme-support-bot",
+        console=True,
+    )
+    provider = pipeline.tracer_provider
+elif pipeline_mode == "otel":
+    # ── OTel-only: traces go to Jaeger/Tempo/Datadog ──
+    pipeline = DualPipelineProvider(
+        otlp_endpoint=os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"),
+        service_name="acme-support-bot",
+        console=True,
+    )
+    provider = pipeline.tracer_provider
+else:
+    # ── OCSF-only: security events to SIEM (default for this demo) ──
+    provider = TracerProvider()
 
 # Security processor — watches every prompt for OWASP LLM Top 10 threats
 provider.add_span_processor(SecurityProcessor(
@@ -147,13 +181,14 @@ provider.add_span_processor(CostProcessor(
     budget_limit=50.0,  # $50 daily budget
 ))
 
-# OCSF exporter — produces SIEM-ready JSONL files
-ocsf_exporter = OCSFExporter(
-    output_file="/tmp/aitf_ocsf_events.jsonl",
-    compliance_frameworks=["nist_ai_rmf", "mitre_atlas", "eu_ai_act"],
-)
-provider.add_span_processor(SimpleSpanProcessor(ocsf_exporter))
-provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
+# For OCSF-only mode, add the OCSF exporter manually
+if pipeline_mode not in ("dual", "otel"):
+    ocsf_exporter = OCSFExporter(
+        output_file="/tmp/aitf_ocsf_events.jsonl",
+        compliance_frameworks=["nist_ai_rmf", "mitre_atlas", "eu_ai_act"],
+    )
+    provider.add_span_processor(SimpleSpanProcessor(ocsf_exporter))
+    provider.add_span_processor(SimpleSpanProcessor(ConsoleSpanExporter()))
 
 trace.set_tracer_provider(provider)
 
@@ -262,11 +297,21 @@ print(f"  Tokens: {fake_tokens}")
 print(f"\n{'=' * 70}")
 print("  Summary")
 print("=" * 70)
+print(f"  Pipeline mode:        {pipeline_mode}")
 print(f"  Conversation turns:   {len(conversation)}")
-print(f"  OCSF events exported: {ocsf_exporter.event_count}")
-print(f"  Events written to:    /tmp/aitf_ocsf_events.jsonl")
-print(f"\n  Every LLM call is now an OCSF 7001 event containing:")
-print(f"    - Model, provider, prompt/completion content")
-print(f"    - Token counts, cost, and latency")
-print(f"    - NIST AI RMF + EU AI Act + MITRE ATLAS compliance controls")
-print(f"    - OWASP LLM Top 10 security scan results")
+if pipeline_mode == "dual":
+    print(f"  OTel traces sent to:  OTLP endpoint (Jaeger/Tempo/Datadog)")
+    print(f"  OCSF events written:  /tmp/aitf_ocsf_events.jsonl")
+elif pipeline_mode == "otel":
+    print(f"  OTel traces sent to:  OTLP endpoint (Jaeger/Tempo/Datadog)")
+else:
+    print(f"  OCSF events exported: {ocsf_exporter.event_count}")
+    print(f"  Events written to:    /tmp/aitf_ocsf_events.jsonl")
+print(f"\n  Every LLM call produces a span that can be exported as:")
+print(f"    OTel (OTLP):  Standard trace span for observability backends")
+print(f"    OCSF (7001):  Security event for SIEM/XDR with:")
+print(f"      - Model, provider, prompt/completion content")
+print(f"      - Token counts, cost, and latency")
+print(f"      - NIST AI RMF + EU AI Act + MITRE ATLAS compliance controls")
+print(f"      - OWASP LLM Top 10 security scan results")
+print(f"\n  Set AITF_PIPELINE=dual to enable both pipelines simultaneously.")

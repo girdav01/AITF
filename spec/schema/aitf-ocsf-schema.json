@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aitf.io/schema/ocsf/v1",
   "title": "AITF OCSF Event Schema",
-  "description": "JSON Schema for AITF OCSF Category 7 AI events",
+  "description": "JSON Schema for AITF OCSF Category 7 AI events. These events are the security pipeline output of AITF's dual-pipeline architecture. OTel spans (defined in aitf-trace-schema.json) are converted to these OCSF events by the OCSFMapper for delivery to SIEM/XDR platforms. The same spans can simultaneously be exported via OTLP for observability.",
   "type": "object",
   "definitions": {
     "OCSFMetadata": {

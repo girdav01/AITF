@@ -14,6 +14,10 @@ SIEM-ready events — all driven by declarative JSON, no custom code.
 Pipeline:
   Vendor Telemetry → VendorMapper → OCSFMapper → ComplianceMapper → SIEM
 
+All spans are exportable as both OTel traces (OTLP → Jaeger/Tempo) and
+OCSF security events (→ SIEM/XDR).  See ``dual_pipeline_tracing.py``
+for dual-pipeline setup.
+
 Run:
     pip install opentelemetry-sdk aitf
     python vendor_mapping_tracing.py

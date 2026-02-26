@@ -114,7 +114,71 @@ pip install -e ".[all]"
 
 > **No local setup?** Try the [AITF Google Colab notebook](../examples/aitf_colab_demo.ipynb) for a fully interactive walkthrough.
 
-The fastest path to working telemetry — instrument everything, export to a local file:
+### Dual Pipeline (Recommended)
+
+The fastest path to production-grade telemetry — OTel traces for observability **and** OCSF events for SIEM, from a single instrumentation pass:
+
+```python
+from aitf import AITFInstrumentor, create_dual_pipeline_provider
+
+# 1. Create a dual-pipeline provider (OTLP + OCSF)
+provider = create_dual_pipeline_provider(
+    otlp_endpoint="http://localhost:4317",           # → Jaeger / Tempo / Datadog
+    ocsf_output_file="/var/log/aitf/ocsf_events.jsonl",  # → SIEM / XDR
+)
+provider.set_as_global()
+
+# 2. Instrument all AI components
+instrumentor = AITFInstrumentor(tracer_provider=provider.tracer_provider)
+instrumentor.instrument_all()
+
+# 3. Start tracing — spans flow to BOTH pipelines automatically
+with instrumentor.llm.trace_inference(
+    model="gpt-4o", system="openai", operation="chat"
+) as span:
+    span.set_prompt("Hello, world!")
+    span.set_completion("Hi there!")
+    span.set_usage(input_tokens=4, output_tokens=3)
+```
+
+Output:
+- **OTLP** → Traces visible in Jaeger at `http://localhost:16686`
+- **OCSF** → `/var/log/aitf/ocsf_events.jsonl` — one OCSF Category 7 JSON event per line
+
+### OCSF-Only (Security / SIEM)
+
+If you only need SIEM/XDR export without an OTel backend:
+
+```python
+from aitf import AITFInstrumentor, create_ocsf_only_provider
+
+provider = create_ocsf_only_provider(
+    "/var/log/aitf/ocsf_events.jsonl",
+    compliance_frameworks=["nist_ai_rmf", "eu_ai_act"],
+)
+provider.set_as_global()
+
+instrumentor = AITFInstrumentor(tracer_provider=provider.tracer_provider)
+instrumentor.instrument_all()
+```
+
+### OTel-Only (Observability)
+
+If you only need standard OTel traces (no OCSF conversion):
+
+```python
+from aitf import AITFInstrumentor, create_otel_only_provider
+
+provider = create_otel_only_provider("http://localhost:4317")
+provider.set_as_global()
+
+instrumentor = AITFInstrumentor(tracer_provider=provider.tracer_provider)
+instrumentor.instrument_all()
+```
+
+### Manual Setup (Advanced)
+
+For full control over processors and exporters:
 
 ```python
 from opentelemetry import trace
@@ -124,27 +188,15 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from aitf import AITFInstrumentor
 from aitf.exporters.ocsf_exporter import OCSFExporter
 
-# 1. Create a TracerProvider with an OCSF exporter
 provider = TracerProvider()
 provider.add_span_processor(BatchSpanProcessor(
     OCSFExporter(output_file="/var/log/aitf/ocsf_events.jsonl")
 ))
 trace.set_tracer_provider(provider)
 
-# 2. Instrument all AI components
 instrumentor = AITFInstrumentor(tracer_provider=provider)
 instrumentor.instrument_all()
-
-# 3. Start tracing
-with instrumentor.llm.trace_inference(
-    model="gpt-4o", system="openai", operation="chat"
-) as span:
-    span.set_prompt("Hello, world!")
-    span.set_completion("Hi there!")
-    span.set_usage(input_tokens=4, output_tokens=3)
 ```
-
-Output at `/var/log/aitf/ocsf_events.jsonl` — one OCSF Category 7 JSON event per line, ready for any SIEM.
 
 ---
 
@@ -1200,7 +1252,25 @@ CEF:0|AITF|AI-Telemetry-Framework|1.0.0|700501|AI Security Finding|7|rt=2026-02-
 
 AITF is built on OpenTelemetry. All AITF spans are standard OTel spans with AITF semantic attributes. This means you can export them via native OTLP alongside (or instead of) the AITF-specific exporters.
 
-**OTLP transport options:**
+**Recommended: DualPipelineProvider (one-line setup)**
+
+```python
+from aitf import AITFInstrumentor, create_dual_pipeline_provider
+
+# OTel traces → Jaeger/Tempo AND OCSF events → SIEM, from one provider
+provider = create_dual_pipeline_provider(
+    otlp_endpoint="http://otel-collector.example.com:4317",
+    ocsf_output_file="/var/log/aitf/ocsf_events.jsonl",
+    compliance_frameworks=["nist_ai_rmf", "eu_ai_act"],
+    service_name="my-ai-service",
+)
+provider.set_as_global()
+
+instrumentor = AITFInstrumentor(tracer_provider=provider.tracer_provider)
+instrumentor.instrument_all()
+```
+
+**Advanced: Manual OTLP transport options**
 
 ```python
 from opentelemetry import trace
@@ -1227,7 +1297,7 @@ from opentelemetry.sdk.trace.export import ConsoleSpanExporter
 
 console = ConsoleSpanExporter()
 
-# ── Combine OTLP with AITF exporters ──
+# ── Combine OTLP with AITF exporters (manual dual-pipeline) ──
 from aitf import AITFInstrumentor
 from aitf.exporters.ocsf_exporter import OCSFExporter
 
@@ -1274,15 +1344,16 @@ Use this matrix to choose the right format and transport for your deployment:
 
 | Scenario | Format | Transport | AITF Exporter | Why |
 |---|---|---|---|---|
+| **Production (recommended)** | OTLP + OCSF | gRPC + JSONL/HTTPS | `create_dual_pipeline_provider()` | DevOps observability + SecOps security from one instrumentation |
 | **OCSF-native SIEM** (AWS Security Lake, Splunk OCSF) | OCSF JSON | HTTPS POST / S3 | `OCSFExporter(endpoint=...)` | Full semantic richness, compliance metadata |
 | **Legacy SIEM** (QRadar, ArcSight, LogRhythm) | CEF | TCP+TLS Syslog | `CEFSyslogExporter(tls=True)` | Universal SIEM ingestion format |
-| **Tracing backend** (Jaeger, Grafana Tempo, Honeycomb) | OTLP | gRPC or HTTP | `OTLPSpanExporter` | Native trace visualization |
+| **Tracing backend** (Jaeger, Grafana Tempo, Honeycomb) | OTLP | gRPC or HTTP | `create_otel_only_provider()` | Native trace visualization |
 | **Compliance audit trail** | OCSF JSON | JSONL file | `ImmutableLogExporter` | Tamper-evident, hash-chained |
-| **Local development** | OTel spans | Console | `ConsoleSpanExporter` | Quick debugging |
-| **Data lake / cold storage** | OCSF JSON | JSONL file → S3 | `OCSFExporter(output_file=...)` | Batch analytics, long-term retention |
+| **Local development** | OTel spans | Console | `DualPipelineProvider(console=True)` | Quick debugging |
+| **Data lake / cold storage** | OCSF JSON | JSONL file → S3 | `create_ocsf_only_provider()` | Batch analytics, long-term retention |
 | **High-throughput monitoring** | CEF | UDP Syslog | `CEFSyslogExporter(protocol="udp")` | Minimal latency, acceptable loss |
-| **Multi-SIEM environment** | OCSF + CEF | HTTPS + TCP+TLS | Multiple exporters | Cover both OCSF and non-OCSF SIEMs |
-| **Air-gapped / offline** | OCSF JSON | JSONL file | `OCSFExporter(output_file=...)` | No network dependency |
+| **Multi-SIEM environment** | OCSF + CEF | HTTPS + TCP+TLS | Multiple exporters via `additional_exporters` | Cover both OCSF and non-OCSF SIEMs |
+| **Air-gapped / offline** | OCSF JSON | JSONL file | `create_ocsf_only_provider()` | No network dependency |
 
 ### OpenTelemetry Collector Integration
 
