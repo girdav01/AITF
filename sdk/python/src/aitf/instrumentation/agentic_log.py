@@ -88,8 +88,9 @@ class AgenticLogEntry:
         """Set the agent's own assessment of how likely this action is to succeed.
 
         A sudden drop can indicate a poisoned environment.
-        Value should be between 0.0 and 1.0.
+        Value is clamped to [0.0, 1.0].
         """
+        score = max(0.0, min(1.0, float(score)))
         self._span.set_attribute(AgenticLogAttributes.CONFIDENCE_SCORE, score)
 
     def set_anomaly_score(self, score: float) -> None:
@@ -97,8 +98,9 @@ class AgenticLogEntry:
 
         Indicates how unusual this action is, even for this goal.
         This is the primary input for automated alerting.
-        Value should be between 0.0 and 1.0.
+        Value is clamped to [0.0, 1.0].
         """
+        score = max(0.0, min(1.0, float(score)))
         self._span.set_attribute(AgenticLogAttributes.ANOMALY_SCORE, score)
 
     def set_policy_evaluation(self, evaluation: dict[str, Any] | str) -> None:
@@ -208,9 +210,13 @@ class AgenticLogInstrumentor:
                 tool_parameters = json.dumps(tool_parameters, default=str)
             attributes[AgenticLogAttributes.TOOL_PARAMETERS] = tool_parameters
         if confidence_score is not None:
-            attributes[AgenticLogAttributes.CONFIDENCE_SCORE] = confidence_score
+            attributes[AgenticLogAttributes.CONFIDENCE_SCORE] = max(
+                0.0, min(1.0, float(confidence_score))
+            )
         if anomaly_score is not None:
-            attributes[AgenticLogAttributes.ANOMALY_SCORE] = anomaly_score
+            attributes[AgenticLogAttributes.ANOMALY_SCORE] = max(
+                0.0, min(1.0, float(anomaly_score))
+            )
 
         with tracer.start_as_current_span(
             name=f"agentic_log {agent_id}",

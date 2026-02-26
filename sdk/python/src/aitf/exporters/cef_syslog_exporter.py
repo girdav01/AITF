@@ -212,7 +212,8 @@ def ocsf_event_to_cef(
         extensions.append(f"cfp1={cost['total_cost_usd']}")
         extensions.append("cfp1Label=total_cost_usd")
 
-    # Compliance frameworks
+    # Compliance frameworks (use deviceCustomString7 to avoid
+    # overwriting flexString2 which may hold mitre_technique)
     compliance = event.get("compliance", {})
     if isinstance(compliance, dict):
         comp_parts = []
@@ -220,9 +221,9 @@ def ocsf_event_to_cef(
             comp_parts.append(f"{framework}:{details}")
         if comp_parts:
             extensions.append(
-                f"flexString2={_sanitize_cef_value('; '.join(comp_parts[:5]))}"
+                f"cs7={_sanitize_cef_value('; '.join(comp_parts[:5]))}"
             )
-            extensions.append("flexString2Label=compliance_frameworks")
+            extensions.append("cs7Label=compliance_frameworks")
 
     extension_str = " ".join(extensions)
     vendor_h = _sanitize_cef_header(vendor)

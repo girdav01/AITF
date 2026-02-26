@@ -363,11 +363,12 @@ AITF/
 │   ├── python/                        # Python SDK
 │   │   ├── src/aitf/
 │   │   │   ├── semantic_conventions/  # Attribute constants
-│   │   │   ├── instrumentation/       # LLM, Agent, MCP, RAG, Skills
-│   │   │   ├── processors/            # Security, PII, Compliance, Cost
-│   │   │   ├── exporters/             # OCSF exporter
-│   │   │   └── ocsf/                  # OCSF schema & mapper
-│   │   └── tests/                     # Test suite
+│   │   │   ├── instrumentation/       # LLM, Agent, MCP, RAG, Skills, AgenticLog
+│   │   │   ├── processors/            # Security, PII, Compliance, Cost, Memory
+│   │   │   ├── generators/            # AI-BOM generator
+│   │   │   ├── exporters/             # OCSF, Immutable Log, CEF Syslog
+│   │   │   └── ocsf/                  # OCSF schema, mapper, vendor mappings
+│   │   └── tests/                     # Test suite (214 tests)
 │   ├── go/                            # Go SDK
 │   │   ├── semconv/                   # Attribute constants & metrics
 │   │   ├── instrumentation/           # LLM, Agent, MCP, RAG, Skills
@@ -388,6 +389,10 @@ AITF/
 │   ├── agent_tracing.py               # Agent lifecycle example
 │   ├── mcp_tracing.py                 # MCP protocol example
 │   ├── rag_pipeline_tracing.py        # RAG pipeline example
+│   ├── agentic_log_tracing.py         # Agentic log (Table 10.1) example
+│   ├── ai_bom_generation.py           # AI-BOM generation example
+│   ├── vendor_mapping_tracing.py      # Vendor mapping pipeline example
+│   ├── aitf_colab_demo.ipynb          # Interactive Google Colab notebook
 │   ├── siem-forwarding/               # SIEM integration examples
 │   │   ├── aws_security_lake.py       # AWS Security Lake (OCSF native)
 │   │   ├── trend_vision_one.py        # Trend Vision One XDR
@@ -450,6 +455,21 @@ AITF automatically maps telemetry events to eight regulatory and security framew
 - [Framework Telemetry Requirements](framework_telemetry_requirements.md)
 - [Telemetry Gaps Analysis](telemetry_gaps_analysis.md)
 - [Defining AI Stack Telemetry](DefiningAIStackTelemetry-GDF-DGMarch04.pdf)
+
+## Security Hardening
+
+The AITF SDK is built with defense-in-depth principles. Key security measures include:
+
+| Category | Measure | Location |
+|----------|---------|----------|
+| **ReDoS Prevention** | All regex patterns use bounded quantifiers; vendor-supplied patterns validated for length and correctness | `security_processor.py`, `pii_processor.py`, `vendor_mapper.py` |
+| **Path Traversal** | File output paths reject `..` components to prevent directory escape | `ocsf_exporter.py`, `immutable_log.py` |
+| **Input Validation** | Content length limits (100KB), token count limits (10M), score clamping (0.0-1.0), attribute type/length validation | All processors, instrumentors |
+| **Thread Safety** | All shared mutable state protected by threading locks | `cost_processor.py`, `memory_state.py`, `ai_bom.py`, `ocsf_exporter.py` |
+| **Credential Safety** | HTTPS enforced for remote endpoints with API keys; HMAC-SHA256 with random keys for PII hashing | `ocsf_exporter.py`, `pii_processor.py` |
+| **DoS Prevention** | File size limits on log resume, max event/snapshot bounds, max components bound | `immutable_log.py`, `memory_state.py`, `ai_bom.py` |
+| **Log Injection** | CEF field values sanitized; OCSF/MITRE/compliance data use separate fields | `cef_syslog_exporter.py` |
+| **Hash Chain Integrity** | SHA-256 hash chains with genesis hash, sequence numbers, and file rotation | `immutable_log.py` |
 
 ## Roadmap
 

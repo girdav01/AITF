@@ -346,7 +346,8 @@ class AIBOMGenerator(SpanExporter):
         for span in spans:
             try:
                 self._extract_components(span)
-                self._span_count += 1
+                with self._lock:
+                    self._span_count += 1
             except Exception as exc:
                 logger.debug("Failed to extract components from span: %s", exc)
 
