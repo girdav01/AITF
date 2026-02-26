@@ -215,6 +215,143 @@ class TestCrewAIMapping:
 
 
 # ---------------------------------------------------------------------------
+# TestOpenRouterMapping – OpenRouter-specific tests
+# ---------------------------------------------------------------------------
+
+class TestOpenRouterMapping:
+    """Test OpenRouter vendor mapping."""
+
+    def setup_method(self):
+        openrouter_path = MAPPINGS_DIR / "openrouter.json"
+        data = json.loads(openrouter_path.read_text(encoding="utf-8"))
+        self.mapping = VendorMapping(data)
+
+    def test_vendor_name(self):
+        assert self.mapping.vendor == "openrouter"
+
+    def test_classify_inference_native_prefix(self):
+        assert self.mapping.classify_span("openrouter.chat") == "inference"
+        assert self.mapping.classify_span("OpenRouter.completion") == "inference"
+
+    def test_classify_inference_provider_prefix(self):
+        """OpenRouter model IDs include the provider prefix."""
+        assert self.mapping.classify_span("chat anthropic/claude-sonnet-4-5-20250929") == "inference"
+        assert self.mapping.classify_span("chat openai/gpt-4o") == "inference"
+        assert self.mapping.classify_span("chat google/gemini-2.0-flash") == "inference"
+        assert self.mapping.classify_span("chat meta-llama/llama-3.3-70b") == "inference"
+        assert self.mapping.classify_span("chat deepseek/deepseek-r1") == "inference"
+
+    def test_classify_unknown_span(self):
+        assert self.mapping.classify_span("http.request GET /api") is None
+
+    def test_translate_inference_attributes(self):
+        vendor_attrs = {
+            "openrouter.model": "anthropic/claude-sonnet-4-5-20250929",
+            "openrouter.route.provider": "anthropic",
+            "openrouter.request.temperature": 0.5,
+            "openrouter.request.max_tokens": 4096,
+            "openrouter.usage.prompt_tokens": 500,
+            "openrouter.usage.completion_tokens": 200,
+            "openrouter.usage.total_tokens": 700,
+            "openrouter.cost.prompt": 0.0015,
+            "openrouter.cost.completion": 0.003,
+            "openrouter.cost.total": 0.0045,
+            "openrouter.latency.total_ms": 1250.0,
+            "openrouter.response.finish_reason": "end_turn",
+            "openrouter.response.id": "gen-abc123",
+        }
+        result = self.mapping.translate_attributes("inference", vendor_attrs)
+        assert result["gen_ai.request.model"] == "anthropic/claude-sonnet-4-5-20250929"
+        assert result["gen_ai.request.temperature"] == 0.5
+        assert result["gen_ai.request.max_tokens"] == 4096
+        assert result["gen_ai.usage.input_tokens"] == 500
+        assert result["gen_ai.usage.output_tokens"] == 200
+        assert result["gen_ai.usage.total_tokens"] == 700
+        assert result["aitf.cost.input_cost"] == 0.0015
+        assert result["aitf.cost.output_cost"] == 0.003
+        assert result["aitf.cost.total_cost"] == 0.0045
+        assert result["aitf.latency.total_ms"] == 1250.0
+        assert result["gen_ai.response.finish_reasons"] == "end_turn"
+        assert result["gen_ai.response.id"] == "gen-abc123"
+        # Default
+        assert result["gen_ai.operation.name"] == "chat"
+
+    def test_translate_routing_attributes(self):
+        """OpenRouter-specific routing metadata should be preserved."""
+        vendor_attrs = {
+            "openrouter.model": "openai/gpt-4o",
+            "openrouter.route.provider": "openai",
+            "openrouter.route.model": "gpt-4o-2025-01-01",
+            "openrouter.route.id": "route-xyz789",
+            "openrouter.request.transforms": "middle-out",
+            "openrouter.request.route": "fallback",
+        }
+        result = self.mapping.translate_attributes("inference", vendor_attrs)
+        assert result["aitf.openrouter.route_provider"] == "openai"
+        assert result["aitf.openrouter.route_model"] == "gpt-4o-2025-01-01"
+        assert result["aitf.openrouter.transforms"] == "middle-out"
+        assert result["aitf.openrouter.route_preference"] == "fallback"
+
+    def test_provider_detection_from_model_prefix(self):
+        """Detect provider from OpenRouter model ID prefix."""
+        # Anthropic model
+        vendor_attrs = {"openrouter.model": "anthropic/claude-sonnet-4-5-20250929"}
+        result = self.mapping.translate_attributes("inference", vendor_attrs)
+        assert result["gen_ai.system"] == "anthropic"
+
+        # OpenAI model
+        vendor_attrs = {"openrouter.model": "openai/gpt-4o"}
+        result = self.mapping.translate_attributes("inference", vendor_attrs)
+        assert result["gen_ai.system"] == "openai"
+
+        # Google model
+        vendor_attrs = {"openrouter.model": "google/gemini-2.0-flash"}
+        result = self.mapping.translate_attributes("inference", vendor_attrs)
+        assert result["gen_ai.system"] == "google"
+
+        # DeepSeek model
+        vendor_attrs = {"openrouter.model": "deepseek/deepseek-r1"}
+        result = self.mapping.translate_attributes("inference", vendor_attrs)
+        assert result["gen_ai.system"] == "deepseek"
+
+    def test_provider_detection_from_explicit_attribute(self):
+        """Explicit route.provider takes priority over model prefix."""
+        vendor_attrs = {
+            "openrouter.model": "anthropic/claude-sonnet-4-5-20250929",
+            "openrouter.route.provider": "anthropic",
+        }
+        result = self.mapping.translate_attributes("inference", vendor_attrs)
+        assert result["gen_ai.system"] == "anthropic"
+
+    def test_ocsf_class_uid(self):
+        assert self.mapping.get_ocsf_class_uid("inference") == 7001
+
+    def test_ocsf_activity_id(self):
+        assert self.mapping.get_ocsf_activity_id("inference", "chat") == 1
+        assert self.mapping.get_ocsf_activity_id("inference", "embeddings") == 3
+        assert self.mapping.get_ocsf_activity_id("inference") == 1  # default
+
+    def test_severity_mapping(self):
+        assert self.mapping.get_severity_id("openrouter.response.status", "success") == 1
+        assert self.mapping.get_severity_id("openrouter.response.status", "rate_limited") == 3
+        assert self.mapping.get_severity_id("openrouter.response.status", "error") == 4
+
+    def test_passthrough_standard_genai_attributes(self):
+        """Standard gen_ai.* attributes should pass through correctly."""
+        vendor_attrs = {
+            "gen_ai.system": "anthropic",
+            "gen_ai.request.model": "claude-sonnet-4-5-20250929",
+            "gen_ai.usage.input_tokens": 300,
+            "gen_ai.usage.output_tokens": 150,
+        }
+        result = self.mapping.translate_attributes("inference", vendor_attrs)
+        assert result["gen_ai.system"] == "anthropic"
+        assert result["gen_ai.request.model"] == "claude-sonnet-4-5-20250929"
+        assert result["gen_ai.usage.input_tokens"] == 300
+        assert result["gen_ai.usage.output_tokens"] == 150
+
+
+# ---------------------------------------------------------------------------
 # TestVendorMapper – integration tests for the main mapper class
 # ---------------------------------------------------------------------------
 
@@ -228,6 +365,7 @@ class TestVendorMapper:
         vendors = self.mapper.vendors
         assert "langchain" in vendors
         assert "crewai" in vendors
+        assert "openrouter" in vendors
 
     def test_loads_specific_vendors(self):
         mapper = VendorMapper(vendors=["langchain"])
@@ -288,6 +426,16 @@ class TestVendorMapper:
         assert vendor == "crewai"
         assert event_type == "agent"
 
+    def test_detect_openrouter_inference_span(self):
+        span = _make_span("chat anthropic/claude-sonnet-4-5-20250929")
+        result = self.mapper.detect_vendor(span)
+        assert result == ("openrouter", "inference")
+
+    def test_detect_openrouter_native_span(self):
+        span = _make_span("openrouter.chat.completion")
+        result = self.mapper.detect_vendor(span)
+        assert result == ("openrouter", "inference")
+
     # -- normalize_span tests -----------------------------------------------
 
     def test_normalize_langchain_inference(self):
@@ -321,6 +469,27 @@ class TestVendorMapper:
         assert attrs["aitf.agent.name"] == "analyst"
         assert attrs["aitf.agent.framework"] == "crewai"
 
+    def test_normalize_openrouter_inference(self):
+        span = _make_span("chat anthropic/claude-sonnet-4-5-20250929", {
+            "openrouter.model": "anthropic/claude-sonnet-4-5-20250929",
+            "openrouter.route.provider": "anthropic",
+            "openrouter.usage.prompt_tokens": 500,
+            "openrouter.usage.completion_tokens": 200,
+            "openrouter.cost.total": 0.0045,
+            "openrouter.latency.total_ms": 1250.0,
+        })
+        result = self.mapper.normalize_span(span)
+        assert result is not None
+        vendor, event_type, attrs = result
+        assert vendor == "openrouter"
+        assert event_type == "inference"
+        assert attrs["gen_ai.request.model"] == "anthropic/claude-sonnet-4-5-20250929"
+        assert attrs["gen_ai.system"] == "anthropic"
+        assert attrs["gen_ai.usage.input_tokens"] == 500
+        assert attrs["gen_ai.usage.output_tokens"] == 200
+        assert attrs["aitf.cost.total_cost"] == 0.0045
+        assert attrs["aitf.latency.total_ms"] == 1250.0
+
     def test_normalize_unknown_span(self):
         span = _make_span("http.request")
         assert self.mapper.normalize_span(span) is None
@@ -343,12 +512,14 @@ class TestVendorMapper:
     def test_get_ocsf_class_uid(self):
         assert self.mapper.get_ocsf_class_uid("langchain", "inference") == 7001
         assert self.mapper.get_ocsf_class_uid("crewai", "agent") == 7002
+        assert self.mapper.get_ocsf_class_uid("openrouter", "inference") == 7001
         assert self.mapper.get_ocsf_class_uid("unknown", "agent") is None
 
     def test_get_ocsf_activity_id(self):
         assert self.mapper.get_ocsf_activity_id("langchain", "inference", "chat") == 1
         assert self.mapper.get_ocsf_activity_id("crewai", "agent", "crew_execution") == 1
         assert self.mapper.get_ocsf_activity_id("crewai", "agent", "delegation") == 4
+        assert self.mapper.get_ocsf_activity_id("openrouter", "inference", "chat") == 1
 
     # -- load_file test -----------------------------------------------------
 
