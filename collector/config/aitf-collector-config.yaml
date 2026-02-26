@@ -2,6 +2,13 @@
 #
 # This configuration extends the standard OTel Collector with
 # AITF-specific receivers, processors, and exporters for AI telemetry.
+#
+# Dual Pipeline Architecture:
+#   The main traces/ai pipeline exports to BOTH:
+#     - otlp      → Standard OTel backends (Jaeger, Grafana Tempo, Datadog)
+#     - file/ocsf → OCSF Category 7 events for SIEM/XDR
+#   This means the same AI spans are available for observability AND security
+#   from a single collector pipeline. See service.pipelines.traces/ai below.
 
 receivers:
   otlp:
@@ -122,7 +129,8 @@ extensions:
 service:
   extensions: [health_check, zpages]
   pipelines:
-    # Main AI telemetry pipeline
+    # Main AI telemetry pipeline (DUAL: OTel + OCSF simultaneously)
+    # Spans flow to: OTLP (Jaeger/Tempo) + OCSF file (SIEM) + Immutable audit log
     traces/ai:
       receivers: [otlp]
       processors: [memory_limiter, attributes/aitf_security, attributes/aitf_pii, attributes/aitf_compliance, batch]

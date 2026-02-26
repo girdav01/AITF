@@ -1,15 +1,30 @@
 // Package aitf provides the AI Telemetry Framework SDK for Go.
 //
 // AITF is a comprehensive, security-first telemetry framework for AI systems
-// built on OpenTelemetry and OCSF. It extends OTel GenAI semantic conventions
-// with native support for agentic AI, MCP, Skills, and multi-agent orchestration.
+// built on OpenTelemetry and OCSF. It supports dual-pipeline export where the
+// same spans flow to OTel backends (via OTLP) and SIEM/XDR (via OCSF)
+// simultaneously.
 //
-// Usage:
+// Dual Pipeline (recommended for production):
 //
-//	import "github.com/girdav01/AITF/sdk/go"
+//	provider, _ := aitf.NewDualPipelineProvider(
+//	    aitf.WithOTLPEndpoint("localhost:4317"),        // → Jaeger/Tempo
+//	    aitf.WithOCSFOutputFile("/var/log/aitf.jsonl"), // → SIEM
+//	)
+//	defer provider.Shutdown(context.Background())
 //
-//	instrumentor := aitf.NewInstrumentor()
+//	instrumentor := aitf.NewInstrumentor(
+//	    aitf.WithTracerProvider(provider.TracerProvider()),
+//	)
 //	instrumentor.InstrumentAll()
+//
+// OTel-Only:
+//
+//	provider, _ := aitf.NewOTelOnlyProvider("localhost:4317")
+//
+// OCSF-Only:
+//
+//	provider, _ := aitf.NewOCSFOnlyProvider("/var/log/aitf.jsonl")
 package aitf
 
 import (

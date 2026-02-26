@@ -2,7 +2,10 @@
  * AITF - AI Telemetry Framework.
  *
  * A comprehensive, security-first telemetry framework for AI systems
- * built on OpenTelemetry and OCSF.
+ * built on OpenTelemetry and OCSF. AITF supports dual-pipeline export:
+ * spans flow simultaneously to OTel backends (via OTLP) and SIEM/XDR
+ * (via OCSF), giving you observability and security from the same
+ * instrumentation.
  */
 
 export const VERSION = "1.0.0";
@@ -212,6 +215,8 @@ export {
   type AISupplyChainEvent,
   type AIGovernanceEvent,
   type AIIdentityEvent,
+  type AIModelOpsEvent,
+  type AIAssetInventoryEvent,
   createModelInferenceEvent,
   createAgentActivityEvent,
   createToolExecutionEvent,
@@ -220,6 +225,8 @@ export {
   createSupplyChainEvent,
   createGovernanceEvent,
   createIdentityEvent,
+  createModelOpsEvent,
+  createAssetInventoryEvent,
 } from "./ocsf/event-classes";
 
 // OCSF Mappers
@@ -235,3 +242,12 @@ export {
   OCSFExporter,
   type OCSFExporterOptions,
 } from "./exporters/ocsf-exporter";
+
+// Pipeline (Dual OTel + OCSF export)
+export {
+  DualPipelineProvider,
+  createDualPipelineProvider,
+  createOTelOnlyProvider,
+  createOCSFOnlyProvider,
+  type DualPipelineOptions,
+} from "./pipeline";

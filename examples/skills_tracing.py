@@ -9,6 +9,10 @@ Demonstrates AITF skill tracing in a realistic customer support scenario:
     and ticket creation for audit — each skill traced with discovery,
     invocation, error handling, composition, and approval flows.
 
+All spans are exportable as both OTel traces (OTLP → Jaeger/Tempo) and
+OCSF security events (→ SIEM/XDR).  See ``dual_pipeline_tracing.py``
+for dual-pipeline setup.
+
 Run:
     pip install opentelemetry-sdk aitf
     python skills_tracing.py

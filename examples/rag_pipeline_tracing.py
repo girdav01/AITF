@@ -11,9 +11,13 @@ with LangChain, LlamaIndex, or a custom RAG stack:
     5. Generate answer           → gpt-4o
     6. Evaluate quality          → faithfulness, relevance, groundedness
 
-Every step is traced as an OCSF event (7001 / 7004) so your SOC can
-audit which documents were retrieved, what context the model saw, and
-how the answer scores on quality metrics.
+Every step produces OTel spans that can be exported as:
+  - **OTLP** → Jaeger / Grafana Tempo / Datadog (observability)
+  - **OCSF** → SIEM / XDR (7001 / 7004 security events)
+  - **Both** → via ``DualPipelineProvider`` (recommended)
+
+See ``dual_pipeline_tracing.py`` for the full dual-pipeline setup.
+This example uses OCSF-only for simplicity.
 
 Run:
     pip install opentelemetry-sdk aitf

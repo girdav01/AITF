@@ -9,6 +9,10 @@ Demonstrates the full AI model lifecycle with AITF in a realistic scenario:
     monitors for drift and SLA compliance, and manages prompt versions —
     every operation traced for regulatory audit (HIPAA, EU AI Act).
 
+All spans are exportable as both OTel traces (OTLP → Jaeger/Tempo) and
+OCSF security events (→ SIEM/XDR).  See ``dual_pipeline_tracing.py``
+for dual-pipeline setup.
+
 Run:
     pip install opentelemetry-sdk aitf
     python model_ops_tracing.py

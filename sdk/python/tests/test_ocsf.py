@@ -1,4 +1,6 @@
-"""Tests for AITF OCSF schema and mapper."""
+"""Tests for AITF OCSF schema, event classes, and mapper."""
+
+from unittest.mock import MagicMock
 
 from aitf.ocsf.schema import (
     AIBaseEvent,
@@ -7,6 +9,7 @@ from aitf.ocsf.schema import (
     AITokenUsage,
     AILatencyMetrics,
     AICostInfo,
+    AISecurityFinding,
     ComplianceMetadata,
     OCSFMetadata,
     OCSFSeverity,
@@ -18,8 +21,27 @@ from aitf.ocsf.event_classes import (
     AIToolExecutionEvent,
     AIDataRetrievalEvent,
     AISecurityFindingEvent,
+    AISupplyChainEvent,
+    AIGovernanceEvent,
+    AIIdentityEvent,
+    AIModelOpsEvent,
+    AIAssetInventoryEvent,
 )
+from aitf.ocsf.mapper import OCSFMapper
 from aitf.ocsf.compliance_mapper import ComplianceMapper
+from aitf.semantic_conventions.attributes import (
+    ComplianceAttributes,
+    DriftDetectionAttributes,
+    GenAIAttributes,
+    IdentityAttributes,
+    ModelOpsAttributes,
+    AssetInventoryAttributes,
+    SupplyChainAttributes,
+    AgentAttributes,
+    MCPAttributes,
+    RAGAttributes,
+    SecurityAttributes,
+)
 
 
 class TestOCSFSchema:
@@ -32,6 +54,8 @@ class TestOCSFSchema:
         assert AIClassUID.SUPPLY_CHAIN == 7006
         assert AIClassUID.GOVERNANCE == 7007
         assert AIClassUID.IDENTITY == 7008
+        assert AIClassUID.MODEL_OPS == 7009
+        assert AIClassUID.ASSET_INVENTORY == 7010
 
     def test_token_usage_total(self):
         usage = AITokenUsage(input_tokens=100, output_tokens=50)
@@ -105,6 +129,269 @@ class TestEventClasses:
         assert data["class_uid"] == 7001
         assert data["category_uid"] == 7
         assert data["model"]["model_id"] == "gpt-4o"
+
+    def test_supply_chain_event(self):
+        event = AISupplyChainEvent(
+            activity_id=1,
+            model_source="huggingface",
+            model_hash="sha256:abc123",
+            model_signed=True,
+            model_signer="meta",
+        )
+        assert event.class_uid == 7006
+        assert event.model_source == "huggingface"
+        assert event.model_signed is True
+
+    def test_governance_event(self):
+        event = AIGovernanceEvent(
+            activity_id=1,
+            frameworks=["eu_ai_act", "nist_ai_rmf"],
+            event_type="audit",
+        )
+        assert event.class_uid == 7007
+        assert len(event.frameworks) == 2
+
+    def test_identity_event(self):
+        event = AIIdentityEvent(
+            activity_id=1,
+            agent_name="orchestrator",
+            agent_id="agent-001",
+            auth_method="mtls",
+            auth_result="success",
+        )
+        assert event.class_uid == 7008
+        assert event.auth_method == "mtls"
+
+    def test_model_ops_event(self):
+        event = AIModelOpsEvent(
+            activity_id=1,
+            operation_type="training",
+            model_id="llama-70b",
+            training_type="fine_tuning",
+            epochs=10,
+            loss_final=0.42,
+        )
+        assert event.class_uid == 7009
+        assert event.operation_type == "training"
+        assert event.loss_final == 0.42
+
+    def test_asset_inventory_event(self):
+        event = AIAssetInventoryEvent(
+            activity_id=2,
+            operation_type="discover",
+            discovery_scope="organization",
+            assets_found=15,
+            shadow_assets=3,
+        )
+        assert event.class_uid == 7010
+        assert event.operation_type == "discover"
+        assert event.shadow_assets == 3
+
+
+def _make_mock_span(name: str, attributes: dict) -> MagicMock:
+    """Create a mock ReadableSpan for testing the mapper."""
+    span = MagicMock()
+    span.name = name
+    span.attributes = attributes
+    span.start_time = 1700000000_000000000  # nanoseconds
+    return span
+
+
+class TestOCSFMapper:
+    """Tests for the OCSFMapper covering all 10 event classes."""
+
+    def setup_method(self):
+        self.mapper = OCSFMapper()
+
+    def test_map_inference_span(self):
+        span = _make_mock_span("chat gpt-4o", {
+            GenAIAttributes.SYSTEM: "openai",
+            GenAIAttributes.REQUEST_MODEL: "gpt-4o",
+            GenAIAttributes.OPERATION_NAME: "chat",
+            GenAIAttributes.USAGE_INPUT_TOKENS: 100,
+            GenAIAttributes.USAGE_OUTPUT_TOKENS: 50,
+            GenAIAttributes.RESPONSE_FINISH_REASONS: ["stop"],
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7001
+        assert event.activity_id == 1
+
+    def test_map_agent_span(self):
+        span = _make_mock_span("agent.session orchestrator", {
+            AgentAttributes.NAME: "orchestrator",
+            AgentAttributes.ID: "agent-001",
+            AgentAttributes.SESSION_ID: "sess-001",
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7002
+
+    def test_map_tool_span(self):
+        span = _make_mock_span("mcp.tool.invoke read_file", {
+            MCPAttributes.TOOL_NAME: "read_file",
+            MCPAttributes.TOOL_SERVER: "filesystem",
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7003
+
+    def test_map_rag_span(self):
+        span = _make_mock_span("rag.retrieve pinecone", {
+            RAGAttributes.RETRIEVE_DATABASE: "pinecone",
+            RAGAttributes.PIPELINE_STAGE: "retrieve",
+            RAGAttributes.RETRIEVE_RESULTS_COUNT: 5,
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7004
+
+    def test_map_security_span(self):
+        span = _make_mock_span("security.prompt_injection", {
+            SecurityAttributes.THREAT_DETECTED: True,
+            SecurityAttributes.THREAT_TYPE: "prompt_injection",
+            SecurityAttributes.RISK_LEVEL: "high",
+            SecurityAttributes.RISK_SCORE: 85.0,
+            SecurityAttributes.CONFIDENCE: 0.9,
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7005
+
+    def test_map_supply_chain_span(self):
+        span = _make_mock_span("supply_chain.verify llama-70b", {
+            SupplyChainAttributes.MODEL_SOURCE: "huggingface",
+            SupplyChainAttributes.MODEL_HASH: "sha256:abc",
+            SupplyChainAttributes.MODEL_SIGNED: True,
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7006
+        assert event.model_source == "huggingface"
+        assert event.activity_id == 1  # verify
+
+    def test_map_governance_span(self):
+        span = _make_mock_span("governance.audit eu-ai-act", {
+            ComplianceAttributes.FRAMEWORKS: ["eu_ai_act", "nist_ai_rmf"],
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7007
+        assert event.activity_id == 1  # audit
+        assert len(event.frameworks) == 2
+
+    def test_map_identity_span(self):
+        span = _make_mock_span("identity.auth orchestrator", {
+            IdentityAttributes.AGENT_ID: "agent-001",
+            IdentityAttributes.AGENT_NAME: "orchestrator",
+            IdentityAttributes.AUTH_METHOD: "mtls",
+            IdentityAttributes.AUTH_RESULT: "success",
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7008
+        assert event.auth_method == "mtls"
+        assert event.activity_id == 1  # authenticate
+
+    def test_map_model_ops_training_span(self):
+        span = _make_mock_span("model_ops.training run-001", {
+            ModelOpsAttributes.TRAINING_RUN_ID: "run-001",
+            ModelOpsAttributes.TRAINING_TYPE: "fine_tuning",
+            ModelOpsAttributes.TRAINING_BASE_MODEL: "llama-70b",
+            ModelOpsAttributes.TRAINING_EPOCHS: 10,
+            ModelOpsAttributes.TRAINING_LOSS_FINAL: 0.42,
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7009
+        assert event.operation_type == "training"
+        assert event.training_type == "fine_tuning"
+        assert event.loss_final == 0.42
+
+    def test_map_model_ops_deployment_span(self):
+        span = _make_mock_span("model_ops.deployment deploy-001", {
+            ModelOpsAttributes.DEPLOYMENT_ID: "deploy-001",
+            ModelOpsAttributes.DEPLOYMENT_MODEL_ID: "llama-70b-v2",
+            ModelOpsAttributes.DEPLOYMENT_STRATEGY: "canary",
+            ModelOpsAttributes.DEPLOYMENT_ENVIRONMENT: "production",
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7009
+        assert event.operation_type == "deployment"
+        assert event.strategy == "canary"
+
+    def test_map_drift_detection_span(self):
+        span = _make_mock_span("drift.detect data_distribution model-001", {
+            DriftDetectionAttributes.MODEL_ID: "model-001",
+            DriftDetectionAttributes.TYPE: "data_distribution",
+            DriftDetectionAttributes.SCORE: 0.85,
+            DriftDetectionAttributes.ACTION_TRIGGERED: "retrain",
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7009  # Drift maps to ModelOps
+        assert event.operation_type == "monitoring"
+        assert event.drift_score == 0.85
+
+    def test_map_asset_register_span(self):
+        span = _make_mock_span("asset.register model customer-llm", {
+            AssetInventoryAttributes.ID: "asset-001",
+            AssetInventoryAttributes.NAME: "customer-llm",
+            AssetInventoryAttributes.TYPE: "model",
+            AssetInventoryAttributes.OWNER: "ml-team",
+            AssetInventoryAttributes.RISK_CLASSIFICATION: "high_risk",
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7010
+        assert event.operation_type == "register"
+        assert event.risk_classification == "high_risk"
+
+    def test_map_asset_discover_span(self):
+        span = _make_mock_span("asset.discover organization", {
+            AssetInventoryAttributes.DISCOVERY_SCOPE: "organization",
+            AssetInventoryAttributes.DISCOVERY_ASSETS_FOUND: 42,
+            AssetInventoryAttributes.DISCOVERY_SHADOW_ASSETS: 5,
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7010
+        assert event.operation_type == "discover"
+        assert event.assets_found == 42
+        assert event.shadow_assets == 5
+
+    def test_map_unrelated_span_returns_none(self):
+        span = _make_mock_span("http.request GET /api/users", {
+            "http.method": "GET",
+            "http.url": "/api/users",
+        })
+        event = self.mapper.map_span(span)
+        assert event is None
+
+    def test_all_10_classes_covered(self):
+        """Verify that the mapper can produce all 10 OCSF class UIDs."""
+        test_spans = [
+            ("chat gpt-4o", {GenAIAttributes.SYSTEM: "openai", GenAIAttributes.REQUEST_MODEL: "gpt-4o", GenAIAttributes.RESPONSE_FINISH_REASONS: ["stop"]}),
+            ("agent.step research", {AgentAttributes.NAME: "r", AgentAttributes.ID: "1", AgentAttributes.SESSION_ID: "s1"}),
+            ("mcp.tool.invoke read", {MCPAttributes.TOOL_NAME: "read"}),
+            ("rag.retrieve db", {RAGAttributes.RETRIEVE_DATABASE: "db", RAGAttributes.RETRIEVE_RESULTS_COUNT: 1}),
+            ("security.threat", {SecurityAttributes.THREAT_DETECTED: True, SecurityAttributes.RISK_LEVEL: "high", SecurityAttributes.RISK_SCORE: 90, SecurityAttributes.CONFIDENCE: 0.9}),
+            ("supply_chain.verify m", {SupplyChainAttributes.MODEL_SOURCE: "hf"}),
+            ("governance.audit x", {ComplianceAttributes.FRAMEWORKS: ["eu_ai_act"]}),
+            ("identity.auth a", {IdentityAttributes.AGENT_ID: "1", IdentityAttributes.AGENT_NAME: "a"}),
+            ("model_ops.training r", {ModelOpsAttributes.TRAINING_RUN_ID: "r1"}),
+            ("asset.register model m", {AssetInventoryAttributes.ID: "a1"}),
+        ]
+        class_uids = set()
+        for name, attrs in test_spans:
+            span = _make_mock_span(name, attrs)
+            event = self.mapper.map_span(span)
+            assert event is not None, f"Span '{name}' was not mapped"
+            class_uids.add(event.class_uid)
+
+        expected = {7001, 7002, 7003, 7004, 7005, 7006, 7007, 7008, 7009, 7010}
+        assert class_uids == expected, f"Missing class UIDs: {expected - class_uids}"
 
 
 class TestComplianceMapper:

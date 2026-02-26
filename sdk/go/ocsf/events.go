@@ -235,3 +235,86 @@ func NewAIIdentityEvent(agentName, agentID, authMethod, authResult string, activ
 func (e *AIIdentityEvent) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
+
+// AIModelOpsEvent represents OCSF Class 7009: AI Model Operations.
+// Model lifecycle operations: training, evaluation, deployment, serving, monitoring.
+type AIModelOpsEvent struct {
+	AIBaseEvent
+	OperationType string   `json:"operation_type"`
+	ModelID       string   `json:"model_id,omitempty"`
+	RunID         string   `json:"run_id,omitempty"`
+	Framework     string   `json:"framework,omitempty"`
+	Status        string   `json:"status,omitempty"`
+	TrainingType  string   `json:"training_type,omitempty"`
+	BaseModel     string   `json:"base_model,omitempty"`
+	DatasetID     string   `json:"dataset_id,omitempty"`
+	Epochs        *int     `json:"epochs,omitempty"`
+	LossFinal     *float64 `json:"loss_final,omitempty"`
+	OutputModelID string   `json:"output_model_id,omitempty"`
+	EvalType      string   `json:"evaluation_type,omitempty"`
+	Metrics       string   `json:"metrics,omitempty"`
+	Passed        *bool    `json:"passed,omitempty"`
+	DeploymentID  string   `json:"deployment_id,omitempty"`
+	Strategy      string   `json:"strategy,omitempty"`
+	Environment   string   `json:"environment,omitempty"`
+	Endpoint      string   `json:"endpoint,omitempty"`
+	SelectedModel string   `json:"selected_model,omitempty"`
+	FallbackChain string   `json:"fallback_chain,omitempty"`
+	CacheHit      *bool    `json:"cache_hit,omitempty"`
+	CheckType     string   `json:"check_type,omitempty"`
+	DriftScore    *float64 `json:"drift_score,omitempty"`
+	DriftType     string   `json:"drift_type,omitempty"`
+	ActionTriggered string `json:"action_triggered,omitempty"`
+}
+
+// NewAIModelOpsEvent creates a new model operations event.
+func NewAIModelOpsEvent(operationType string, activityID int) *AIModelOpsEvent {
+	return &AIModelOpsEvent{
+		AIBaseEvent:   NewAIBaseEvent(ClassUIDModelOps, activityID),
+		OperationType: operationType,
+	}
+}
+
+// ToJSON serializes the event to JSON bytes.
+func (e *AIModelOpsEvent) ToJSON() ([]byte, error) {
+	return json.Marshal(e)
+}
+
+// AIAssetInventoryEvent represents OCSF Class 7010: AI Asset Inventory.
+// AI asset lifecycle events: registration, discovery, audit, classification.
+type AIAssetInventoryEvent struct {
+	AIBaseEvent
+	OperationType         string `json:"operation_type"`
+	AssetID               string `json:"asset_id,omitempty"`
+	AssetName             string `json:"asset_name,omitempty"`
+	AssetType             string `json:"asset_type,omitempty"`
+	AssetVersion          string `json:"asset_version,omitempty"`
+	Owner                 string `json:"owner,omitempty"`
+	DeploymentEnvironment string `json:"deployment_environment,omitempty"`
+	RiskClassification    string `json:"risk_classification,omitempty"`
+	DiscoveryScope        string `json:"discovery_scope,omitempty"`
+	DiscoveryMethod       string `json:"discovery_method,omitempty"`
+	AssetsFound           *int   `json:"assets_found,omitempty"`
+	NewAssets             *int   `json:"new_assets,omitempty"`
+	ShadowAssets          *int   `json:"shadow_assets,omitempty"`
+	AuditType             string `json:"audit_type,omitempty"`
+	AuditResult           string `json:"audit_result,omitempty"`
+	AuditFramework        string `json:"audit_framework,omitempty"`
+	AuditFindings         string `json:"audit_findings,omitempty"`
+	ClassificationFramework  string `json:"classification_framework,omitempty"`
+	PreviousClassification   string `json:"previous_classification,omitempty"`
+	ClassificationReason     string `json:"classification_reason,omitempty"`
+}
+
+// NewAIAssetInventoryEvent creates a new asset inventory event.
+func NewAIAssetInventoryEvent(operationType string, activityID int) *AIAssetInventoryEvent {
+	return &AIAssetInventoryEvent{
+		AIBaseEvent:   NewAIBaseEvent(ClassUIDAssetInventory, activityID),
+		OperationType: operationType,
+	}
+}
+
+// ToJSON serializes the event to JSON bytes.
+func (e *AIAssetInventoryEvent) ToJSON() ([]byte, error) {
+	return json.Marshal(e)
+}

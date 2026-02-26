@@ -46,6 +46,8 @@ export enum AIClassUID {
   SUPPLY_CHAIN = 7006,
   GOVERNANCE = 7007,
   IDENTITY = 7008,
+  MODEL_OPS = 7009,
+  ASSET_INVENTORY = 7010,
 }
 
 // --- OCSF Base Object Interfaces ---

@@ -18,10 +18,12 @@ from aitf.ocsf.schema import (
 )
 from aitf.ocsf.event_classes import (
     AIAgentActivityEvent,
+    AIAssetInventoryEvent,
     AIDataRetrievalEvent,
     AIGovernanceEvent,
     AIIdentityEvent,
     AIModelInferenceEvent,
+    AIModelOpsEvent,
     AISecurityFindingEvent,
     AISupplyChainEvent,
     AIToolExecutionEvent,
@@ -47,6 +49,8 @@ __all__ = [
     "AISupplyChainEvent",
     "AIGovernanceEvent",
     "AIIdentityEvent",
+    "AIModelOpsEvent",
+    "AIAssetInventoryEvent",
     "OCSFMapper",
     "ComplianceMapper",
     "VendorMapper",

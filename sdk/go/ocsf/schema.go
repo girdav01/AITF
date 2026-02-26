@@ -58,6 +58,8 @@ const (
 	ClassUIDSupplyChain     = 7006
 	ClassUIDGovernance      = 7007
 	ClassUIDIdentity        = 7008
+	ClassUIDModelOps        = 7009
+	ClassUIDAssetInventory  = 7010
 )
 
 // --- OCSF Base Objects ---

@@ -7,6 +7,10 @@ models, vector stores, MCP tools, and agent frameworks.
 The AI-BOM answers: "What AI components are running in production,
 who supplies them, and are any of them vulnerable?"
 
+All spans are exportable as both OTel traces (OTLP → Jaeger/Tempo) and
+OCSF security events (→ SIEM/XDR).  See ``dual_pipeline_tracing.py``
+for dual-pipeline setup.
+
 Run:
     pip install opentelemetry-sdk aitf
     python ai_bom_generation.py

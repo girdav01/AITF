@@ -65,22 +65,37 @@ AITF follows a four-layer pipeline architecture:
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Dual-Standard Pipeline
+### Dual-Pipeline Architecture (OTel + OCSF)
 
-AITF uniquely bridges two standards:
+AITF uniquely bridges two standards from a **single instrumentation pass**:
 
-- **OpenTelemetry** — For distributed tracing, metrics, and logs (observability)
-- **OCSF** — For security event normalization (cybersecurity / SIEM / XDR)
+- **OpenTelemetry (OTLP)** — Distributed tracing, metrics, logs → Jaeger, Grafana Tempo, Datadog, Honeycomb
+- **OCSF Category 7** — Security event normalization → Splunk, AWS Security Lake, QRadar, Sentinel, Elastic Security
 
-Every AI telemetry event flows through both pipelines:
+You choose the output: OTel-only, OCSF-only, or both simultaneously.
 
 ```
-AI System → OTel SDK (traces/metrics/logs) → AITF Processors → OTel Collector
-                                                    ↓
-                                              OCSF Mapper → SIEM/XDR
-                                                    ↓
-                                           Compliance Tagger → Audit
+                    ┌──────────────────────────────────────┐
+                    │       AITF Instrumentation            │
+                    │  (single pass — standard OTel spans)  │
+                    └──────────────────┬───────────────────┘
+                                       │
+              ┌────────────────────────┼──────────────────────────┐
+              │                        │                          │
+              ▼                        ▼                          ▼
+    ┌──────────────────┐    ┌──────────────────┐    ┌────────────────────┐
+    │  OTLP Exporter   │    │  OCSF Exporter   │    │  CEF / Immutable   │
+    │  (gRPC / HTTP)   │    │  (JSON → SIEM)   │    │  Log Exporters     │
+    └────────┬─────────┘    └────────┬─────────┘    └────────┬───────────┘
+             │                       │                        │
+             ▼                       ▼                        ▼
+    ┌──────────────────┐    ┌──────────────────┐    ┌────────────────────┐
+    │ Jaeger · Tempo   │    │ Splunk · QRadar  │    │ ArcSight · Audit   │
+    │ Datadog · etc.   │    │ Security Lake    │    │ Compliance archive │
+    └──────────────────┘    └──────────────────┘    └────────────────────┘
 ```
+
+Use `DualPipelineProvider` for one-line setup (see [Quick Start](#quick-start)).
 
 ## OCSF Category 7: AI Event Classes
 
@@ -115,7 +130,57 @@ AITF defines ten OCSF event classes for AI systems:
 
 ```bash
 pip install aitf
+
+# For OTLP export (Jaeger, Grafana Tempo, Datadog, etc.):
+pip install aitf[exporters]   # includes opentelemetry-exporter-otlp
 ```
+
+#### Option 1: Dual Pipeline (OTel + OCSF) — Recommended
+
+```python
+from aitf import AITFInstrumentor, create_dual_pipeline_provider
+
+# One-liner: traces go to Jaeger AND OCSF events go to your SIEM
+provider = create_dual_pipeline_provider(
+    otlp_endpoint="http://localhost:4317",           # → Jaeger / Tempo / Datadog
+    ocsf_output_file="/var/log/aitf/events.jsonl",   # → SIEM / XDR
+)
+provider.set_as_global()
+
+instrumentor = AITFInstrumentor(tracer_provider=provider.tracer_provider)
+instrumentor.instrument_all()
+```
+
+#### Option 2: OTel-only (Observability)
+
+```python
+from aitf import AITFInstrumentor, create_otel_only_provider
+
+provider = create_otel_only_provider("http://localhost:4317")
+provider.set_as_global()
+
+instrumentor = AITFInstrumentor(tracer_provider=provider.tracer_provider)
+instrumentor.instrument_all()
+# Traces flow to Jaeger/Tempo/Datadog — no OCSF conversion
+```
+
+#### Option 3: OCSF-only (Security / SIEM)
+
+```python
+from aitf import AITFInstrumentor, create_ocsf_only_provider
+
+provider = create_ocsf_only_provider(
+    "/var/log/aitf/events.jsonl",
+    compliance_frameworks=["nist_ai_rmf", "eu_ai_act", "mitre_atlas"],
+)
+provider.set_as_global()
+
+instrumentor = AITFInstrumentor(tracer_provider=provider.tracer_provider)
+instrumentor.instrument_all()
+# OCSF Category 7 events written to file / HTTP endpoint — no OTLP
+```
+
+#### Instrumentation (works with any pipeline option)
 
 ```python
 from aitf.instrumentation.llm import LLMInstrumentor
@@ -135,19 +200,12 @@ async def research_agent(query: str):
 mcp = MCPInstrumentor()
 mcp.instrument()  # Captures tool.invoke, resource.read, prompt.get, etc.
 
-# Security & PII processors
+# Security & PII processors (enrich spans before export)
 from aitf.processors.security_processor import SecurityProcessor
 from aitf.processors.pii_processor import PIIProcessor
 
 security = SecurityProcessor()  # OWASP LLM Top 10 detection
 pii = PIIProcessor(action="redact")
-
-# OCSF export to SIEM/XDR
-from aitf.exporters.ocsf_exporter import OCSFExporter
-exporter = OCSFExporter(
-    endpoint="https://siem.example.com/api/events",
-    compliance_frameworks=["nist_ai_rmf", "mitre_atlas", "eu_ai_act"]
-)
 ```
 
 ### Go
@@ -435,6 +493,7 @@ AITF/
 │       ├── package.json
 │       └── tsconfig.json
 ├── examples/
+│   ├── dual_pipeline_tracing.py       # ★ Dual OTel+OCSF pipeline example
 │   ├── basic_llm_tracing.py           # Basic LLM tracing example
 │   ├── agent_tracing.py               # Agent lifecycle example
 │   ├── mcp_tracing.py                 # MCP protocol example

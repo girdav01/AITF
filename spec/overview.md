@@ -101,7 +101,86 @@ Layer 4: Analytics          — SIEM, XDR, dashboards, compliance reporting
 └───────────────────┘                          └──────────────────┘
 ```
 
-### 3.3 Span Hierarchy
+### 3.3 Dual Pipeline Architecture
+
+AITF is designed to produce **both** standard OpenTelemetry signals (OTLP)
+and OCSF security events from the same instrumentation. This dual-pipeline
+architecture means you never have to choose between observability and security
+— you get both from a single instrumentation pass.
+
+#### Output Formats
+
+| Pipeline | Format | Purpose | Backends |
+|----------|--------|---------|----------|
+| **Observability** | OTLP (gRPC/HTTP) | Distributed tracing, latency analysis, dependency maps | Jaeger, Grafana Tempo, Datadog, Honeycomb, Dynatrace, New Relic |
+| **Security** | OCSF Category 7 (JSON) | Security events, compliance, threat detection | Splunk, AWS Security Lake, QRadar, Sentinel, Elastic Security |
+| **Security** | CEF over Syslog | Legacy SIEM integration | ArcSight, LogRhythm, QRadar |
+| **Audit** | Hash-chained JSONL | Tamper-evident audit trail | File-based, S3, compliance archives |
+
+#### How It Works
+
+1. **Single instrumentation** — AITF instrumentors create standard OTel spans enriched with `gen_ai.*` and `aitf.*` attributes
+2. **Shared TracerProvider** — One `TracerProvider` with multiple `SpanProcessor` pipelines attached
+3. **Parallel export** — Each span is delivered to all configured exporters simultaneously:
+   - **OTLP exporter** sends the raw OTel span to observability backends
+   - **OCSF exporter** maps the span to an OCSF Category 7 event and delivers it to SIEM/XDR
+   - **CEF/Immutable exporters** convert to additional formats as needed
+
+```
+                    ┌──────────────────────────────────────┐
+                    │       AITF Instrumentation            │
+                    │  (produces standard OTel spans)       │
+                    └──────────────────┬───────────────────┘
+                                       │
+                    ┌──────────────────▼───────────────────┐
+                    │     TracerProvider                     │
+                    │     (DualPipelineProvider)             │
+                    │                                       │
+                    │  ┌─────────────┐  ┌───────────────┐  │
+                    │  │  BatchSpan  │  │  BatchSpan    │  │
+                    │  │  Processor  │  │  Processor    │  │
+                    │  │  (OTLP)     │  │  (OCSF)       │  │
+                    │  └──────┬──────┘  └───────┬───────┘  │
+                    └─────────┼─────────────────┼──────────┘
+                              │                 │
+            ┌─────────────────▼──┐    ┌────────▼───────────────┐
+            │  OTLP Exporter     │    │  OCSF Exporter         │
+            │  (gRPC / HTTP)     │    │  (JSON → File / HTTP)  │
+            └─────────────────┬──┘    └────────┬───────────────┘
+                              │                 │
+            ┌─────────────────▼──┐    ┌────────▼───────────────┐
+            │  Observability     │    │  Security / Compliance  │
+            │  Jaeger, Tempo,    │    │  Splunk, Security Lake, │
+            │  Datadog, etc.     │    │  QRadar, S3, etc.       │
+            └────────────────────┘    └────────────────────────┘
+```
+
+#### When to Use Each Pipeline
+
+- **OTel-only** — Development, performance profiling, latency debugging. Use when your AI application needs observability without security event compliance.
+- **OCSF-only** — Security monitoring, audit compliance, SIEM integration. Use when your SIEM team needs AI events but you already have separate OTel infrastructure.
+- **Dual (recommended)** — Production deployments where both DevOps and SecOps teams consume telemetry. One instrumentation, two audiences.
+
+#### SDK Support
+
+The Python SDK provides `DualPipelineProvider` for one-line dual-pipeline setup:
+
+```python
+from aitf.pipeline import create_dual_pipeline_provider
+from aitf import AITFInstrumentor
+
+# Enable both OTel traces (→ Jaeger) and OCSF events (→ SIEM)
+provider = create_dual_pipeline_provider(
+    otlp_endpoint="http://localhost:4317",
+    ocsf_output_file="/var/log/aitf/events.jsonl",
+)
+provider.set_as_global()
+
+instrumentor = AITFInstrumentor(tracer_provider=provider.tracer_provider)
+instrumentor.instrument_all()
+```
+
+### 3.4 Span Hierarchy
 
 AITF defines a clear span hierarchy for AI operations:
 
@@ -189,6 +268,10 @@ AITF defines a clear span hierarchy for AI operations:
 
 ## 5. OCSF Integration
 
+OCSF (Open Cybersecurity Schema Framework) is the **security pipeline** in AITF's dual-pipeline architecture.  While the OTel/OTLP pipeline serves observability teams (traces, latency, dependencies), the OCSF pipeline serves security and compliance teams (SIEM events, audit trails, regulatory reporting).
+
+Both pipelines consume the same OTel spans produced by AITF instrumentors — there is no separate instrumentation step for OCSF.
+
 ### 5.1 OCSF Category 7: AI Events
 
 AITF defines a new OCSF category (Category 7) for AI-specific security events. Each AITF span can be mapped to an OCSF event for consumption by SIEM/XDR platforms.
@@ -200,6 +283,22 @@ See [OCSF Event Classes](ocsf-mapping/event-classes.md) for detailed class defin
 Every OCSF event is automatically enriched with compliance metadata mapping to eight regulatory frameworks.
 
 See [Compliance Mapping](ocsf-mapping/compliance-mapping.md) for framework details.
+
+### 5.3 OTel ↔ OCSF Attribute Mapping
+
+AITF uses a consistent attribute mapping between OTel spans and OCSF events:
+
+| OTel Span Attribute | OCSF Field | Example |
+|---------------------|------------|---------|
+| `gen_ai.system` | `unmapped.gen_ai_system` | `"openai"` |
+| `gen_ai.request.model` | `ai_model.name` | `"gpt-4o"` |
+| `gen_ai.usage.input_tokens` | `ai_model.input_tokens` | `150` |
+| `gen_ai.usage.output_tokens` | `ai_model.output_tokens` | `42` |
+| `aitf.agent.name` | `actor.agent.name` | `"ResearchBot"` |
+| `aitf.security.threat_type` | `finding_info.title` | `"prompt_injection"` |
+| `aitf.cost.total` | `ai_model.cost.total` | `0.0032` |
+
+The full mapping is implemented in `OCSFMapper` and can be extended via vendor mapping files.
 
 ## 6. Comparison with OpenTelemetry GenAI SIG
 
