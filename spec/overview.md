@@ -11,7 +11,7 @@ The AI Telemetry Framework (AITF) is a comprehensive telemetry specification and
 ### 1.1 Goals
 
 1. **Extend OpenTelemetry GenAI** — Build on existing `gen_ai.*` conventions rather than replacing them
-2. **Bridge Observability and Security** — Dual-pipeline producing both OTel traces and OCSF security events
+2. **Unified Observability and Security** — Security-enriched OTel spans serve both observability and security analytics via OTLP, with OCSF normalization for SIEM-native ingestion
 3. **Support Modern AI Patterns** — First-class support for agentic AI, MCP, skills, multi-agent orchestration
 4. **Compliance by Design** — Automatic mapping to regulatory frameworks
 5. **Production Ready** — Stable conventions with clear migration from OTel GenAI experimental
@@ -95,26 +95,29 @@ Layer 4: Analytics          — SIEM, XDR, dashboards, compliance reporting
         ▼                                               ▼
 ┌───────────────────┐                          ┌──────────────────┐
 │  OTel Backends    │                          │  OCSF Exporter   │
-│  - Jaeger         │                          │  - SIEM/XDR      │
-│  - Grafana Tempo  │                          │  - S3 Data Lake  │
-│  - Datadog        │                          │  - Syslog        │
+│  (Obs & Security) │                          │  (OCSF-Native)   │
+│  - Jaeger/Tempo   │                          │  - SIEM/XDR      │
+│  - Datadog        │                          │  - S3 Data Lake   │
+│  - Elastic Sec.   │                          │  - Syslog         │
 └───────────────────┘                          └──────────────────┘
 ```
 
 ### 3.3 Dual Pipeline Architecture
 
-AITF is designed to produce **both** standard OpenTelemetry signals (OTLP)
-and OCSF security events from the same instrumentation. This dual-pipeline
-architecture means you never have to choose between observability and security
-— you get both from a single instrumentation pass.
+AITF is designed to produce security-enriched OpenTelemetry signals (OTLP)
+and OCSF-normalized events from the same instrumentation. OTel spans carry
+full security context (`aitf.security.*` attributes) making OTLP a first-class
+transport for both observability and security analytics. The OCSF pipeline
+provides additional schema normalization for SIEMs that require OCSF-native
+ingestion. A single instrumentation pass feeds both pipelines.
 
 #### Output Formats
 
 | Pipeline | Format | Purpose | Backends |
 |----------|--------|---------|----------|
-| **Observability** | OTLP (gRPC/HTTP) | Distributed tracing, latency analysis, dependency maps | Jaeger, Grafana Tempo, Datadog, Honeycomb, Dynatrace, New Relic |
-| **Security** | OCSF Category 7 (JSON) | Security events, compliance, threat detection | Splunk, AWS Security Lake, QRadar, Sentinel, Elastic Security |
-| **Security** | CEF over Syslog | Legacy SIEM integration | ArcSight, LogRhythm, QRadar |
+| **OTLP** | OTLP (gRPC/HTTP) | Distributed tracing, security analytics, latency analysis, dependency maps | Jaeger, Grafana Tempo, Datadog, Elastic Security, Honeycomb, Dynatrace, New Relic |
+| **OCSF** | OCSF Category 7 (JSON) | OCSF-normalized security events, compliance, threat detection | Splunk, AWS Security Lake, QRadar, Sentinel |
+| **CEF/Syslog** | CEF over Syslog | Legacy SIEM integration | ArcSight, LogRhythm, QRadar |
 | **Audit** | Hash-chained JSONL | Tamper-evident audit trail | File-based, S3, compliance archives |
 
 #### How It Works
@@ -122,8 +125,8 @@ architecture means you never have to choose between observability and security
 1. **Single instrumentation** — AITF instrumentors create standard OTel spans enriched with `gen_ai.*` and `aitf.*` attributes
 2. **Shared TracerProvider** — One `TracerProvider` with multiple `SpanProcessor` pipelines attached
 3. **Parallel export** — Each span is delivered to all configured exporters simultaneously:
-   - **OTLP exporter** sends the raw OTel span to observability backends
-   - **OCSF exporter** maps the span to an OCSF Category 7 event and delivers it to SIEM/XDR
+   - **OTLP exporter** sends the security-enriched OTel span (including `aitf.security.*` attributes) to OTLP-compatible backends for both observability and security analytics
+   - **OCSF exporter** normalizes the span into an OCSF Category 7 event for SIEMs that require OCSF-native ingestion
    - **CEF/Immutable exporters** convert to additional formats as needed
 
 ```
@@ -149,17 +152,19 @@ architecture means you never have to choose between observability and security
             └─────────────────┬──┘    └────────┬───────────────┘
                               │                 │
             ┌─────────────────▼──┐    ┌────────▼───────────────┐
-            │  Observability     │    │  Security / Compliance  │
+            │  Observability &   │    │  OCSF-Native SIEM /    │
+            │  Security          │    │  Compliance             │
             │  Jaeger, Tempo,    │    │  Splunk, Security Lake, │
-            │  Datadog, etc.     │    │  QRadar, S3, etc.       │
+            │  Datadog, Elastic  │    │  QRadar, Sentinel,      │
+            │  Security, etc.    │    │  S3, etc.               │
             └────────────────────┘    └────────────────────────┘
 ```
 
 #### When to Use Each Pipeline
 
-- **OTel-only** — Development, performance profiling, latency debugging. Use when your AI application needs observability without security event compliance.
-- **OCSF-only** — Security monitoring, audit compliance, SIEM integration. Use when your SIEM team needs AI events but you already have separate OTel infrastructure.
-- **Dual (recommended)** — Production deployments where both DevOps and SecOps teams consume telemetry. One instrumentation, two audiences.
+- **OTLP-only** — Observability and security analytics through OTLP-compatible backends. OTel spans carry full security context (`aitf.security.*` attributes, risk scores, OWASP classifications) — sufficient when your security platform consumes OTLP natively (e.g., Elastic Security, Datadog Security, Grafana).
+- **OCSF-only** — OCSF-normalized security events for SIEMs that require OCSF-native ingestion (AWS Security Lake, Splunk). Use when your SIEM team needs structured OCSF events and you already have separate OTel infrastructure for observability.
+- **Dual (recommended)** — Production deployments serving both OTLP-native and OCSF-native consumers. One instrumentation pass, two export formats, full security context in both.
 
 #### SDK Support
 
