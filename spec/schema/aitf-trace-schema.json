@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://aitf.io/schema/trace/v1",
   "title": "AITF Trace Schema",
-  "description": "JSON Schema for AITF trace span attributes. These attributes are set on standard OpenTelemetry spans and can be exported via OTLP (for observability backends like Jaeger, Grafana Tempo, Datadog) and/or converted to OCSF Category 7 events (for SIEM/XDR platforms like Splunk, AWS Security Lake, QRadar) using the OCSFMapper.",
+  "description": "JSON Schema for AITF trace span attributes. These attributes are set on standard OpenTelemetry spans and carry full security context (aitf.security.* attributes including threat detection, risk scores, and OWASP classifications). Spans can be exported via OTLP (for observability and security analytics backends like Jaeger, Grafana Tempo, Datadog, Elastic Security) and/or converted to OCSF Category 7 events (for OCSF-native SIEMs like Splunk, AWS Security Lake, QRadar) using the OCSFMapper.",
   "type": "object",
   "definitions": {
     "gen_ai_attributes": {

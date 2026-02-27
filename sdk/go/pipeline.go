@@ -1,9 +1,10 @@
 // Package aitf provides the AI Telemetry Framework SDK for Go.
 //
-// DualPipelineProvider configures an OTel TracerProvider with both
-// observability (OTLP) and security (OCSF) export pipelines, enabling
-// the same spans to be sent to OTel backends (Jaeger, Grafana Tempo,
-// Datadog) AND SIEM/XDR endpoints simultaneously.
+// DualPipelineProvider configures an OTel TracerProvider with both OTLP
+// and OCSF export pipelines, enabling the same security-enriched spans
+// to be sent to OTLP-compatible backends (Jaeger, Grafana Tempo, Datadog,
+// Elastic Security) for observability and security analytics AND
+// OCSF-native SIEM/XDR endpoints simultaneously.
 //
 // Usage:
 //
@@ -145,7 +146,7 @@ func NewDualPipelineProvider(opts ...PipelineOption) (*DualPipelineProvider, err
 	var spanExporters []sdktrace.SpanExporter
 	var spanProcessors []sdktrace.TracerProviderOption
 
-	// OTLP pipeline (observability)
+	// OTLP pipeline (observability & security analytics)
 	if cfg.OTLPEndpoint != "" {
 		otlpExp, err := createOTLPGRPCExporter(cfg.OTLPEndpoint, cfg.OTLPHeaders)
 		if err != nil {
@@ -168,7 +169,7 @@ func NewDualPipelineProvider(opts ...PipelineOption) (*DualPipelineProvider, err
 		}
 	}
 
-	// OCSF pipeline (security / SIEM)
+	// OCSF pipeline (OCSF-native SIEM / compliance)
 	if cfg.OCSFOutputFile != "" || cfg.OCSFEndpoint != "" {
 		ocsfOpts := []exporters.OCSFExporterOption{}
 		if cfg.OCSFOutputFile != "" {

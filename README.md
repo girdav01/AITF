@@ -6,7 +6,7 @@
 
 **A comprehensive, security-first telemetry framework for AI systems built on OpenTelemetry and OCSF.**
 
-AITF extends OpenTelemetry's GenAI semantic conventions with first-class support for agentic AI, MCP (Model Context Protocol), Skills, multi-agent orchestration, and security/compliance telemetry — bridging the gap between AI observability and cybersecurity.
+AITF extends OpenTelemetry's GenAI semantic conventions with first-class support for agentic AI, MCP (Model Context Protocol), Skills, multi-agent orchestration, and security/compliance telemetry — unifying AI observability and cybersecurity in a single OTel-native framework.
 
 ## Why AITF?
 
@@ -151,7 +151,7 @@ instrumentor = AITFInstrumentor(tracer_provider=provider.tracer_provider)
 instrumentor.instrument_all()
 ```
 
-#### Option 2: OTel-only (Observability)
+#### Option 2: OTLP-only (Observability & Security Analytics)
 
 ```python
 from aitf import AITFInstrumentor, create_otel_only_provider
@@ -164,7 +164,7 @@ instrumentor.instrument_all()
 # Traces flow to Jaeger/Tempo/Datadog — no OCSF conversion
 ```
 
-#### Option 3: OCSF-only (Security / SIEM)
+#### Option 3: OCSF-only (OCSF-Native SIEM)
 
 ```python
 from aitf import AITFInstrumentor, create_ocsf_only_provider

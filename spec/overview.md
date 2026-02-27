@@ -273,7 +273,7 @@ AITF defines a clear span hierarchy for AI operations:
 
 ## 5. OCSF Integration
 
-OCSF (Open Cybersecurity Schema Framework) is the **security pipeline** in AITF's dual-pipeline architecture.  While the OTel/OTLP pipeline serves observability teams (traces, latency, dependencies), the OCSF pipeline serves security and compliance teams (SIEM events, audit trails, regulatory reporting).
+OCSF (Open Cybersecurity Schema Framework) provides an additional schema normalization layer in AITF's dual-pipeline architecture.  While OTLP carries security-enriched spans (including `aitf.security.*` attributes) directly to OTLP-compatible backends for both observability and security analytics, the OCSF pipeline normalizes those same spans into OCSF Category 7 events for SIEMs and data lakes that require OCSF-native ingestion (Splunk, AWS Security Lake, QRadar, Sentinel).
 
 Both pipelines consume the same OTel spans produced by AITF instrumentors — there is no separate instrumentation step for OCSF.
 

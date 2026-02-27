@@ -116,7 +116,7 @@ pip install -e ".[all]"
 
 ### Dual Pipeline (Recommended)
 
-The fastest path to production-grade telemetry — OTel traces for observability **and** OCSF events for SIEM, from a single instrumentation pass:
+The fastest path to production-grade telemetry — security-enriched OTel traces (for observability and security analytics) **and** OCSF-normalized events (for OCSF-native SIEMs), from a single instrumentation pass:
 
 ```python
 from aitf import AITFInstrumentor, create_dual_pipeline_provider
@@ -162,9 +162,9 @@ instrumentor = AITFInstrumentor(tracer_provider=provider.tracer_provider)
 instrumentor.instrument_all()
 ```
 
-### OTel-Only (Observability)
+### OTLP-Only (Observability & Security Analytics)
 
-If you only need standard OTel traces (no OCSF conversion):
+If your backends consume OTLP natively for both observability and security analytics (no OCSF conversion needed):
 
 ```python
 from aitf import AITFInstrumentor, create_otel_only_provider
@@ -1344,7 +1344,7 @@ Use this matrix to choose the right format and transport for your deployment:
 
 | Scenario | Format | Transport | AITF Exporter | Why |
 |---|---|---|---|---|
-| **Production (recommended)** | OTLP + OCSF | gRPC + JSONL/HTTPS | `create_dual_pipeline_provider()` | DevOps observability + SecOps security from one instrumentation |
+| **Production (recommended)** | OTLP + OCSF | gRPC + JSONL/HTTPS | `create_dual_pipeline_provider()` | Full observability and security analytics (OTLP) + OCSF-native SIEM from one instrumentation |
 | **OCSF-native SIEM** (AWS Security Lake, Splunk OCSF) | OCSF JSON | HTTPS POST / S3 | `OCSFExporter(endpoint=...)` | Full semantic richness, compliance metadata |
 | **Legacy SIEM** (QRadar, ArcSight, LogRhythm) | CEF | TCP+TLS Syslog | `CEFSyslogExporter(tls=True)` | Universal SIEM ingestion format |
 | **Tracing backend** (Jaeger, Grafana Tempo, Honeycomb) | OTLP | gRPC or HTTP | `create_otel_only_provider()` | Native trace visualization |
@@ -1445,7 +1445,7 @@ Most production environments use multiple formats simultaneously. Here are commo
 
 **Pattern A: OCSF + OTLP (Modern Stack)**
 
-Use OCSF for security/compliance teams and OTLP for engineering/observability teams.
+Both pipelines carry security context. OTLP delivers security-enriched spans (with `aitf.security.*` attributes) to OTLP-compatible platforms. OCSF provides additional normalization for SIEMs that require OCSF-native ingestion.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐

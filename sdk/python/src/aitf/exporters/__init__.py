@@ -5,8 +5,8 @@ XDR, data lakes) and standard OpenTelemetry export (OTLP to Jaeger, Grafana
 Tempo, Datadog, etc.).
 
 AITF supports dual-pipeline export where the same spans flow to both:
-- **OTLP** → Standard OTel backends for observability
-- **OCSF** → SIEM/XDR for security monitoring
+- **OTLP** → OTLP-compatible backends for observability and security analytics
+- **OCSF** → OCSF-native SIEM/XDR for normalized security events
 
 See :mod:`aitf.pipeline` for the recommended ``DualPipelineProvider``.
 """

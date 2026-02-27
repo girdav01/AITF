@@ -1,8 +1,9 @@
 """AITF Dual Pipeline Provider.
 
-Configures an OpenTelemetry ``TracerProvider`` with both observability (OTLP)
-and security (OCSF) export pipelines, enabling the same spans to be sent to
-OTel backends (Jaeger, Grafana Tempo, Datadog, etc.) **and** SIEM/XDR
+Configures an OpenTelemetry ``TracerProvider`` with both OTLP and OCSF
+export pipelines, enabling the same security-enriched spans to be sent to
+OTLP-compatible backends (Jaeger, Grafana Tempo, Datadog, Elastic Security,
+etc.) for observability and security analytics **and** OCSF-native SIEM/XDR
 endpoints simultaneously.
 
 Architecture::
@@ -11,7 +12,7 @@ Architecture::
     │              Your AI Application                  │
     │        (AITF Instrumentors create spans)          │
     └────────────────────┬─────────────────────────────┘
-                         │ OTel Spans
+                         │ OTel Spans (with aitf.security.* attributes)
                          ▼
     ┌──────────────────────────────────────────────────┐
     │           DualPipelineProvider                     │
@@ -26,9 +27,10 @@ Architecture::
               │                          │
               ▼                          ▼
     ┌──────────────────┐      ┌──────────────────────┐
-    │  OTel Backend    │      │  SIEM / XDR / Lake   │
-    │  (Jaeger, Tempo, │      │  (OCSF JSONL, HTTP,  │
-    │   Datadog, etc.) │      │   CEF Syslog, etc.)  │
+    │  Observability & │      │  OCSF-Native SIEM /  │
+    │  Security        │      │  Compliance           │
+    │  (Jaeger, Tempo, │      │  (Splunk, Security   │
+    │   Datadog, etc.) │      │   Lake, QRadar, etc.)│
     └──────────────────┘      └──────────────────────┘
 
 Usage::
@@ -36,7 +38,7 @@ Usage::
     from aitf.pipeline import DualPipelineProvider
     from aitf import AITFInstrumentor
 
-    # One-liner: enable both OTel + OCSF export
+    # One-liner: enable both OTLP + OCSF export
     provider = DualPipelineProvider(
         otlp_endpoint="http://localhost:4317",
         ocsf_output_file="/var/log/aitf/events.jsonl",
@@ -45,7 +47,7 @@ Usage::
     instrumentor = AITFInstrumentor(tracer_provider=provider.tracer_provider)
     instrumentor.instrument_all()
 
-    # Spans flow to OTLP (Jaeger/Tempo) AND OCSF (SIEM) simultaneously.
+    # Spans flow to OTLP (observability & security) AND OCSF (SIEM) simultaneously.
 """
 
 from __future__ import annotations
@@ -69,11 +71,13 @@ logger = logging.getLogger(__name__)
 
 
 class DualPipelineProvider:
-    """Configures a TracerProvider with dual OTel + OCSF export.
+    """Configures a TracerProvider with dual OTLP + OCSF export.
 
-    This is the recommended entry point for production AITF deployments
-    that need both observability (traces in Jaeger, Tempo, Datadog) and
-    security (OCSF events in SIEM/XDR).
+    This is the recommended entry point for production AITF deployments.
+    OTLP carries security-enriched spans (including ``aitf.security.*``
+    attributes) to OTLP-compatible backends for both observability and
+    security analytics. OCSF provides additional schema normalization for
+    SIEMs that require OCSF-native ingestion.
 
     Parameters
     ----------
@@ -135,7 +139,7 @@ class DualPipelineProvider:
         self._provider = TracerProvider(resource=resource)
         self._exporters: list[SpanExporter] = []
 
-        # ── OTLP pipeline (observability) ──────────────────────────
+        # ── OTLP pipeline (observability & security analytics) ─────
         otlp_exporter = self._create_otlp_exporter(
             otlp_endpoint, otlp_http_endpoint, otlp_headers,
         )
@@ -148,7 +152,7 @@ class DualPipelineProvider:
                 otlp_endpoint or otlp_http_endpoint,
             )
 
-        # ── OCSF pipeline (security / SIEM) ───────────────────────
+        # ── OCSF pipeline (OCSF-native SIEM / compliance) ──────────
         if ocsf_output_file or ocsf_endpoint:
             ocsf_exporter = OCSFExporter(
                 output_file=ocsf_output_file,
@@ -264,7 +268,8 @@ def create_otel_only_provider(
 ) -> DualPipelineProvider:
     """Create a provider that exports only to an OTel backend (OTLP).
 
-    Use when you want standard observability without OCSF/SIEM export.
+    Use when your backend consumes OTLP natively for both observability and
+    security analytics, and you do not need OCSF-formatted output.
     """
     return DualPipelineProvider(
         otlp_endpoint=endpoint,
@@ -285,7 +290,8 @@ def create_ocsf_only_provider(
 ) -> DualPipelineProvider:
     """Create a provider that exports only to OCSF (SIEM/XDR).
 
-    Use when you want security event export without standard OTel traces.
+    Use when your SIEM requires OCSF-native ingestion and you already
+    have separate OTLP infrastructure for observability and security.
     """
     return DualPipelineProvider(
         ocsf_output_file=output_file,

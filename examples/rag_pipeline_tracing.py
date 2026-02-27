@@ -12,8 +12,8 @@ with LangChain, LlamaIndex, or a custom RAG stack:
     6. Evaluate quality          → faithfulness, relevance, groundedness
 
 Every step produces OTel spans that can be exported as:
-  - **OTLP** → Jaeger / Grafana Tempo / Datadog (observability)
-  - **OCSF** → SIEM / XDR (7001 / 7004 security events)
+  - **OTLP** → Jaeger / Grafana Tempo / Datadog / Elastic Security (observability & security analytics)
+  - **OCSF** → OCSF-native SIEM / XDR (7001 / 7004 events)
   - **Both** → via ``DualPipelineProvider`` (recommended)
 
 See ``dual_pipeline_tracing.py`` for the full dual-pipeline setup.

@@ -2,12 +2,12 @@
 
 Demonstrates AITF's dual-pipeline architecture where the **same spans**
 are exported to both:
-  - **OTLP** → Standard OTel backends (Jaeger, Grafana Tempo, Datadog)
-  - **OCSF** → SIEM/XDR platforms (Splunk, AWS Security Lake, QRadar)
+  - **OTLP** → OTLP-compatible backends for observability and security analytics
+            (Jaeger, Grafana Tempo, Datadog, Elastic Security)
+  - **OCSF** → OCSF-native SIEM/XDR platforms (Splunk, AWS Security Lake, QRadar)
 
 This is the recommended production setup.  You instrument once and get
-observability (for DevOps) and security events (for SecOps) from the
-same telemetry.
+security-enriched spans in both formats from the same telemetry.
 
 The example simulates a research assistant that:
   1. Takes a user question
@@ -216,20 +216,20 @@ print("=" * 72)
 
 otlp_ep = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT")
 if otlp_ep:
-    print(f"\n  OTLP Pipeline (Observability):")
+    print(f"\n  OTLP Pipeline (Observability & Security Analytics):")
     print(f"    Endpoint:  {otlp_ep}")
     print(f"    View in:   Jaeger UI / Grafana Tempo / Datadog APM")
     print(f"    Signals:   4 trace spans (2 LLM + 1 RAG + 1 Embedding)")
 else:
     print(f"\n  OTLP Pipeline: SKIPPED (set OTEL_EXPORTER_OTLP_ENDPOINT to enable)")
 
-print(f"\n  OCSF Pipeline (Security / SIEM):")
+print(f"\n  OCSF Pipeline (OCSF-Native SIEM):")
 print(f"    Output:    {OCSF_OUTPUT}")
 print(f"    Events:    OCSF Category 7 JSON (7001 Model Inference, 7004 Data Retrieval)")
 print(f"    Enriched:  NIST AI RMF + EU AI Act + MITRE ATLAS compliance controls")
 
-print(f"\n  Both pipelines received the SAME spans from a SINGLE instrumentation pass.")
-print(f"  DevOps sees traces in Jaeger.  SecOps sees events in Splunk.  Zero duplication.")
+print(f"\n  Both pipelines received the SAME security-enriched spans from a SINGLE instrumentation pass.")
+print(f"  OTLP carries full aitf.security.* context.  OCSF normalizes to Category 7 for SIEMs.")
 
 print(f"\n  Pipeline modes:")
 print(f"    from aitf import create_dual_pipeline_provider  # OTel + OCSF")
