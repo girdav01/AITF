@@ -584,11 +584,13 @@ The AITF SDK is built with defense-in-depth principles. Key security measures in
 ## Roadmap
 
 - **Java SDK** — Full AITF SDK for Java/JVM ecosystem (Spring Boot, Quarkus integrations)
+- **Rust** - Full AITF SDK for Rust ecosystem
 - **C++ SDK** — High-performance SDK for edge AI and embedded inference systems
 - **OpenTelemetry Collector Processor** — Native AITF processor plugin for the OTel Collector
 - **Kubernetes Operator** — Auto-instrument AI workloads in K8s clusters
 - **Real-time Threat Dashboard** — Pre-built Grafana dashboards for AI security operations
-
+- **SDKs Available in Librairies repos** -Python and TypeScript SDKs published to PyPI and npm
+  
 ## Based On
 
 - [AITelemetry](https://github.com/girdav01/AITelemetry) — Reference implementation and OCSF schema extensions
