@@ -12,11 +12,11 @@ Traditional observability tools were built for request-response web services. AI
 - **Tool orchestration** — MCP servers, skills, function calling, and multi-agent delegation create complex execution graphs that need purpose-built instrumentation.
 - **Compliance requirements** — EU AI Act, NIST AI RMF, ISO 42001, and CSA AICM all require specific audit trails that generic logging cannot provide.
 
-AITF addresses these challenges by **extending** OpenTelemetry — not forking it. All AITF instrumentation produces standard OTel signals (spans, metrics, events) that flow over standard OTLP. The extension adds AI-specific semantic conventions, security processors, and a parallel OCSF export pipeline for SIEM integration.
+AITF addresses these challenges by **extending** OpenTelemetry — not forking it. All AITF instrumentation produces standard OTel signals (spans, metrics, events) that flow over standard OTLP. OTel spans carry full security context (`aitf.security.*` attributes including threat detection, risk scores, and OWASP classifications) making OTLP a first-class transport for both observability and security analytics. The extension adds AI-specific semantic conventions, in-process security processors, and an optional OCSF normalization layer for SIEMs that require OCSF-native ingestion.
 
 ## 2. Architecture: The Dual-Pipeline Model
 
-The central innovation in AITF is the dual-pipeline architecture. A single instrumentation pass produces two simultaneous outputs:
+The central innovation in AITF is the dual-pipeline architecture. A single instrumentation pass produces security-enriched OTel spans that are exported in two formats simultaneously — OTLP for platforms that consume OTel natively, and OCSF for SIEMs that require OCSF-formatted events. Both pipelines carry full security context:
 
 ```
                     ┌──────────────────────────────────────┐
@@ -41,9 +41,11 @@ The central innovation in AITF is the dual-pipeline architecture. A single instr
             └─────────┬──────────┘    └────────┬───────────────┘
                       │                        │
             ┌─────────▼──────────┐    ┌────────▼───────────────┐
-            │  Observability     │    │  Security / Compliance  │
+            │  Observability &   │    │  OCSF-Native SIEM /    │
+            │  Security          │    │  Compliance             │
             │  Jaeger, Tempo,    │    │  Splunk, Security Lake, │
-            │  Datadog, etc.     │    │  QRadar, S3, etc.       │
+            │  Datadog, Elastic  │    │  QRadar, Sentinel,      │
+            │  Security, etc.    │    │  S3, etc.               │
             └────────────────────┘    └────────────────────────┘
 ```
 
@@ -52,18 +54,20 @@ The central innovation in AITF is the dual-pipeline architecture. A single instr
 1. **Single instrumentation** — AITF instrumentors create standard OTel spans with `gen_ai.*` and `aitf.*` attributes.
 2. **Shared TracerProvider** — One `TracerProvider` with multiple `SpanProcessor` chains attached.
 3. **Parallel export** — Every span flows through all processors and exporters simultaneously:
-   - The **OTLP exporter** sends the raw OTel span to observability backends (Jaeger, Tempo, Datadog).
-   - The **OCSF exporter** converts the span to an OCSF Category 7 AI event and delivers it to SIEM/XDR platforms.
+   - The **OTLP exporter** sends the security-enriched OTel span (including `aitf.security.*` attributes, risk scores, and compliance metadata) to OTLP-compatible backends for both observability and security analytics.
+   - The **OCSF exporter** converts the span to an OCSF Category 7 AI event for SIEMs that require OCSF-native ingestion (Splunk, AWS Security Lake, QRadar, Sentinel).
    - Optional **CEF/Syslog** and **immutable log** exporters add legacy SIEM and tamper-evident audit trail support.
 
 ### Pipeline options
 
 | Pipeline | Format | Purpose | Backends |
 |----------|--------|---------|----------|
-| Observability | OTLP (gRPC/HTTP) | Distributed tracing, latency analysis, dependency maps | Jaeger, Grafana Tempo, Datadog, Honeycomb |
-| Security | OCSF Category 7 (JSON) | Security events, compliance, threat detection | Splunk, AWS Security Lake, QRadar, Sentinel |
-| Security (legacy) | CEF over Syslog | Legacy SIEM integration | ArcSight, LogRhythm, QRadar |
+| OTLP | OTLP (gRPC/HTTP) | Distributed tracing, latency analysis, security analytics, dependency maps | Jaeger, Grafana Tempo, Datadog, Elastic Security, Honeycomb |
+| OCSF | OCSF Category 7 (JSON) | OCSF-normalized security events, compliance, threat detection | Splunk, AWS Security Lake, QRadar, Sentinel |
+| CEF/Syslog | CEF over Syslog | Legacy SIEM integration | ArcSight, LogRhythm, QRadar |
 | Audit | Hash-chained JSONL | Tamper-evident audit trail (EU AI Act Art. 12, SOC 2 CC8.1) | File-based, S3, compliance archives |
+
+> **Note:** Both OTLP and OCSF pipelines carry full security context. OTel spans include `aitf.security.*` attributes (threat detection, risk scores, OWASP classifications), making them directly consumable by OTLP-compatible security platforms. The OCSF pipeline provides additional normalization into the OCSF Category 7 schema for SIEMs that require OCSF-native ingestion.
 
 ### Setup
 
@@ -198,7 +202,7 @@ agent.session research-bot
      └── agent.session writer                     (recursive)
 ```
 
-Every span in this tree flows simultaneously to both the OTLP pipeline (for tracing) and the OCSF pipeline (for security events).
+Every span in this tree flows simultaneously to both the OTLP pipeline (carrying full security context for observability and security analytics) and the OCSF pipeline (normalized into OCSF Category 7 events for OCSF-native SIEMs).
 
 ## 5. Processors: In-Flight Span Enrichment
 
@@ -255,7 +259,7 @@ Tracks agent memory mutations for security:
 
 ## 6. OCSF Mapping: OTel Spans to Security Events
 
-The `OCSFMapper` converts OTel spans to OCSF Category 7 (AI System Activity) events. This is the bridge between the observability world and the security world.
+The `OCSFMapper` converts OTel spans to OCSF Category 7 (AI System Activity) events. While OTLP already carries full security context and can feed security analytics platforms directly, the OCSF pipeline provides additional schema normalization for SIEMs and data lakes that require OCSF-native ingestion (Splunk, AWS Security Lake, QRadar, Sentinel).
 
 ### 6.1 OCSF Category 7 Event Classes
 
@@ -471,20 +475,22 @@ All SDKs share the same OCSF JSON Schema (`spec/schema/aitf-ocsf-schema.json`) a
 ### Why extend OTel instead of building from scratch?
 
 - OTel has mature SDKs in every major language with battle-tested context propagation, batching, and retry logic.
-- OTLP is a universal wire format supported by every major observability vendor.
+- OTLP is a universal wire format supported by every major observability and security vendor.
+- OTel spans natively carry arbitrary attributes — AITF's `aitf.security.*` attributes (threat types, risk scores, OWASP classifications) travel over standard OTLP without any protocol extension, making OTel a first-class security telemetry transport.
 - The `gen_ai.*` namespace already covers basic LLM inference — AITF builds on this rather than competing.
-- Teams can adopt AITF incrementally: start with OTel-only, add OCSF export later.
+- Modern security platforms (Elastic Security, Datadog Security, Grafana + Loki/Tempo) consume OTLP directly — teams get security analytics from the same OTel pipeline they already run.
+- Teams can adopt AITF incrementally: start with OTLP for both observability and security, add OCSF normalization later for SIEM-specific requirements.
 
-### Why OCSF for the security pipeline?
+### Why add OCSF in addition to OTLP?
 
-- OCSF is an open standard (by AWS, Splunk, IBM, etc.) specifically designed for security event normalization.
-- Category 7 (AI System Activity) provides a natural home for AI-specific security events.
-- OCSF events are directly ingestible by major SIEMs (Splunk, AWS Security Lake, QRadar, Sentinel).
-- The `class_uid` / `activity_id` / `type_uid` structure maps cleanly to AI operation taxonomies.
+- OTLP carries full security context and is sufficient for many security use cases. However, some SIEMs and data lakes require events in OCSF format.
+- OCSF is an open standard (by AWS, Splunk, IBM, etc.) specifically designed for security event normalization. Platforms like AWS Security Lake, Splunk, and QRadar ingest OCSF natively.
+- Category 7 (AI System Activity) provides a structured schema for AI-specific security events with standardized `class_uid` / `activity_id` / `type_uid` classification.
+- The OCSF pipeline is an additional normalization layer — not the exclusive security path. Security teams can choose OTLP, OCSF, or both depending on their SIEM infrastructure.
 
 ### Why dual-pipeline instead of post-processing?
 
 - Post-processing adds latency and requires separate infrastructure for security teams.
-- Dual-pipeline ensures security events are generated in real time, in the same process.
-- A single instrumentation pass eliminates the risk of observability/security data divergence.
-- Security processors (threat detection, PII redaction) operate on raw spans before any data leaves the process.
+- Dual-pipeline ensures both OTLP and OCSF security events are generated in real time, in the same process.
+- A single instrumentation pass eliminates the risk of data divergence between pipelines.
+- Security processors (threat detection, PII redaction) operate on raw spans before any data leaves the process — both OTLP and OCSF consumers receive the security-enriched result.
