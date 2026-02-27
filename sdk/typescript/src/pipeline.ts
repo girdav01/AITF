@@ -1,10 +1,11 @@
 /**
  * AITF Dual Pipeline Provider.
  *
- * Configures an OpenTelemetry TracerProvider with both observability (OTLP)
- * and security (OCSF) export pipelines, enabling the same spans to be sent
- * to OTel backends (Jaeger, Grafana Tempo, Datadog) AND SIEM/XDR endpoints
- * simultaneously.
+ * Configures an OpenTelemetry TracerProvider with both OTLP and OCSF
+ * export pipelines, enabling the same security-enriched spans to be sent
+ * to OTLP-compatible backends (Jaeger, Grafana Tempo, Datadog, Elastic
+ * Security) for observability and security analytics AND SIEM/XDR
+ * endpoints simultaneously.
  *
  * Usage:
  *
@@ -102,7 +103,7 @@ export class DualPipelineProvider {
 
     this.provider = new NodeTracerProvider({ resource });
 
-    // OTLP pipeline (observability)
+    // OTLP pipeline (observability & security analytics)
     if (otlpEndpoint) {
       try {
         // Dynamic import — user must install @opentelemetry/exporter-trace-otlp-grpc
@@ -142,7 +143,7 @@ export class DualPipelineProvider {
       }
     }
 
-    // OCSF pipeline (security / SIEM)
+    // OCSF pipeline (OCSF-native SIEM / compliance)
     if (ocsfOutputFile || ocsfEndpoint) {
       const ocsfExporter = new OCSFExporter({
         outputFile: ocsfOutputFile,

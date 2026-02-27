@@ -11,8 +11,8 @@ Demonstrates how AITF instruments a realistic multi-step AI agent that:
 Then shows a **multi-agent team** where a manager delegates to a
 researcher and a writer.
 
-All spans are exported as **both** OTel traces (for observability) and
-OCSF events (for SIEM).  See ``dual_pipeline_tracing.py`` for the full
+All spans are exported as **both** OTel traces (for observability and
+security analytics) and OCSF events (for OCSF-native SIEMs).  See ``dual_pipeline_tracing.py`` for the full
 dual-pipeline setup.  This example uses OCSF-only for simplicity.
 
 Run:

@@ -4,12 +4,13 @@ Demonstrates how AITF instruments a realistic multi-turn chatbot.  The
 simulated ``ChatBot`` class mirrors what you would build with the OpenAI
 or Anthropic SDK; AITF wraps every inference call so that every prompt,
 completion, token count, latency, and cost is captured as **both** an
-OTel trace span (for observability) and an OCSF event (for SIEM).
+OTel trace span (for observability and security analytics) and an OCSF
+event (for OCSF-native SIEMs).
 
 Pipeline options (set via AITF_PIPELINE env var):
   - "dual"  → OTLP to Jaeger/Tempo AND OCSF to SIEM (default)
-  - "otel"  → OTLP only (observability)
-  - "ocsf"  → OCSF only (security/SIEM)
+  - "otel"  → OTLP only (observability & security analytics)
+  - "ocsf"  → OCSF only (OCSF-native SIEM)
 
 Run:
     pip install opentelemetry-sdk aitf
@@ -136,18 +137,18 @@ class ChatBot:
 
 
 # ────────────────────────────────────────────────────────────────────
-# 3. AITF Setup — dual pipeline: OTel (observability) + OCSF (security)
+# 3. AITF Setup — dual pipeline: OTLP (observability & security) + OCSF (SIEM)
 # ────────────────────────────────────────────────────────────────────
 #
 # AITF supports three pipeline modes from the same instrumentation:
 #   "dual" → OTLP to Jaeger/Tempo AND OCSF to SIEM (recommended)
-#   "otel" → OTLP only (observability)
-#   "ocsf" → OCSF only (security/SIEM)
+#   "otel" → OTLP only (observability & security analytics)
+#   "ocsf" → OCSF only (OCSF-native SIEM)
 #
 pipeline_mode = os.environ.get("AITF_PIPELINE", "ocsf")
 
 if pipeline_mode == "dual":
-    # ── Dual pipeline: OTel traces + OCSF security events ──
+    # ── Dual pipeline: OTLP (observability & security) + OCSF (SIEM) ──
     pipeline = DualPipelineProvider(
         otlp_endpoint=os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"),
         ocsf_output_file="/tmp/aitf_ocsf_events.jsonl",
@@ -165,7 +166,7 @@ elif pipeline_mode == "otel":
     )
     provider = pipeline.tracer_provider
 else:
-    # ── OCSF-only: security events to SIEM (default for this demo) ──
+    # ── OCSF-only: OCSF-normalized events to SIEM (default for this demo) ──
     provider = TracerProvider()
 
 # Security processor — watches every prompt for OWASP LLM Top 10 threats
@@ -308,7 +309,7 @@ else:
     print(f"  OCSF events exported: {ocsf_exporter.event_count}")
     print(f"  Events written to:    /tmp/aitf_ocsf_events.jsonl")
 print(f"\n  Every LLM call produces a span that can be exported as:")
-print(f"    OTel (OTLP):  Standard trace span for observability backends")
+print(f"    OTel (OTLP):  Security-enriched trace span for observability & security backends")
 print(f"    OCSF (7001):  Security event for SIEM/XDR with:")
 print(f"      - Model, provider, prompt/completion content")
 print(f"      - Token counts, cost, and latency")
