@@ -12,7 +12,7 @@ import (
 	"github.com/girdav01/AITF/sdk/go/semconv"
 )
 
-const skillsTracerName = "aitf.instrumentation.skills"
+const skillsTracerName = "instrumentation.skills"
 
 // SkillInstrumentor traces skill operations.
 type SkillInstrumentor struct {

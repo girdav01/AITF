@@ -42,17 +42,17 @@ Represents agent discovery via `GET /agents` or `GET /agents/{name}`.
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.acp.operation` | string | **Required** | `"list_agents"` or `"get_agent"` | NIST AI RMF MAP-1.1 |
-| `aitf.acp.http.method` | string | **Required** | `"GET"` | — |
-| `aitf.acp.http.url` | string | **Recommended** | Request URL | MITRE ATLAS [AML.T0040](https://atlas.mitre.org/techniques/AML.T0040) |
-| `aitf.acp.agent.name` | string | **Recommended** | Agent name (if fetching specific agent) | OWASP LLM06 (Excessive Agency) |
-| `aitf.acp.agent.description` | string | **Optional** | Agent description from manifest | EU AI Act Art.13 (Transparency) |
-| `aitf.acp.agent.input_content_types` | string[] | **Optional** | Supported input MIME types | — |
-| `aitf.acp.agent.output_content_types` | string[] | **Optional** | Supported output MIME types | — |
-| `aitf.acp.agent.framework` | string | **Optional** | Agent framework from metadata | NIST AI RMF MAP-1.1 |
-| `aitf.acp.agent.status.success_rate` | double | **Optional** | Agent success rate (0–100) | NIST AI RMF MEASURE-2.5 |
-| `aitf.acp.agent.status.avg_run_time_seconds` | double | **Optional** | Average run time in seconds | NIST AI RMF MEASURE-2.5 |
-| `aitf.acp.http.status_code` | int | **Recommended** | HTTP response status code | — |
+| `acp.operation` | string | **Required** | `"list_agents"` or `"get_agent"` | NIST AI RMF MAP-1.1 |
+| `acp.http.method` | string | **Required** | `"GET"` | — |
+| `acp.http.url` | string | **Recommended** | Request URL | MITRE ATLAS [AML.T0040](https://atlas.mitre.org/techniques/AML.T0040) |
+| `acp.agent.name` | string | **Recommended** | Agent name (if fetching specific agent) | OWASP LLM06 (Excessive Agency) |
+| `acp.agent.description` | string | **Optional** | Agent description from manifest | EU AI Act Art.13 (Transparency) |
+| `acp.agent.input_content_types` | string[] | **Optional** | Supported input MIME types | — |
+| `acp.agent.output_content_types` | string[] | **Optional** | Supported output MIME types | — |
+| `acp.agent.framework` | string | **Optional** | Agent framework from metadata | NIST AI RMF MAP-1.1 |
+| `acp.agent.status.success_rate` | double | **Optional** | Agent success rate (0–100) | NIST AI RMF MEASURE-2.5 |
+| `acp.agent.status.avg_run_time_seconds` | double | **Optional** | Average run time in seconds | NIST AI RMF MEASURE-2.5 |
+| `acp.http.status_code` | int | **Recommended** | HTTP response status code | — |
 
 ---
 
@@ -70,37 +70,37 @@ Represents creating and executing an agent run via `POST /runs`.
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.acp.run.agent_name` | string | **Required** | Agent name to execute | OWASP LLM06 (Excessive Agency), MITRE ATLAS [AML.T0048](https://atlas.mitre.org/techniques/AML.T0048) |
-| `aitf.acp.run.id` | string | **Recommended** | Server-assigned run UUID | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
-| `aitf.acp.run.session_id` | string | **Recommended** | Session ID for stateful conversations | NIST AI RMF GOVERN-1.2 |
-| `aitf.acp.operation` | string | **Required** | `"create_run"` | — |
-| `aitf.acp.http.method` | string | **Required** | `"POST"` | — |
+| `acp.run.agent_name` | string | **Required** | Agent name to execute | OWASP LLM06 (Excessive Agency), MITRE ATLAS [AML.T0048](https://atlas.mitre.org/techniques/AML.T0048) |
+| `acp.run.id` | string | **Recommended** | Server-assigned run UUID | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
+| `acp.run.session_id` | string | **Recommended** | Session ID for stateful conversations | NIST AI RMF GOVERN-1.2 |
+| `acp.operation` | string | **Required** | `"create_run"` | — |
+| `acp.http.method` | string | **Required** | `"POST"` | — |
 
 #### Execution Configuration
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.acp.run.mode` | string | **Required** | `"sync"`, `"async"`, or `"stream"` | NIST AI RMF MEASURE-2.5 |
-| `aitf.acp.input.message_count` | int | **Recommended** | Number of input messages | — |
-| `aitf.acp.run.status` | string | **Recommended** | Final run status (see Run States below) | NIST AI RMF MEASURE-2.5 |
-| `aitf.acp.run.duration_ms` | double | **Recommended** | Total run duration in milliseconds | NIST AI RMF MEASURE-2.5, OWASP LLM10 |
-| `aitf.acp.output.message_count` | int | **Recommended** | Number of output messages | — |
+| `acp.run.mode` | string | **Required** | `"sync"`, `"async"`, or `"stream"` | NIST AI RMF MEASURE-2.5 |
+| `acp.input.message_count` | int | **Recommended** | Number of input messages | — |
+| `acp.run.status` | string | **Recommended** | Final run status (see Run States below) | NIST AI RMF MEASURE-2.5 |
+| `acp.run.duration_ms` | double | **Recommended** | Total run duration in milliseconds | NIST AI RMF MEASURE-2.5, OWASP LLM10 |
+| `acp.output.message_count` | int | **Recommended** | Number of output messages | — |
 
 #### Error Handling
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.acp.run.error.code` | string | **Recommended** | Error code if failed: `"server_error"`, `"invalid_input"`, `"not_found"` | NIST AI RMF MEASURE-2.5 |
-| `aitf.acp.run.error.message` | string | **Recommended** | Error message if failed | NIST AI RMF MEASURE-2.5 |
-| `aitf.acp.http.status_code` | int | **Recommended** | HTTP response status code | — |
+| `acp.run.error.code` | string | **Recommended** | Error code if failed: `"server_error"`, `"invalid_input"`, `"not_found"` | NIST AI RMF MEASURE-2.5 |
+| `acp.run.error.message` | string | **Recommended** | Error message if failed | NIST AI RMF MEASURE-2.5 |
+| `acp.http.status_code` | int | **Recommended** | HTTP response status code | — |
 
 #### Await/Resume (Human-in-the-Loop)
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.acp.await.active` | boolean | **Recommended** | Whether the run is currently awaiting client input | EU AI Act Art.14 (Human Oversight) |
-| `aitf.acp.await.count` | int | **Optional** | Number of await/resume cycles in this run | EU AI Act Art.14 |
-| `aitf.acp.await.duration_ms` | double | **Optional** | Total time spent in awaiting state | — |
+| `acp.await.active` | boolean | **Recommended** | Whether the run is currently awaiting client input | EU AI Act Art.14 (Human Oversight) |
+| `acp.await.count` | int | **Optional** | Number of await/resume cycles in this run | EU AI Act Art.14 |
+| `acp.await.duration_ms` | double | **Optional** | Total time spent in awaiting state | — |
 
 ### Events
 
@@ -134,11 +134,11 @@ Represents polling a run's status via `GET /runs/{run_id}`.
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.acp.run.id` | string | **Required** | Run UUID | NIST AI RMF GOVERN-1.2 |
-| `aitf.acp.operation` | string | **Required** | `"get_run"` | — |
-| `aitf.acp.http.method` | string | **Required** | `"GET"` | — |
-| `aitf.acp.run.status` | string | **Recommended** | Current run status | NIST AI RMF MEASURE-2.5 |
-| `aitf.acp.http.status_code` | int | **Recommended** | HTTP response status code | — |
+| `acp.run.id` | string | **Required** | Run UUID | NIST AI RMF GOVERN-1.2 |
+| `acp.operation` | string | **Required** | `"get_run"` | — |
+| `acp.http.method` | string | **Required** | `"GET"` | — |
+| `acp.run.status` | string | **Recommended** | Current run status | NIST AI RMF MEASURE-2.5 |
+| `acp.http.status_code` | int | **Recommended** | HTTP response status code | — |
 
 ---
 
@@ -154,11 +154,11 @@ Represents canceling a running agent via `POST /runs/{run_id}/cancel`.
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.acp.run.id` | string | **Required** | Run UUID | NIST AI RMF GOVERN-1.2 |
-| `aitf.acp.operation` | string | **Required** | `"cancel_run"` | — |
-| `aitf.acp.http.method` | string | **Required** | `"POST"` | — |
-| `aitf.acp.run.status` | string | **Recommended** | Status after cancel | OWASP LLM06 |
-| `aitf.acp.http.status_code` | int | **Recommended** | HTTP response status code | — |
+| `acp.run.id` | string | **Required** | Run UUID | NIST AI RMF GOVERN-1.2 |
+| `acp.operation` | string | **Required** | `"cancel_run"` | — |
+| `acp.http.method` | string | **Required** | `"POST"` | — |
+| `acp.run.status` | string | **Recommended** | Status after cancel | OWASP LLM06 |
+| `acp.http.status_code` | int | **Recommended** | HTTP response status code | — |
 
 ---
 
@@ -174,11 +174,11 @@ Represents resuming an awaiting run via `POST /runs/{run_id}/resume`.
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.acp.run.id` | string | **Required** | Run UUID | NIST AI RMF GOVERN-1.2 |
-| `aitf.acp.operation` | string | **Required** | `"resume_run"` | — |
-| `aitf.acp.http.method` | string | **Required** | `"POST"` | — |
-| `aitf.acp.run.status` | string | **Recommended** | Status after resume | EU AI Act Art.14 |
-| `aitf.acp.http.status_code` | int | **Recommended** | HTTP response status code | — |
+| `acp.run.id` | string | **Required** | Run UUID | NIST AI RMF GOVERN-1.2 |
+| `acp.operation` | string | **Required** | `"resume_run"` | — |
+| `acp.http.method` | string | **Required** | `"POST"` | — |
+| `acp.run.status` | string | **Recommended** | Status after resume | EU AI Act Art.14 |
+| `acp.http.status_code` | int | **Recommended** | HTTP response status code | — |
 
 ---
 
@@ -200,23 +200,23 @@ Represents resuming an awaiting run via `POST /runs/{run_id}/resume`.
 
 ```
 Span: acp.agent.discover research-agent
-  aitf.acp.operation: "get_agent"
-  aitf.acp.http.method: "GET"
-  aitf.acp.agent.name: "research-agent"
-  aitf.acp.agent.framework: "beeai"
-  aitf.acp.agent.status.success_rate: 94.5
-  aitf.acp.http.status_code: 200
+  acp.operation: "get_agent"
+  acp.http.method: "GET"
+  acp.agent.name: "research-agent"
+  acp.agent.framework: "beeai"
+  acp.agent.status.success_rate: 94.5
+  acp.http.status_code: 200
 
 Span: acp.run.create research-agent
-  aitf.acp.run.agent_name: "research-agent"
-  aitf.acp.run.mode: "async"
-  aitf.acp.input.message_count: 1
-  aitf.acp.run.id: "run-abc123"
-  aitf.acp.run.session_id: "sess-xyz789"
-  aitf.acp.run.status: "completed"
-  aitf.acp.run.duration_ms: 5200.0
-  aitf.acp.output.message_count: 2
-  aitf.acp.await.count: 1
+  acp.run.agent_name: "research-agent"
+  acp.run.mode: "async"
+  acp.input.message_count: 1
+  acp.run.id: "run-abc123"
+  acp.run.session_id: "sess-xyz789"
+  acp.run.status: "completed"
+  acp.run.duration_ms: 5200.0
+  acp.output.message_count: 2
+  acp.await.count: 1
   Events:
     acp.run.status_change: {status: "created"}
     acp.run.status_change: {status: "in-progress"}
@@ -224,7 +224,7 @@ Span: acp.run.create research-agent
     acp.run.await
     |
     +-- Span: acp.run.resume run-abc123
-    |     aitf.acp.run.status: "in-progress"
+    |     acp.run.status: "in-progress"
     |     acp.run.resume
     |
     acp.run.status_change: {status: "completed"}

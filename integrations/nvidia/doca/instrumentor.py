@@ -127,7 +127,7 @@ from aitf.semantic_conventions.attributes import (
     SupplyChainAttributes,
 )
 
-_TRACER_NAME = "aitf.integrations.nvidia.doca"
+_TRACER_NAME = "integrations.nvidia.doca"
 _GEN_AI_SYSTEM = "nvidia_doca"
 
 
@@ -194,9 +194,9 @@ class DOCAInstrumentor:
             GenAIAttributes.SYSTEM: _GEN_AI_SYSTEM,
         }
         if self._dpu_address:
-            attrs["aitf.nvidia.doca.dpu.address"] = self._dpu_address
+            attrs["nvidia.doca.dpu.address"] = self._dpu_address
         if self._bf_version:
-            attrs["aitf.nvidia.doca.dpu.version"] = self._bf_version
+            attrs["nvidia.doca.dpu.version"] = self._bf_version
         return attrs
 
     # ------------------------------------------------------------------
@@ -221,14 +221,14 @@ class DOCAInstrumentor:
         """
         tracer = self.get_tracer()
         attributes = self._base_attributes()
-        attributes["aitf.nvidia.doca.operation"] = "dpu_init"
-        attributes["aitf.nvidia.doca.dpu.mode"] = mode
+        attributes["nvidia.doca.operation"] = "dpu_init"
+        attributes["nvidia.doca.dpu.mode"] = mode
         if bf_version:
-            attributes["aitf.nvidia.doca.dpu.version"] = bf_version
+            attributes["nvidia.doca.dpu.version"] = bf_version
         if firmware:
             attributes[SupplyChainAttributes.MODEL_VERSION] = firmware
         if serial_number:
-            attributes["aitf.nvidia.doca.dpu.serial"] = serial_number
+            attributes["nvidia.doca.dpu.serial"] = serial_number
 
         start = time.monotonic()
         with tracer.start_as_current_span(
@@ -267,17 +267,17 @@ class DOCAInstrumentor:
         """
         tracer = self.get_tracer()
         attributes = self._base_attributes()
-        attributes["aitf.nvidia.doca.operation"] = "dts_config"
+        attributes["nvidia.doca.operation"] = "dts_config"
         if providers:
-            attributes["aitf.nvidia.doca.dts.providers"] = providers
+            attributes["nvidia.doca.dts.providers"] = providers
         if exporters:
-            attributes["aitf.nvidia.doca.dts.exporters"] = exporters
+            attributes["nvidia.doca.dts.exporters"] = exporters
         if self._dts_otlp_target:
-            attributes["aitf.nvidia.doca.dts.otlp_target"] = (
+            attributes["nvidia.doca.dts.otlp_target"] = (
                 self._dts_otlp_target
             )
         if sampling_interval_ms is not None:
-            attributes["aitf.nvidia.doca.dts.sampling_interval_ms"] = (
+            attributes["nvidia.doca.dts.sampling_interval_ms"] = (
                 sampling_interval_ms
             )
 
@@ -324,20 +324,20 @@ class DOCAInstrumentor:
         """
         tracer = self.get_tracer()
         attributes = self._base_attributes()
-        attributes["aitf.nvidia.doca.operation"] = "flow_create"
-        attributes["aitf.nvidia.doca.flow.pipe_name"] = pipe_name
+        attributes["nvidia.doca.operation"] = "flow_create"
+        attributes["nvidia.doca.flow.pipe_name"] = pipe_name
         if match_protocol:
-            attributes["aitf.nvidia.doca.flow.match_protocol"] = match_protocol
+            attributes["nvidia.doca.flow.match_protocol"] = match_protocol
         if match_dst_ports:
-            attributes["aitf.nvidia.doca.flow.match_dst_ports"] = (
+            attributes["nvidia.doca.flow.match_dst_ports"] = (
                 match_dst_ports
             )
         if match_src_ip:
-            attributes["aitf.nvidia.doca.flow.match_src_ip"] = match_src_ip
+            attributes["nvidia.doca.flow.match_src_ip"] = match_src_ip
         if match_dst_ip:
-            attributes["aitf.nvidia.doca.flow.match_dst_ip"] = match_dst_ip
+            attributes["nvidia.doca.flow.match_dst_ip"] = match_dst_ip
         if description:
-            attributes["aitf.nvidia.doca.flow.description"] = description
+            attributes["nvidia.doca.flow.description"] = description
 
         with tracer.start_as_current_span(
             name=f"doca.flow.create {pipe_name}",
@@ -365,8 +365,8 @@ class DOCAInstrumentor:
         """
         tracer = self.get_tracer()
         attributes = self._base_attributes()
-        attributes["aitf.nvidia.doca.operation"] = "flow_stats"
-        attributes["aitf.nvidia.doca.flow.pipe_name"] = pipe_name
+        attributes["nvidia.doca.operation"] = "flow_stats"
+        attributes["nvidia.doca.flow.pipe_name"] = pipe_name
 
         with tracer.start_as_current_span(
             name=f"doca.flow.stats {pipe_name}",
@@ -408,12 +408,12 @@ class DOCAInstrumentor:
         """
         tracer = self.get_tracer()
         attributes = self._base_attributes()
-        attributes["aitf.nvidia.doca.operation"] = "appshield_scan"
-        attributes["aitf.nvidia.doca.appshield.target_process"] = (
+        attributes["nvidia.doca.operation"] = "appshield_scan"
+        attributes["nvidia.doca.appshield.target_process"] = (
             target_process
         )
-        attributes["aitf.nvidia.doca.appshield.scan_type"] = scan_type
-        attributes["aitf.nvidia.doca.appshield.system_layer"] = system_layer
+        attributes["nvidia.doca.appshield.scan_type"] = scan_type
+        attributes["nvidia.doca.appshield.system_layer"] = system_layer
 
         start = time.monotonic()
         with tracer.start_as_current_span(
@@ -453,10 +453,10 @@ class DOCAInstrumentor:
         """
         tracer = self.get_tracer()
         attributes = self._base_attributes()
-        attributes["aitf.nvidia.doca.operation"] = "dpi_inspection"
-        attributes["aitf.nvidia.doca.dpi.signature_set"] = signature_set
+        attributes["nvidia.doca.operation"] = "dpi_inspection"
+        attributes["nvidia.doca.dpi.signature_set"] = signature_set
         if flow_count is not None:
-            attributes["aitf.nvidia.doca.dpi.flow_count"] = flow_count
+            attributes["nvidia.doca.dpi.flow_count"] = flow_count
 
         start = time.monotonic()
         with tracer.start_as_current_span(
@@ -495,9 +495,9 @@ class DOCAInstrumentor:
         """
         tracer = self.get_tracer()
         attributes = self._base_attributes()
-        attributes["aitf.nvidia.doca.operation"] = "grpc_call"
-        attributes["aitf.nvidia.doca.grpc.service"] = service
-        attributes["aitf.nvidia.doca.grpc.method"] = method
+        attributes["nvidia.doca.operation"] = "grpc_call"
+        attributes["nvidia.doca.grpc.service"] = service
+        attributes["nvidia.doca.grpc.method"] = method
 
         start = time.monotonic()
         with tracer.start_as_current_span(
@@ -532,32 +532,32 @@ class DPUInitSpan:
         return self._span
 
     def set_arm_cores(self, count: int) -> None:
-        self._span.set_attribute("aitf.nvidia.doca.dpu.arm_cores", count)
+        self._span.set_attribute("nvidia.doca.dpu.arm_cores", count)
 
     def set_network_speed_gbps(self, gbps: int) -> None:
         self._span.set_attribute(
-            "aitf.nvidia.doca.dpu.network_speed_gbps", gbps
+            "nvidia.doca.dpu.network_speed_gbps", gbps
         )
 
     def set_pcie_gen(self, gen: str) -> None:
-        self._span.set_attribute("aitf.nvidia.doca.dpu.pcie_gen", gen)
+        self._span.set_attribute("nvidia.doca.dpu.pcie_gen", gen)
 
     def set_memory_gb(self, gb: int) -> None:
-        self._span.set_attribute("aitf.nvidia.doca.dpu.memory_gb", gb)
+        self._span.set_attribute("nvidia.doca.dpu.memory_gb", gb)
 
     def set_crypto_engines(self, engines: list[str]) -> None:
         self._span.set_attribute(
-            "aitf.nvidia.doca.dpu.crypto_engines", engines
+            "nvidia.doca.dpu.crypto_engines", engines
         )
 
     def set_init_time_ms(self, ms: float | None = None) -> None:
         if ms is None:
             ms = (time.monotonic() - self._start_time) * 1000
-        self._span.set_attribute("aitf.nvidia.doca.dpu.init_time_ms", ms)
+        self._span.set_attribute("nvidia.doca.dpu.init_time_ms", ms)
 
     def set_secure_boot(self, enabled: bool) -> None:
         self._span.set_attribute(
-            "aitf.nvidia.doca.dpu.secure_boot", enabled
+            "nvidia.doca.dpu.secure_boot", enabled
         )
 
 
@@ -573,20 +573,20 @@ class DTSConfigSpan:
 
     def set_counter_sets(self, counter_sets: list[str]) -> None:
         self._span.set_attribute(
-            "aitf.nvidia.doca.dts.counter_sets", counter_sets
+            "nvidia.doca.dts.counter_sets", counter_sets
         )
 
     def set_hft_enabled(self, enabled: bool) -> None:
         """Set whether High Frequency Telemetry is enabled."""
-        self._span.set_attribute("aitf.nvidia.doca.dts.hft_enabled", enabled)
+        self._span.set_attribute("nvidia.doca.dts.hft_enabled", enabled)
 
     def set_ipc_socket(self, path: str) -> None:
-        self._span.set_attribute("aitf.nvidia.doca.dts.ipc_socket", path)
+        self._span.set_attribute("nvidia.doca.dts.ipc_socket", path)
 
     def set_labels(self, labels: dict[str, str]) -> None:
         for key, value in labels.items():
             self._span.set_attribute(
-                f"aitf.nvidia.doca.dts.label.{key}", value
+                f"nvidia.doca.dts.label.{key}", value
             )
 
 
@@ -603,20 +603,20 @@ class FlowPipeSpan:
     def set_action(self, action: str) -> None:
         """Set pipe action (``monitor_and_forward``, ``drop``, ``hairpin``,
         ``mirror``)."""
-        self._span.set_attribute("aitf.nvidia.doca.flow.action", action)
+        self._span.set_attribute("nvidia.doca.flow.action", action)
 
     def set_hw_offload(self, offloaded: bool) -> None:
         self._span.set_attribute(
-            "aitf.nvidia.doca.flow.hw_offload", offloaded
+            "nvidia.doca.flow.hw_offload", offloaded
         )
 
     def set_pipe_type(self, pipe_type: str) -> None:
         """Set pipe type (``basic``, ``control``)."""
-        self._span.set_attribute("aitf.nvidia.doca.flow.pipe_type", pipe_type)
+        self._span.set_attribute("nvidia.doca.flow.pipe_type", pipe_type)
 
     def set_entry_count(self, count: int) -> None:
         self._span.set_attribute(
-            "aitf.nvidia.doca.flow.entry_count", count
+            "nvidia.doca.flow.entry_count", count
         )
 
     def set_meter(
@@ -626,11 +626,11 @@ class FlowPipeSpan:
     ) -> None:
         if cir_bytes_per_sec is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.flow.meter_cir", cir_bytes_per_sec
+                "nvidia.doca.flow.meter_cir", cir_bytes_per_sec
             )
         if cbs_bytes is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.flow.meter_cbs", cbs_bytes
+                "nvidia.doca.flow.meter_cbs", cbs_bytes
             )
 
 
@@ -653,19 +653,19 @@ class FlowStatsSpan:
     ) -> None:
         if total_packets is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.flow.stats.total_packets", total_packets
+                "nvidia.doca.flow.stats.total_packets", total_packets
             )
         if total_bytes is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.flow.stats.total_bytes", total_bytes
+                "nvidia.doca.flow.stats.total_bytes", total_bytes
             )
         if active_flows is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.flow.stats.active_flows", active_flows
+                "nvidia.doca.flow.stats.active_flows", active_flows
             )
         if hw_offloaded_flows is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.flow.stats.hw_offloaded_flows",
+                "nvidia.doca.flow.stats.hw_offloaded_flows",
                 hw_offloaded_flows,
             )
 
@@ -678,21 +678,21 @@ class FlowStatsSpan:
     ) -> None:
         if inference_requests is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.flow.stats.inference_requests",
+                "nvidia.doca.flow.stats.inference_requests",
                 inference_requests,
             )
         if inference_bytes is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.flow.stats.inference_bytes",
+                "nvidia.doca.flow.stats.inference_bytes",
                 inference_bytes,
             )
         if mcp_requests is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.flow.stats.mcp_requests", mcp_requests
+                "nvidia.doca.flow.stats.mcp_requests", mcp_requests
             )
         if model_download_bytes is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.flow.stats.model_download_bytes",
+                "nvidia.doca.flow.stats.model_download_bytes",
                 model_download_bytes,
             )
 
@@ -717,23 +717,23 @@ class AppShieldScanSpan:
         suspicious_modules: list[str] | None = None,
     ) -> None:
         self._span.set_attribute(
-            "aitf.nvidia.doca.appshield.integrity_valid", integrity_valid
+            "nvidia.doca.appshield.integrity_valid", integrity_valid
         )
         if pages_scanned is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.appshield.pages_scanned", pages_scanned
+                "nvidia.doca.appshield.pages_scanned", pages_scanned
             )
         if pages_modified is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.appshield.pages_modified", pages_modified
+                "nvidia.doca.appshield.pages_modified", pages_modified
             )
         if modules_loaded is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.appshield.modules_loaded", modules_loaded
+                "nvidia.doca.appshield.modules_loaded", modules_loaded
             )
         if suspicious_modules:
             self._span.set_attribute(
-                "aitf.nvidia.doca.appshield.suspicious_modules",
+                "nvidia.doca.appshield.suspicious_modules",
                 suspicious_modules,
             )
             # Also flag as security finding
@@ -744,7 +744,7 @@ class AppShieldScanSpan:
     def set_yara_matches(self, rule_names: list[str]) -> None:
         """Record YARA rule matches found in process memory."""
         self._span.set_attribute(
-            "aitf.nvidia.doca.appshield.yara_matches", rule_names
+            "nvidia.doca.appshield.yara_matches", rule_names
         )
         if rule_names:
             self._span.set_attribute(
@@ -755,7 +755,7 @@ class AppShieldScanSpan:
         if ms is None:
             ms = (time.monotonic() - self._start_time) * 1000
         self._span.set_attribute(
-            "aitf.nvidia.doca.appshield.scan_time_ms", ms
+            "nvidia.doca.appshield.scan_time_ms", ms
         )
 
     def set_network_connections(
@@ -766,11 +766,11 @@ class AppShieldScanSpan:
         """Record network connections observed for the AI process."""
         if total is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.appshield.connections_total", total
+                "nvidia.doca.appshield.connections_total", total
             )
         if suspicious:
             self._span.set_attribute(
-                "aitf.nvidia.doca.appshield.connections_suspicious",
+                "nvidia.doca.appshield.connections_suspicious",
                 suspicious,
             )
 
@@ -795,22 +795,22 @@ class DPIInspectionSpan:
     ) -> None:
         if packets_inspected is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.dpi.packets_inspected", packets_inspected
+                "nvidia.doca.dpi.packets_inspected", packets_inspected
             )
         if matches is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.dpi.matches", matches
+                "nvidia.doca.dpi.matches", matches
             )
         if match_signatures:
             self._span.set_attribute(
-                "aitf.nvidia.doca.dpi.match_signatures", match_signatures
+                "nvidia.doca.dpi.match_signatures", match_signatures
             )
             self._span.set_attribute(
                 SecurityAttributes.THREAT_TYPE, "dpi_pattern_match"
             )
         if bytes_inspected is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.dpi.bytes_inspected", bytes_inspected
+                "nvidia.doca.dpi.bytes_inspected", bytes_inspected
             )
 
     def set_throughput(
@@ -820,18 +820,18 @@ class DPIInspectionSpan:
     ) -> None:
         if gbps is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.dpi.throughput_gbps", gbps
+                "nvidia.doca.dpi.throughput_gbps", gbps
             )
         if packets_per_second is not None:
             self._span.set_attribute(
-                "aitf.nvidia.doca.dpi.packets_per_second", packets_per_second
+                "nvidia.doca.dpi.packets_per_second", packets_per_second
             )
 
     def set_inspection_time_ms(self, ms: float | None = None) -> None:
         if ms is None:
             ms = (time.monotonic() - self._start_time) * 1000
         self._span.set_attribute(
-            "aitf.nvidia.doca.dpi.inspection_time_ms", ms
+            "nvidia.doca.dpi.inspection_time_ms", ms
         )
 
     def set_actions_taken(
@@ -842,16 +842,16 @@ class DPIInspectionSpan:
         alerted: int = 0,
     ) -> None:
         self._span.set_attribute(
-            "aitf.nvidia.doca.dpi.actions_dropped", dropped
+            "nvidia.doca.dpi.actions_dropped", dropped
         )
         self._span.set_attribute(
-            "aitf.nvidia.doca.dpi.actions_forwarded", forwarded
+            "nvidia.doca.dpi.actions_forwarded", forwarded
         )
         self._span.set_attribute(
-            "aitf.nvidia.doca.dpi.actions_mirrored", mirrored
+            "nvidia.doca.dpi.actions_mirrored", mirrored
         )
         self._span.set_attribute(
-            "aitf.nvidia.doca.dpi.actions_alerted", alerted
+            "nvidia.doca.dpi.actions_alerted", alerted
         )
 
 
@@ -868,10 +868,10 @@ class GRPCCallSpan:
 
     def set_response_status(self, status: str) -> None:
         self._span.set_attribute(
-            "aitf.nvidia.doca.grpc.status", status
+            "nvidia.doca.grpc.status", status
         )
 
     def set_latency_ms(self, ms: float | None = None) -> None:
         if ms is None:
             ms = (time.monotonic() - self._start_time) * 1000
-        self._span.set_attribute("aitf.nvidia.doca.grpc.latency_ms", ms)
+        self._span.set_attribute("nvidia.doca.grpc.latency_ms", ms)

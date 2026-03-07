@@ -70,7 +70,7 @@ from aitf.semantic_conventions.attributes import (
 
 logger = logging.getLogger(__name__)
 
-_TRACER_NAME = "aitf.integration.anthropic.claude_api"
+_TRACER_NAME = "integration.anthropic.claude_api"
 
 # ---------------------------------------------------------------------------
 # Default per-model pricing (USD per 1 million tokens).

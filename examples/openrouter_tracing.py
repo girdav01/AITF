@@ -262,7 +262,7 @@ for i, (task_type, prompt) in enumerate(tasks, 1):
             enriched = compliance_mapper.enrich_event(ocsf_event, "model_inference")
             ocsf_events.append(enriched)
             print(f"      OCSF:    class={ocsf_event.class_uid}, "
-                  f"provider={aitf_attrs.get('gen_ai.system', '?')}, "
+                  f"provider={aitf_attrs.get('gen_ai.provider.name', '?')}, "
                   f"model={aitf_attrs.get('gen_ai.request.model', '?')}")
 
 
@@ -290,8 +290,8 @@ for model in test_models:
     result = vendor_mapper.normalize_span(span)
     if result:
         _, _, attrs = result
-        provider = attrs.get("gen_ai.system", "?")
-        print(f"    {model:<45s} → gen_ai.system = {provider}")
+        provider = attrs.get("gen_ai.provider.name", "?")
+        print(f"    {model:<45s} → gen_ai.provider.name = {provider}")
 
 # Show routing metadata preservation
 print("\n  OpenRouter-specific attributes (preserved for audit):")
@@ -307,7 +307,7 @@ result = vendor_mapper.normalize_span(span)
 if result:
     _, _, attrs = result
     for k, v in sorted(attrs.items()):
-        if k.startswith("aitf.openrouter."):
+        if k.startswith("openrouter."):
             print(f"    {k:<45s} = {v}")
 
 
@@ -348,7 +348,7 @@ print(f"""
                                     ↓
                               VendorMapper (openrouter.json)
                                     ↓
-                              gen_ai.* AITF attrs + aitf.openrouter.* routing
+                              gen_ai.* attrs + openrouter.* routing
                                     ↓
                               OCSFMapper → OCSF 7001 events
                                     ↓

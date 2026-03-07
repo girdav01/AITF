@@ -146,7 +146,7 @@ export class SecurityProcessor implements SpanProcessor {
 
     // Only process AI-related spans
     const hasAiPrefix = Object.keys(attrs).some(
-      (key) => key.startsWith("gen_ai.") || key.startsWith("aitf.")
+      (key) => key.startsWith("gen_ai.") || key.startsWith("")
     );
     if (!hasAiPrefix) {
       return;
@@ -183,9 +183,9 @@ export class SecurityProcessor implements SpanProcessor {
 
     // Also check tool input/output attributes
     for (const key of [
-      "aitf.mcp.tool.input",
-      "aitf.mcp.tool.output",
-      "aitf.skill.input",
+      "mcp.tool.input",
+      "mcp.tool.output",
+      "skill.input",
     ]) {
       const val = attrs[key];
       if (val) {

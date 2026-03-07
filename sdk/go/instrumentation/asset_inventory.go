@@ -13,7 +13,7 @@ import (
 	"github.com/girdav01/AITF/sdk/go/semconv"
 )
 
-const assetInventoryTracerName = "aitf.instrumentation.asset_inventory"
+const assetInventoryTracerName = "instrumentation.asset_inventory"
 
 // AssetInventoryInstrumentor traces AI asset lifecycle management including
 // registration, discovery, audit, risk classification, and decommissioning.

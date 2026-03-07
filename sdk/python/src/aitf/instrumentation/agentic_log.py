@@ -21,7 +21,7 @@ from opentelemetry.trace import SpanKind, StatusCode
 
 from aitf.semantic_conventions.attributes import AgenticLogAttributes
 
-_TRACER_NAME = "aitf.instrumentation.agentic_log"
+_TRACER_NAME = "instrumentation.agentic_log"
 
 
 class AgenticLogEntry:

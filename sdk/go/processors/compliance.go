@@ -314,7 +314,7 @@ func ClassifySpanName(name string, attrKeys []string) string {
 		return "data_retrieval"
 	}
 	for _, k := range attrKeys {
-		if strings.HasPrefix(k, "aitf.security.") {
+		if strings.HasPrefix(k, "security.") {
 			return "security_finding"
 		}
 	}

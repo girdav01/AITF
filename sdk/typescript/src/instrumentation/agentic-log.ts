@@ -17,7 +17,7 @@ import {
 import { randomUUID } from "crypto";
 import { AgenticLogAttributes } from "../semantic-conventions/attributes";
 
-const TRACER_NAME = "aitf.instrumentation.agentic_log";
+const TRACER_NAME = "instrumentation.agentic_log";
 
 /** Options for creating an agentic log entry. */
 export interface AgenticLogOptions {

@@ -61,30 +61,30 @@ from aitf.semantic_conventions.attributes import RAGAttributes
 
 logger = logging.getLogger(__name__)
 
-_TRACER_NAME = "aitf.integration.weaviate"
+_TRACER_NAME = "integration.weaviate"
 
 # ---------------------------------------------------------------------------
 # Extended attribute keys specific to Weaviate
 # ---------------------------------------------------------------------------
-_WEAVIATE_COLLECTION = "aitf.rag.retrieve.collection"
-_WEAVIATE_SEARCH_TYPE = "aitf.rag.retrieve.search_type"
-_WEAVIATE_CONSISTENCY_LEVEL = "aitf.rag.retrieve.consistency_level"
-_WEAVIATE_REPLICATION_FACTOR = "aitf.rag.retrieve.replication_factor"
-_WEAVIATE_TENANT = "aitf.rag.retrieve.tenant"
-_WEAVIATE_ALPHA = "aitf.rag.retrieve.hybrid_alpha"
-_WEAVIATE_FUSION_TYPE = "aitf.rag.retrieve.fusion_type"
-_WEAVIATE_VECTOR_DISTANCE = "aitf.rag.retrieve.vector_distance"
-_WEAVIATE_CERTAINTY = "aitf.rag.retrieve.certainty"
-_WEAVIATE_AUTOCUT = "aitf.rag.retrieve.autocut"
-_WEAVIATE_QUERY_TEXT = "aitf.rag.retrieve.query_text"
-_WEAVIATE_OPERATION = "aitf.rag.retrieve.operation"
-_WEAVIATE_OBJECT_COUNT = "aitf.rag.retrieve.object_count"
-_WEAVIATE_BATCH_SIZE = "aitf.rag.retrieve.batch_size"
-_WEAVIATE_BATCH_ERRORS = "aitf.rag.retrieve.batch_errors"
-_WEAVIATE_GROUP_BY = "aitf.rag.retrieve.group_by"
-_WEAVIATE_RETURN_PROPERTIES = "aitf.rag.retrieve.return_properties"
-_WEAVIATE_RETURN_REFERENCES = "aitf.rag.retrieve.return_references"
-_WEAVIATE_FILTERS = "aitf.rag.retrieve.where_filter"
+_WEAVIATE_COLLECTION = "rag.retrieve.collection"
+_WEAVIATE_SEARCH_TYPE = "rag.retrieve.search_type"
+_WEAVIATE_CONSISTENCY_LEVEL = "rag.retrieve.consistency_level"
+_WEAVIATE_REPLICATION_FACTOR = "rag.retrieve.replication_factor"
+_WEAVIATE_TENANT = "rag.retrieve.tenant"
+_WEAVIATE_ALPHA = "rag.retrieve.hybrid_alpha"
+_WEAVIATE_FUSION_TYPE = "rag.retrieve.fusion_type"
+_WEAVIATE_VECTOR_DISTANCE = "rag.retrieve.vector_distance"
+_WEAVIATE_CERTAINTY = "rag.retrieve.certainty"
+_WEAVIATE_AUTOCUT = "rag.retrieve.autocut"
+_WEAVIATE_QUERY_TEXT = "rag.retrieve.query_text"
+_WEAVIATE_OPERATION = "rag.retrieve.operation"
+_WEAVIATE_OBJECT_COUNT = "rag.retrieve.object_count"
+_WEAVIATE_BATCH_SIZE = "rag.retrieve.batch_size"
+_WEAVIATE_BATCH_ERRORS = "rag.retrieve.batch_errors"
+_WEAVIATE_GROUP_BY = "rag.retrieve.group_by"
+_WEAVIATE_RETURN_PROPERTIES = "rag.retrieve.return_properties"
+_WEAVIATE_RETURN_REFERENCES = "rag.retrieve.return_references"
+_WEAVIATE_FILTERS = "rag.retrieve.where_filter"
 
 
 class WeaviateInstrumentor:
@@ -328,13 +328,13 @@ class WeaviateInstrumentor:
                 try:
                     result = original(query_self, *args, **kwargs)
                     elapsed_ms = (time.monotonic() - start) * 1000
-                    span.set_attribute("aitf.latency.total_ms", elapsed_ms)
+                    span.set_attribute("latency.total_ms", elapsed_ms)
                     _enrich_query_result(span, result)
                     span.set_status(StatusCode.OK)
                     return result
                 except Exception as exc:
                     elapsed_ms = (time.monotonic() - start) * 1000
-                    span.set_attribute("aitf.latency.total_ms", elapsed_ms)
+                    span.set_attribute("latency.total_ms", elapsed_ms)
                     span.set_status(StatusCode.ERROR, str(exc))
                     span.record_exception(exc)
                     raise
@@ -378,13 +378,13 @@ class WeaviateInstrumentor:
                 try:
                     result = original(data_self, *args, **kwargs)
                     elapsed_ms = (time.monotonic() - start) * 1000
-                    span.set_attribute("aitf.latency.total_ms", elapsed_ms)
+                    span.set_attribute("latency.total_ms", elapsed_ms)
                     _enrich_data_result(span, result, operation)
                     span.set_status(StatusCode.OK)
                     return result
                 except Exception as exc:
                     elapsed_ms = (time.monotonic() - start) * 1000
-                    span.set_attribute("aitf.latency.total_ms", elapsed_ms)
+                    span.set_attribute("latency.total_ms", elapsed_ms)
                     span.set_status(StatusCode.ERROR, str(exc))
                     span.record_exception(exc)
                     raise
@@ -426,12 +426,12 @@ class WeaviateInstrumentor:
                 try:
                     result = original(agg_self, *args, **kwargs)
                     elapsed_ms = (time.monotonic() - start) * 1000
-                    span.set_attribute("aitf.latency.total_ms", elapsed_ms)
+                    span.set_attribute("latency.total_ms", elapsed_ms)
                     span.set_status(StatusCode.OK)
                     return result
                 except Exception as exc:
                     elapsed_ms = (time.monotonic() - start) * 1000
-                    span.set_attribute("aitf.latency.total_ms", elapsed_ms)
+                    span.set_attribute("latency.total_ms", elapsed_ms)
                     span.set_status(StatusCode.ERROR, str(exc))
                     span.record_exception(exc)
                     raise
@@ -494,7 +494,7 @@ def _extract_query_kwargs(
     near_vector = kwargs.get("near_vector")
     if near_vector is not None:
         try:
-            attrs["aitf.rag.retrieve.vector_dimensions"] = len(near_vector)
+            attrs["rag.retrieve.vector_dimensions"] = len(near_vector)
         except TypeError:
             pass
 

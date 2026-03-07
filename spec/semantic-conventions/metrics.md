@@ -14,7 +14,7 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `gen_ai.system` | string | Provider |
+| `gen_ai.provider.name` | string | Provider (OTel standard) |
 | `gen_ai.request.model` | string | Model ID |
 | `gen_ai.token.type` | string | `"input"`, `"output"` |
 | `gen_ai.operation.name` | string | Operation name |
@@ -27,7 +27,7 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `gen_ai.system` | string | Provider |
+| `gen_ai.provider.name` | string | Provider (OTel standard) |
 | `gen_ai.request.model` | string | Model ID |
 | `gen_ai.operation.name` | string | Operation name |
 | `gen_ai.response.finish_reasons` | string[] | Finish reasons |
@@ -39,7 +39,7 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 ### Inference Metrics
 
-#### `aitf.inference.requests`
+#### `inference.requests`
 
 **Type:** Counter
 **Unit:** `{request}`
@@ -47,13 +47,13 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `gen_ai.system` | string | Provider |
+| `gen_ai.provider.name` | string | Provider (OTel standard) |
 | `gen_ai.request.model` | string | Model ID |
 | `gen_ai.operation.name` | string | Operation name |
-| `aitf.cost.attribution.user` | string | User ID |
-| `aitf.cost.attribution.project` | string | Project ID |
+| `cost.attribution.user` | string | User ID |
+| `cost.attribution.project` | string | Project ID |
 
-#### `aitf.inference.errors`
+#### `inference.errors`
 
 **Type:** Counter
 **Unit:** `{error}`
@@ -61,11 +61,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `gen_ai.system` | string | Provider |
+| `gen_ai.provider.name` | string | Provider (OTel standard) |
 | `gen_ai.request.model` | string | Model ID |
 | `error.type` | string | Error type |
 
-#### `aitf.inference.time_to_first_token`
+#### `inference.time_to_first_token`
 
 **Type:** Histogram
 **Unit:** `ms`
@@ -73,10 +73,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `gen_ai.system` | string | Provider |
+| `gen_ai.provider.name` | string | Provider (OTel standard) |
 | `gen_ai.request.model` | string | Model ID |
 
-#### `aitf.inference.tokens_per_second`
+#### `inference.tokens_per_second`
 
 **Type:** Histogram
 **Unit:** `{token}/s`
@@ -84,14 +84,14 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `gen_ai.system` | string | Provider |
+| `gen_ai.provider.name` | string | Provider (OTel standard) |
 | `gen_ai.request.model` | string | Model ID |
 
 ---
 
 ### Agent Metrics
 
-#### `aitf.agent.sessions`
+#### `agent.sessions`
 
 **Type:** Counter
 **Unit:** `{session}`
@@ -99,10 +99,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.agent.name` | string | Agent name |
-| `aitf.agent.framework` | string | Framework |
+| `gen_ai.agent.name` | string | Agent name |
+| `agent.framework` | string | Framework |
 
-#### `aitf.agent.steps`
+#### `agent.steps`
 
 **Type:** Counter
 **Unit:** `{step}`
@@ -110,10 +110,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.agent.name` | string | Agent name |
-| `aitf.agent.step.type` | string | Step type |
+| `gen_ai.agent.name` | string | Agent name |
+| `agent.step.type` | string | Step type |
 
-#### `aitf.agent.session.duration`
+#### `agent.session.duration`
 
 **Type:** Histogram
 **Unit:** `s`
@@ -121,10 +121,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.agent.name` | string | Agent name |
-| `aitf.agent.framework` | string | Framework |
+| `gen_ai.agent.name` | string | Agent name |
+| `agent.framework` | string | Framework |
 
-#### `aitf.agent.steps_per_session`
+#### `agent.steps_per_session`
 
 **Type:** Histogram
 **Unit:** `{step}`
@@ -132,9 +132,9 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.agent.name` | string | Agent name |
+| `gen_ai.agent.name` | string | Agent name |
 
-#### `aitf.agent.delegations`
+#### `agent.delegations`
 
 **Type:** Counter
 **Unit:** `{delegation}`
@@ -142,15 +142,15 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.agent.name` | string | Delegating agent |
-| `aitf.agent.delegation.target_agent` | string | Target agent |
-| `aitf.agent.delegation.strategy` | string | Strategy |
+| `gen_ai.agent.name` | string | Delegating agent |
+| `agent.delegation.target_agent` | string | Target agent |
+| `agent.delegation.strategy` | string | Strategy |
 
 ---
 
 ### MCP Metrics
 
-#### `aitf.mcp.tool.invocations`
+#### `mcp.tool.invocations`
 
 **Type:** Counter
 **Unit:** `{invocation}`
@@ -158,11 +158,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.mcp.tool.name` | string | Tool name |
-| `aitf.mcp.tool.server` | string | Server name |
-| `aitf.mcp.tool.is_error` | boolean | Error status |
+| `mcp.tool.name` | string | Tool name |
+| `mcp.tool.server` | string | Server name |
+| `mcp.tool.is_error` | boolean | Error status |
 
-#### `aitf.mcp.tool.duration`
+#### `mcp.tool.duration`
 
 **Type:** Histogram
 **Unit:** `ms`
@@ -170,10 +170,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.mcp.tool.name` | string | Tool name |
-| `aitf.mcp.tool.server` | string | Server name |
+| `mcp.tool.name` | string | Tool name |
+| `mcp.tool.server` | string | Server name |
 
-#### `aitf.mcp.server.connections`
+#### `mcp.server.connections`
 
 **Type:** UpDownCounter
 **Unit:** `{connection}`
@@ -181,10 +181,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.mcp.server.name` | string | Server name |
-| `aitf.mcp.server.transport` | string | Transport type |
+| `mcp.server.name` | string | Server name |
+| `mcp.server.transport` | string | Transport type |
 
-#### `aitf.mcp.tool.approvals`
+#### `mcp.tool.approvals`
 
 **Type:** Counter
 **Unit:** `{approval}`
@@ -192,14 +192,14 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.mcp.tool.name` | string | Tool name |
-| `aitf.mcp.tool.approved` | boolean | Whether approved |
+| `mcp.tool.name` | string | Tool name |
+| `mcp.tool.approved` | boolean | Whether approved |
 
 ---
 
 ### Skill Metrics
 
-#### `aitf.skill.invocations`
+#### `skill.invocations`
 
 **Type:** Counter
 **Unit:** `{invocation}`
@@ -207,11 +207,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.skill.name` | string | Skill name |
-| `aitf.skill.category` | string | Skill category |
-| `aitf.skill.status` | string | Execution status |
+| `skill.name` | string | Skill name |
+| `skill.category` | string | Skill category |
+| `skill.status` | string | Execution status |
 
-#### `aitf.skill.duration`
+#### `skill.duration`
 
 **Type:** Histogram
 **Unit:** `ms`
@@ -219,14 +219,14 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.skill.name` | string | Skill name |
-| `aitf.skill.category` | string | Skill category |
+| `skill.name` | string | Skill name |
+| `skill.category` | string | Skill category |
 
 ---
 
 ### Cost Metrics
 
-#### `aitf.cost.total`
+#### `cost.total`
 
 **Type:** Counter
 **Unit:** `USD`
@@ -234,13 +234,13 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `gen_ai.system` | string | Provider |
+| `gen_ai.provider.name` | string | Provider (OTel standard) |
 | `gen_ai.request.model` | string | Model ID |
-| `aitf.cost.attribution.user` | string | User ID |
-| `aitf.cost.attribution.team` | string | Team ID |
-| `aitf.cost.attribution.project` | string | Project ID |
+| `cost.attribution.user` | string | User ID |
+| `cost.attribution.team` | string | Team ID |
+| `cost.attribution.project` | string | Project ID |
 
-#### `aitf.cost.budget.utilization`
+#### `cost.budget.utilization`
 
 **Type:** Gauge
 **Unit:** `%`
@@ -248,14 +248,14 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.cost.attribution.project` | string | Project ID |
-| `aitf.cost.attribution.team` | string | Team ID |
+| `cost.attribution.project` | string | Project ID |
+| `cost.attribution.team` | string | Team ID |
 
 ---
 
 ### Security Metrics
 
-#### `aitf.security.threats_detected`
+#### `security.threats_detected`
 
 **Type:** Counter
 **Unit:** `{threat}`
@@ -263,11 +263,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.security.threat_type` | string | Threat type |
-| `aitf.security.owasp_category` | string | OWASP category |
-| `aitf.security.risk_level` | string | Risk level |
+| `security.threat_type` | string | Threat type |
+| `security.owasp_category` | string | OWASP category |
+| `security.risk_level` | string | Risk level |
 
-#### `aitf.security.requests_blocked`
+#### `security.requests_blocked`
 
 **Type:** Counter
 **Unit:** `{request}`
@@ -275,9 +275,9 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.security.threat_type` | string | Threat type |
+| `security.threat_type` | string | Threat type |
 
-#### `aitf.security.pii_detected`
+#### `security.pii_detected`
 
 **Type:** Counter
 **Unit:** `{detection}`
@@ -285,10 +285,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.security.pii.types` | string[] | PII types |
-| `aitf.security.pii.action` | string | Action taken |
+| `security.pii.types` | string[] | PII types |
+| `security.pii.action` | string | Action taken |
 
-#### `aitf.security.guardrail.checks`
+#### `security.guardrail.checks`
 
 **Type:** Counter
 **Unit:** `{check}`
@@ -296,14 +296,14 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.security.guardrail.name` | string | Guardrail name |
-| `aitf.security.guardrail.result` | string | Result |
+| `security.guardrail.name` | string | Guardrail name |
+| `security.guardrail.result` | string | Result |
 
 ---
 
 ### RAG Metrics
 
-#### `aitf.rag.retrievals`
+#### `rag.retrievals`
 
 **Type:** Counter
 **Unit:** `{retrieval}`
@@ -311,10 +311,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.rag.retrieve.database` | string | Vector DB |
-| `aitf.rag.pipeline.name` | string | Pipeline name |
+| `rag.retrieve.database` | string | Vector DB |
+| `rag.pipeline.name` | string | Pipeline name |
 
-#### `aitf.rag.retrieval.duration`
+#### `rag.retrieval.duration`
 
 **Type:** Histogram
 **Unit:** `ms`
@@ -322,9 +322,9 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.rag.retrieve.database` | string | Vector DB |
+| `rag.retrieve.database` | string | Vector DB |
 
-#### `aitf.rag.retrieval.results`
+#### `rag.retrieval.results`
 
 **Type:** Histogram
 **Unit:** `{document}`
@@ -332,14 +332,14 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.rag.retrieve.database` | string | Vector DB |
-| `aitf.rag.pipeline.name` | string | Pipeline name |
+| `rag.retrieve.database` | string | Vector DB |
+| `rag.pipeline.name` | string | Pipeline name |
 
 ---
 
 ### Quality Metrics
 
-#### `aitf.quality.hallucination`
+#### `quality.hallucination`
 
 **Type:** Histogram
 **Unit:** `1`
@@ -349,7 +349,7 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 |-----------|------|-------|
 | `gen_ai.request.model` | string | Model ID |
 
-#### `aitf.quality.user_rating`
+#### `quality.user_rating`
 
 **Type:** Histogram
 **Unit:** `{rating}`
@@ -358,13 +358,13 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 | Attribute | Type | Notes |
 |-----------|------|-------|
 | `gen_ai.request.model` | string | Model ID |
-| `aitf.agent.name` | string | Agent name (if applicable) |
+| `gen_ai.agent.name` | string | Agent name (if applicable) |
 
 ---
 
 ### Model Operations (LLMOps/MLOps) Metrics
 
-#### `aitf.model_ops.training.runs`
+#### `model_ops.training.runs`
 
 **Type:** Counter
 **Unit:** `{run}`
@@ -372,11 +372,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.training.type` | string | Training type |
-| `aitf.model_ops.training.status` | string | Run status |
-| `aitf.model_ops.training.base_model` | string | Base model |
+| `model_ops.training.type` | string | Training type |
+| `model_ops.training.status` | string | Run status |
+| `model_ops.training.base_model` | string | Base model |
 
-#### `aitf.model_ops.training.duration`
+#### `model_ops.training.duration`
 
 **Type:** Histogram
 **Unit:** `s`
@@ -384,10 +384,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.training.type` | string | Training type |
-| `aitf.model_ops.training.base_model` | string | Base model |
+| `model_ops.training.type` | string | Training type |
+| `model_ops.training.base_model` | string | Base model |
 
-#### `aitf.model_ops.training.gpu_hours`
+#### `model_ops.training.gpu_hours`
 
 **Type:** Counter
 **Unit:** `h`
@@ -395,10 +395,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.training.compute.gpu_type` | string | GPU type |
-| `aitf.model_ops.training.type` | string | Training type |
+| `model_ops.training.compute.gpu_type` | string | GPU type |
+| `model_ops.training.type` | string | Training type |
 
-#### `aitf.model_ops.evaluation.runs`
+#### `model_ops.evaluation.runs`
 
 **Type:** Counter
 **Unit:** `{run}`
@@ -406,10 +406,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.evaluation.type` | string | Evaluation type |
-| `aitf.model_ops.evaluation.pass` | boolean | Pass/fail |
+| `model_ops.evaluation.type` | string | Evaluation type |
+| `model_ops.evaluation.pass` | boolean | Pass/fail |
 
-#### `aitf.model_ops.evaluation.score`
+#### `model_ops.evaluation.score`
 
 **Type:** Histogram
 **Unit:** `1`
@@ -417,11 +417,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.evaluation.model_id` | string | Model evaluated |
-| `aitf.model_ops.evaluation.type` | string | Evaluation type |
-| `aitf.model_ops.monitoring.metric_name` | string | Metric name |
+| `model_ops.evaluation.model_id` | string | Model evaluated |
+| `model_ops.evaluation.type` | string | Evaluation type |
+| `model_ops.monitoring.metric_name` | string | Metric name |
 
-#### `aitf.model_ops.registry.operations`
+#### `model_ops.registry.operations`
 
 **Type:** Counter
 **Unit:** `{operation}`
@@ -429,10 +429,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.registry.operation` | string | Operation type |
-| `aitf.model_ops.registry.stage` | string | Target stage |
+| `model_ops.registry.operation` | string | Operation type |
+| `model_ops.registry.stage` | string | Target stage |
 
-#### `aitf.model_ops.deployment.count`
+#### `model_ops.deployment.count`
 
 **Type:** Counter
 **Unit:** `{deployment}`
@@ -440,11 +440,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.deployment.strategy` | string | Deployment strategy |
-| `aitf.model_ops.deployment.environment` | string | Target environment |
-| `aitf.model_ops.deployment.status` | string | Deployment status |
+| `model_ops.deployment.strategy` | string | Deployment strategy |
+| `model_ops.deployment.environment` | string | Target environment |
+| `model_ops.deployment.status` | string | Deployment status |
 
-#### `aitf.model_ops.serving.cache_hit_rate`
+#### `model_ops.serving.cache_hit_rate`
 
 **Type:** Gauge
 **Unit:** `%`
@@ -452,9 +452,9 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.serving.cache.type` | string | Cache type |
+| `model_ops.serving.cache.type` | string | Cache type |
 
-#### `aitf.model_ops.serving.fallback.count`
+#### `model_ops.serving.fallback.count`
 
 **Type:** Counter
 **Unit:** `{fallback}`
@@ -462,9 +462,9 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.serving.fallback.trigger` | string | Trigger reason |
+| `model_ops.serving.fallback.trigger` | string | Trigger reason |
 
-#### `aitf.model_ops.serving.circuit_breaker.transitions`
+#### `model_ops.serving.circuit_breaker.transitions`
 
 **Type:** Counter
 **Unit:** `{transition}`
@@ -472,10 +472,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.serving.circuit_breaker.state` | string | New state |
-| `aitf.model_ops.serving.circuit_breaker.model` | string | Affected model |
+| `model_ops.serving.circuit_breaker.state` | string | New state |
+| `model_ops.serving.circuit_breaker.model` | string | Affected model |
 
-#### `aitf.model_ops.monitoring.drift_score`
+#### `model_ops.monitoring.drift_score`
 
 **Type:** Histogram
 **Unit:** `1`
@@ -483,10 +483,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.monitoring.model_id` | string | Monitored model |
-| `aitf.model_ops.monitoring.drift_type` | string | Drift type |
+| `model_ops.monitoring.model_id` | string | Monitored model |
+| `model_ops.monitoring.drift_type` | string | Drift type |
 
-#### `aitf.model_ops.monitoring.alerts`
+#### `model_ops.monitoring.alerts`
 
 **Type:** Counter
 **Unit:** `{alert}`
@@ -494,11 +494,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.monitoring.check_type` | string | Check type |
-| `aitf.model_ops.monitoring.result` | string | Alert level |
-| `aitf.model_ops.monitoring.action_triggered` | string | Action taken |
+| `model_ops.monitoring.check_type` | string | Check type |
+| `model_ops.monitoring.result` | string | Alert level |
+| `model_ops.monitoring.action_triggered` | string | Action taken |
 
-#### `aitf.model_ops.prompt.versions`
+#### `model_ops.prompt.versions`
 
 **Type:** Counter
 **Unit:** `{version}`
@@ -506,14 +506,14 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.model_ops.prompt.name` | string | Prompt name |
-| `aitf.model_ops.prompt.operation` | string | Operation type |
+| `model_ops.prompt.name` | string | Prompt name |
+| `model_ops.prompt.operation` | string | Operation type |
 
 ---
 
 ### Identity Metrics
 
-#### `aitf.identity.authentications`
+#### `identity.authentications`
 
 **Type:** Counter
 **Unit:** `{authentication}`
@@ -521,11 +521,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.identity.auth.method` | string | Auth method |
-| `aitf.identity.auth.result` | string | Auth result |
-| `aitf.identity.provider` | string | Identity provider |
+| `identity.auth.method` | string | Auth method |
+| `identity.auth.result` | string | Auth result |
+| `identity.provider` | string | Identity provider |
 
-#### `aitf.identity.authentication.duration`
+#### `identity.authentication.duration`
 
 **Type:** Histogram
 **Unit:** `ms`
@@ -533,10 +533,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.identity.auth.method` | string | Auth method |
-| `aitf.identity.provider` | string | Identity provider |
+| `identity.auth.method` | string | Auth method |
+| `identity.provider` | string | Identity provider |
 
-#### `aitf.identity.authorizations`
+#### `identity.authorizations`
 
 **Type:** Counter
 **Unit:** `{authorization}`
@@ -544,10 +544,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.identity.authz.decision` | string | Decision |
-| `aitf.identity.authz.policy_engine` | string | Policy engine |
+| `identity.authz.decision` | string | Decision |
+| `identity.authz.policy_engine` | string | Policy engine |
 
-#### `aitf.identity.delegations`
+#### `identity.delegations`
 
 **Type:** Counter
 **Unit:** `{delegation}`
@@ -555,10 +555,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.identity.delegation.type` | string | Delegation type |
-| `aitf.identity.delegation.result` | string | Delegation result |
+| `identity.delegation.type` | string | Delegation type |
+| `identity.delegation.result` | string | Delegation result |
 
-#### `aitf.identity.delegation.chain_depth`
+#### `identity.delegation.chain_depth`
 
 **Type:** Histogram
 **Unit:** `{depth}`
@@ -566,9 +566,9 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.identity.delegation.type` | string | Delegation type |
+| `identity.delegation.type` | string | Delegation type |
 
-#### `aitf.identity.active_sessions`
+#### `identity.active_sessions`
 
 **Type:** UpDownCounter
 **Unit:** `{session}`
@@ -576,10 +576,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.identity.type` | string | Identity type |
-| `aitf.identity.provider` | string | Provider |
+| `identity.type` | string | Identity type |
+| `identity.provider` | string | Provider |
 
-#### `aitf.identity.lifecycle.events`
+#### `identity.lifecycle.events`
 
 **Type:** Counter
 **Unit:** `{event}`
@@ -587,10 +587,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.identity.lifecycle.operation` | string | Lifecycle operation |
-| `aitf.identity.type` | string | Identity type |
+| `identity.lifecycle.operation` | string | Lifecycle operation |
+| `identity.type` | string | Identity type |
 
-#### `aitf.identity.trust.establishments`
+#### `identity.trust.establishments`
 
 **Type:** Counter
 **Unit:** `{trust}`
@@ -598,11 +598,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.identity.trust.method` | string | Trust method |
-| `aitf.identity.trust.result` | string | Trust result |
-| `aitf.identity.trust.cross_domain` | boolean | Cross-domain |
+| `identity.trust.method` | string | Trust method |
+| `identity.trust.result` | string | Trust result |
+| `identity.trust.cross_domain` | boolean | Cross-domain |
 
-#### `aitf.identity.auth_failures`
+#### `identity.auth_failures`
 
 **Type:** Counter
 **Unit:** `{failure}`
@@ -610,15 +610,15 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.identity.agent_name` | string | Agent name |
-| `aitf.identity.auth.method` | string | Auth method |
-| `aitf.identity.auth.failure_reason` | string | Failure reason |
+| `identity.agent_name` | string | Agent name |
+| `identity.auth.method` | string | Auth method |
+| `identity.auth.failure_reason` | string | Failure reason |
 
 ---
 
 ### Asset Inventory Metrics
 
-#### `aitf.asset.registered`
+#### `asset.registered`
 
 **Type:** Counter
 **Unit:** `{asset}`
@@ -626,11 +626,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.asset.type` | string | Asset type |
-| `aitf.asset.deployment_environment` | string | Environment |
-| `aitf.asset.risk_classification` | string | Risk level |
+| `asset.type` | string | Asset type |
+| `asset.deployment_environment` | string | Environment |
+| `asset.risk_classification` | string | Risk level |
 
-#### `aitf.asset.discovery.scans`
+#### `asset.discovery.scans`
 
 **Type:** Counter
 **Unit:** `{scan}`
@@ -638,10 +638,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.asset.discovery.scope` | string | Discovery scope |
-| `aitf.asset.discovery.method` | string | Discovery method |
+| `asset.discovery.scope` | string | Discovery scope |
+| `asset.discovery.method` | string | Discovery method |
 
-#### `aitf.asset.discovery.shadow_assets`
+#### `asset.discovery.shadow_assets`
 
 **Type:** Counter
 **Unit:** `{asset}`
@@ -649,9 +649,9 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.asset.discovery.scope` | string | Discovery scope |
+| `asset.discovery.scope` | string | Discovery scope |
 
-#### `aitf.asset.audit.runs`
+#### `asset.audit.runs`
 
 **Type:** Counter
 **Unit:** `{audit}`
@@ -659,11 +659,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.asset.audit.type` | string | Audit type |
-| `aitf.asset.audit.result` | string | Audit result |
-| `aitf.asset.audit.framework` | string | Compliance framework |
+| `asset.audit.type` | string | Audit type |
+| `asset.audit.result` | string | Audit result |
+| `asset.audit.framework` | string | Compliance framework |
 
-#### `aitf.asset.audit.risk_score`
+#### `asset.audit.risk_score`
 
 **Type:** Histogram
 **Unit:** `1`
@@ -671,10 +671,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.asset.type` | string | Asset type |
-| `aitf.asset.audit.framework` | string | Framework |
+| `asset.type` | string | Asset type |
+| `asset.audit.framework` | string | Framework |
 
-#### `aitf.asset.classification.changes`
+#### `asset.classification.changes`
 
 **Type:** Counter
 **Unit:** `{change}`
@@ -682,11 +682,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.asset.risk_classification` | string | New classification |
-| `aitf.asset.classification.previous` | string | Previous classification |
-| `aitf.asset.classification.framework` | string | Framework |
+| `asset.risk_classification` | string | New classification |
+| `asset.classification.previous` | string | Previous classification |
+| `asset.classification.framework` | string | Framework |
 
-#### `aitf.asset.audit.overdue`
+#### `asset.audit.overdue`
 
 **Type:** Gauge
 **Unit:** `{asset}`
@@ -694,14 +694,14 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.asset.type` | string | Asset type |
-| `aitf.asset.deployment_environment` | string | Environment |
+| `asset.type` | string | Asset type |
+| `asset.deployment_environment` | string | Environment |
 
 ---
 
 ### Drift Detection Metrics
 
-#### `aitf.drift.detections`
+#### `drift.detections`
 
 **Type:** Counter
 **Unit:** `{detection}`
@@ -709,11 +709,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.drift.type` | string | Drift type |
-| `aitf.drift.result` | string | Detection result |
-| `aitf.drift.detection_method` | string | Statistical method |
+| `drift.type` | string | Drift type |
+| `drift.result` | string | Detection result |
+| `drift.detection_method` | string | Statistical method |
 
-#### `aitf.drift.score`
+#### `drift.score`
 
 **Type:** Histogram
 **Unit:** `1`
@@ -721,10 +721,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.drift.model_id` | string | Monitored model |
-| `aitf.drift.type` | string | Drift type |
+| `drift.model_id` | string | Monitored model |
+| `drift.type` | string | Drift type |
 
-#### `aitf.drift.alerts`
+#### `drift.alerts`
 
 **Type:** Counter
 **Unit:** `{alert}`
@@ -732,11 +732,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.drift.type` | string | Drift type |
-| `aitf.drift.result` | string | Alert level |
-| `aitf.drift.action_triggered` | string | Action taken |
+| `drift.type` | string | Drift type |
+| `drift.result` | string | Alert level |
+| `drift.action_triggered` | string | Action taken |
 
-#### `aitf.drift.remediations`
+#### `drift.remediations`
 
 **Type:** Counter
 **Unit:** `{remediation}`
@@ -744,11 +744,11 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.drift.remediation.action` | string | Action type |
-| `aitf.drift.remediation.automated` | boolean | Was automated |
-| `aitf.drift.remediation.status` | string | Outcome |
+| `drift.remediation.action` | string | Action type |
+| `drift.remediation.automated` | boolean | Was automated |
+| `drift.remediation.status` | string | Outcome |
 
-#### `aitf.drift.time_to_detect`
+#### `drift.time_to_detect`
 
 **Type:** Histogram
 **Unit:** `s`
@@ -756,10 +756,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.drift.type` | string | Drift type |
-| `aitf.drift.detection_method` | string | Detection method |
+| `drift.type` | string | Drift type |
+| `drift.detection_method` | string | Detection method |
 
-#### `aitf.drift.time_to_remediate`
+#### `drift.time_to_remediate`
 
 **Type:** Histogram
 **Unit:** `s`
@@ -767,14 +767,14 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.drift.remediation.action` | string | Remediation action |
-| `aitf.drift.remediation.automated` | boolean | Was automated |
+| `drift.remediation.action` | string | Remediation action |
+| `drift.remediation.automated` | boolean | Was automated |
 
 ---
 
 ### Memory Security Metrics
 
-#### `aitf.memory.security.mutations`
+#### `memory.security.mutations`
 
 **Type:** Counter
 **Unit:** `{mutation}`
@@ -782,10 +782,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.memory.operation` | string | Operation type |
-| `aitf.memory.store` | string | Memory store |
+| `memory.operation` | string | Operation type |
+| `memory.store` | string | Memory store |
 
-#### `aitf.memory.security.poisoning_detections`
+#### `memory.security.poisoning_detections`
 
 **Type:** Counter
 **Unit:** `{detection}`
@@ -793,10 +793,10 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.memory.store` | string | Memory store |
-| `aitf.memory.provenance` | string | Content provenance |
+| `memory.store` | string | Memory store |
+| `memory.provenance` | string | Content provenance |
 
-#### `aitf.memory.security.integrity_violations`
+#### `memory.security.integrity_violations`
 
 **Type:** Counter
 **Unit:** `{violation}`
@@ -804,9 +804,9 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.memory.store` | string | Memory store |
+| `memory.store` | string | Memory store |
 
-#### `aitf.memory.security.cross_session_accesses`
+#### `memory.security.cross_session_accesses`
 
 **Type:** Counter
 **Unit:** `{access}`
@@ -814,9 +814,9 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.memory.store` | string | Memory store |
+| `memory.store` | string | Memory store |
 
-#### `aitf.memory.security.session_size`
+#### `memory.security.session_size`
 
 **Type:** Histogram
 **Unit:** `By`
@@ -824,4 +824,4 @@ These metrics follow OpenTelemetry GenAI semantic conventions.
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.memory.store` | string | Memory store |
+| `memory.store` | string | Memory store |

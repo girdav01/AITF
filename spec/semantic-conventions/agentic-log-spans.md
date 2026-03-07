@@ -14,23 +14,23 @@ This span is created for each logged agent action.
 
 | Attribute | Type | Description | Example |
 |---|---|---|---|
-| `aitf.agentic_log.event_id` | string | A unique identifier for the specific log entry | `e-44b1c8f0` |
-| `aitf.agentic_log.timestamp` | string | ISO 8601 formatted timestamp with millisecond precision | `2025-10-26T14:30:05.122Z` |
-| `aitf.agentic_log.agent_id` | string | The unique, cryptographically verifiable identity of the agent | `agent-innovacorp-logicore-prod-042` |
-| `aitf.agentic_log.session_id` | string | A unique ID for the agent's current operational session or "thought process" | `sess-f0a1b2` |
+| `agentic_log.event_id` | string | A unique identifier for the specific log entry | `e-44b1c8f0` |
+| `agentic_log.timestamp` | string | ISO 8601 formatted timestamp with millisecond precision | `2025-10-26T14:30:05.122Z` |
+| `agentic_log.agent_id` | string | The unique, cryptographically verifiable identity of the agent | `agent-innovacorp-logicore-prod-042` |
+| `agentic_log.session_id` | string | A unique ID for the agent's current operational session or "thought process" | `sess-f0a1b2` |
 
 ### Recommended Attributes
 
 | Attribute | Type | Description | Security Relevance |
 |---|---|---|---|
-| `aitf.agentic_log.goal_id` | string | An identifier for the high-level goal the agent is currently pursuing | The single most important field for security context |
-| `aitf.agentic_log.sub_task_id` | string | The specific, immediate task the agent is performing | Granular context for a specific action |
-| `aitf.agentic_log.tool_used` | string | The specific tool, function, or API being invoked | Pinpointing the exact capability being used |
-| `aitf.agentic_log.tool_parameters` | string | A sanitized JSON log of the parameters passed to the tool. Must redact PII, credentials, and other sensitive data | Understanding the specifics of the action |
-| `aitf.agentic_log.outcome` | string | The result of the action (e.g., `SUCCESS`, `FAILURE`, `ERROR`, `DENIED`, `TIMEOUT`, `PARTIAL`) | Basic operational monitoring |
-| `aitf.agentic_log.confidence_score` | double | The agent's own assessment of how likely this action is to succeed (0.0-1.0) | A sudden drop can indicate a poisoned environment |
-| `aitf.agentic_log.anomaly_score` | double | Score from a real-time model indicating how unusual this action is, even for this goal (0.0-1.0) | The primary input for automated alerting |
-| `aitf.agentic_log.policy_evaluation` | string | JSON record of a check against a security policy engine (e.g., OPA) | Proactive compliance and guardrail enforcement |
+| `agentic_log.goal_id` | string | An identifier for the high-level goal the agent is currently pursuing | The single most important field for security context |
+| `agentic_log.sub_task_id` | string | The specific, immediate task the agent is performing | Granular context for a specific action |
+| `agentic_log.tool_used` | string | The specific tool, function, or API being invoked | Pinpointing the exact capability being used |
+| `agentic_log.tool_parameters` | string | A sanitized JSON log of the parameters passed to the tool. Must redact PII, credentials, and other sensitive data | Understanding the specifics of the action |
+| `agentic_log.outcome` | string | The result of the action (e.g., `SUCCESS`, `FAILURE`, `ERROR`, `DENIED`, `TIMEOUT`, `PARTIAL`) | Basic operational monitoring |
+| `agentic_log.confidence_score` | double | The agent's own assessment of how likely this action is to succeed (0.0-1.0) | A sudden drop can indicate a poisoned environment |
+| `agentic_log.anomaly_score` | double | Score from a real-time model indicating how unusual this action is, even for this goal (0.0-1.0) | The primary input for automated alerting |
+| `agentic_log.policy_evaluation` | string | JSON record of a check against a security policy engine (e.g., OPA) | Proactive compliance and guardrail enforcement |
 
 ### Outcome Values
 

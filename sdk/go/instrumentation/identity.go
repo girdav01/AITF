@@ -14,7 +14,7 @@ import (
 	"github.com/girdav01/AITF/sdk/go/semconv"
 )
 
-const identityTracerName = "aitf.instrumentation.identity"
+const identityTracerName = "instrumentation.identity"
 
 // IdentityInstrumentor traces AI agent identity operations including lifecycle,
 // authentication, authorization, delegation, trust establishment, and session

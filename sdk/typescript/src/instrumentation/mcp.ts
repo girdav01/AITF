@@ -15,7 +15,7 @@ import {
 } from "@opentelemetry/api";
 import { MCPAttributes } from "../semantic-conventions/attributes";
 
-const TRACER_NAME = "aitf.instrumentation.mcp";
+const TRACER_NAME = "instrumentation.mcp";
 
 /** Options for tracing an MCP server connection. */
 export interface TraceServerConnectOptions {

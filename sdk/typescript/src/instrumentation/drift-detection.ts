@@ -16,7 +16,7 @@ import {
 } from "@opentelemetry/api";
 import { DriftDetectionAttributes } from "../semantic-conventions/attributes";
 
-const TRACER_NAME = "aitf.instrumentation.drift_detection";
+const TRACER_NAME = "instrumentation.drift_detection";
 
 // ---------------------------------------------------------------------------
 // Option interfaces

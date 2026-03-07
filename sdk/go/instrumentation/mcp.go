@@ -13,7 +13,7 @@ import (
 	"github.com/girdav01/AITF/sdk/go/semconv"
 )
 
-const mcpTracerName = "aitf.instrumentation.mcp"
+const mcpTracerName = "instrumentation.mcp"
 
 // MCPInstrumentor traces MCP protocol operations.
 type MCPInstrumentor struct {

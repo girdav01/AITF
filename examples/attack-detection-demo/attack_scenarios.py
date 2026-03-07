@@ -578,14 +578,14 @@ def scenario_4_supply_chain_swap(
         span.set_usage(input_tokens=500, output_tokens=120)
 
     # Set supply chain attributes on a separate span
-    tracer = provider.get_tracer("aitf.demo")
+    tracer = provider.get_tracer("demo")
     with tracer.start_as_current_span("model.registry.verify") as sc_span:
         sc_span.set_attribute(SupplyChainAttributes.MODEL_SOURCE, "internal-registry")
         sc_span.set_attribute(SupplyChainAttributes.MODEL_HASH, backdoor_hash)
         sc_span.set_attribute(SupplyChainAttributes.MODEL_LICENSE, "proprietary")
         sc_span.set_attribute(SupplyChainAttributes.MODEL_SIGNED, False)  # NOT signed!
-        sc_span.set_attribute("aitf.supply_chain.baseline_hash", legit_hash)
-        sc_span.set_attribute("aitf.supply_chain.hash_match", False)
+        sc_span.set_attribute("supply_chain.baseline_hash", legit_hash)
+        sc_span.set_attribute("supply_chain.hash_match", False)
 
     provider.force_flush()
 
@@ -795,17 +795,17 @@ def scenario_6_unauthorized_delegation(
             pass
 
     # Identity span showing the auth bypass
-    tracer = provider.get_tracer("aitf.demo")
+    tracer = provider.get_tracer("demo")
     with tracer.start_as_current_span("identity.authz.check") as auth_span:
-        auth_span.set_attribute("aitf.identity.authz.decision", "deny")
-        auth_span.set_attribute("aitf.identity.authz.resource", "financial-db")
-        auth_span.set_attribute("aitf.identity.authz.action", "read")
-        auth_span.set_attribute("aitf.identity.authz.deny_reason", "agent_not_in_team_roster")
-        auth_span.set_attribute("aitf.identity.delegation.delegator", "orchestrator")
-        auth_span.set_attribute("aitf.identity.delegation.delegatee", "external-data-agent")
-        auth_span.set_attribute("aitf.identity.delegation.chain",
+        auth_span.set_attribute("identity.authz.decision", "deny")
+        auth_span.set_attribute("identity.authz.resource", "financial-db")
+        auth_span.set_attribute("identity.authz.action", "read")
+        auth_span.set_attribute("identity.authz.deny_reason", "agent_not_in_team_roster")
+        auth_span.set_attribute("identity.delegation.delegator", "orchestrator")
+        auth_span.set_attribute("identity.delegation.delegatee", "external-data-agent")
+        auth_span.set_attribute("identity.delegation.chain",
                                ["user-alice", "orchestrator", "external-data-agent"])
-        auth_span.set_attribute("aitf.identity.delegation.chain_depth", 2)
+        auth_span.set_attribute("identity.delegation.chain_depth", 2)
 
     provider.force_flush()
 
@@ -920,11 +920,11 @@ def scenario_7_rag_poisoning(
         span.set_usage(input_tokens=200, output_tokens=40)
 
     # Memory security check
-    tracer = provider.get_tracer("aitf.demo")
+    tracer = provider.get_tracer("demo")
     with tracer.start_as_current_span("memory.security.check") as mem_span:
-        mem_span.set_attribute("aitf.memory.security.poisoning_score", 0.78)
-        mem_span.set_attribute("aitf.memory.security.provenance_verified", False)
-        mem_span.set_attribute("aitf.memory.security.content_hash",
+        mem_span.set_attribute("memory.security.poisoning_score", 0.78)
+        mem_span.set_attribute("memory.security.provenance_verified", False)
+        mem_span.set_attribute("memory.security.content_hash",
                                "sha256:corrupted_doc_hash_after_injection")
 
     provider.force_flush()

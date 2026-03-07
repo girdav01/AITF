@@ -16,7 +16,7 @@ from opentelemetry.trace import SpanKind, StatusCode
 
 from aitf.semantic_conventions.attributes import SkillAttributes
 
-_TRACER_NAME = "aitf.instrumentation.skills"
+_TRACER_NAME = "instrumentation.skills"
 
 
 class SkillInstrumentor:
@@ -115,7 +115,7 @@ class SkillInstrumentor:
             SkillAttributes.SOURCE: source,
         }
         if filter_category:
-            attributes["aitf.skill.filter.category"] = filter_category
+            attributes["skill.filter.category"] = filter_category
 
         with tracer.start_as_current_span(
             name=f"skill.discover {source}",

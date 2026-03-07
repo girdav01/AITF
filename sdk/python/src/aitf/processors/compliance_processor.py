@@ -290,7 +290,7 @@ class ComplianceProcessor(SpanProcessor):
 
         if name.startswith("chat ") or name.startswith("embeddings "):
             return "model_inference"
-        if "gen_ai.system" in attrs:
+        if "gen_ai.provider.name" in attrs:
             return "model_inference"
         if name.startswith("agent."):
             return "agent_activity"
@@ -298,7 +298,7 @@ class ComplianceProcessor(SpanProcessor):
             return "tool_execution"
         if name.startswith("rag.") or name.startswith("mcp.resource."):
             return "data_retrieval"
-        if "aitf.security." in " ".join(str(k) for k in attrs.keys()):
+        if "security." in " ".join(str(k) for k in attrs.keys()):
             return "security_finding"
 
         return None

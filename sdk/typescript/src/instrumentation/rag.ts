@@ -15,7 +15,7 @@ import {
 } from "@opentelemetry/api";
 import { RAGAttributes } from "../semantic-conventions/attributes";
 
-const TRACER_NAME = "aitf.instrumentation.rag";
+const TRACER_NAME = "instrumentation.rag";
 
 /** Options for tracing a RAG pipeline. */
 export interface TracePipelineOptions {

@@ -12,7 +12,7 @@ Traditional observability tools were built for request-response web services. AI
 - **Tool orchestration** — MCP servers, skills, function calling, and multi-agent delegation create complex execution graphs that need purpose-built instrumentation.
 - **Compliance requirements** — EU AI Act, NIST AI RMF, ISO 42001, and CSA AICM all require specific audit trails that generic logging cannot provide.
 
-AITF addresses these challenges by **extending** OpenTelemetry — not forking it. All AITF instrumentation produces standard OTel signals (spans, metrics, events) that flow over standard OTLP. OTel spans carry full security context (`aitf.security.*` attributes including threat detection, risk scores, and OWASP classifications) making OTLP a first-class transport for both observability and security analytics. The extension adds AI-specific semantic conventions, in-process security processors, and an optional OCSF normalization layer for SIEMs that require OCSF-native ingestion.
+AITF addresses these challenges by **extending** OpenTelemetry — not forking it. All AITF instrumentation produces standard OTel signals (spans, metrics, events) that flow over standard OTLP. OTel spans carry full security context (`security.*` attributes including threat detection, risk scores, and OWASP classifications) making OTLP a first-class transport for both observability and security analytics. The extension adds AI-specific semantic conventions, in-process security processors, and an optional OCSF normalization layer for SIEMs that require OCSF-native ingestion.
 
 ## 2. Architecture: The Dual-Pipeline Model
 
@@ -51,10 +51,10 @@ The central innovation in AITF is the dual-pipeline architecture. A single instr
 
 ### How it works
 
-1. **Single instrumentation** — AITF instrumentors create standard OTel spans with `gen_ai.*` and `aitf.*` attributes.
+1. **Single instrumentation** — AITF instrumentors create standard OTel spans with `gen_ai.*`, `security.*`, `mcp.*`, and other AITF attributes.
 2. **Shared TracerProvider** — One `TracerProvider` with multiple `SpanProcessor` chains attached.
 3. **Parallel export** — Every span flows through all processors and exporters simultaneously:
-   - The **OTLP exporter** sends the security-enriched OTel span (including `aitf.security.*` attributes, risk scores, and compliance metadata) to OTLP-compatible backends for both observability and security analytics.
+   - The **OTLP exporter** sends the security-enriched OTel span (including `security.*` attributes, risk scores, and compliance metadata) to OTLP-compatible backends for both observability and security analytics.
    - The **OCSF exporter** converts the span to an OCSF Category 7 AI event for SIEMs that require OCSF-native ingestion (Splunk, AWS Security Lake, QRadar, Sentinel).
    - Optional **CEF/Syslog** and **immutable log** exporters add legacy SIEM and tamper-evident audit trail support.
 
@@ -67,7 +67,7 @@ The central innovation in AITF is the dual-pipeline architecture. A single instr
 | CEF/Syslog | CEF over Syslog | Legacy SIEM integration | ArcSight, LogRhythm, QRadar |
 | Audit | Hash-chained JSONL | Tamper-evident audit trail (EU AI Act Art. 12, SOC 2 CC8.1) | File-based, S3, compliance archives |
 
-> **Note:** Both OTLP and OCSF pipelines carry full security context. OTel spans include `aitf.security.*` attributes (threat detection, risk scores, OWASP classifications), making them directly consumable by OTLP-compatible security platforms. The OCSF pipeline provides additional normalization into the OCSF Category 7 schema for SIEMs that require OCSF-native ingestion.
+> **Note:** Both OTLP and OCSF pipelines carry full security context. OTel spans include `security.*` attributes (threat detection, risk scores, OWASP classifications), making them directly consumable by OTLP-compatible security platforms. The OCSF pipeline provides additional normalization into the OCSF Category 7 schema for SIEMs that require OCSF-native ingestion.
 
 ### Setup
 
@@ -97,15 +97,15 @@ instrumentor.instrument_all()
 
 ## 3. Extending OTel Semantic Conventions for AI
 
-AITF preserves the existing OpenTelemetry `gen_ai.*` namespace for backward compatibility and extends it with the `aitf.*` namespace for AI-specific concerns.
+AITF preserves and builds on the existing OpenTelemetry `gen_ai.*` namespace. Attributes that OTel now covers natively (agents, tools, conversations, providers) use `gen_ai.*` directly. AITF-specific attributes use shorter, prefix-free names.
 
-### 3.1 Preserved OTel GenAI Conventions (`gen_ai.*`)
+### 3.1 OTel GenAI Conventions (`gen_ai.*`)
 
 These are the standard OpenTelemetry GenAI semantic conventions, used as-is:
 
 | Attribute | Example | Purpose |
 |-----------|---------|---------|
-| `gen_ai.system` | `"openai"`, `"anthropic"` | LLM provider identifier |
+| `gen_ai.provider.name` | `"openai"`, `"anthropic"` | LLM provider identifier (OTel standard) |
 | `gen_ai.operation.name` | `"chat"`, `"embeddings"` | Operation type |
 | `gen_ai.request.model` | `"gpt-4o"` | Requested model |
 | `gen_ai.request.temperature` | `0.7` | Sampling temperature |
@@ -115,30 +115,35 @@ These are the standard OpenTelemetry GenAI semantic conventions, used as-is:
 | `gen_ai.usage.input_tokens` | `150` | Input token count |
 | `gen_ai.usage.output_tokens` | `320` | Output token count |
 
-### 3.2 AITF Extensions (`aitf.*`)
+### 3.2 AITF Extensions
 
-AITF adds 15 attribute namespaces covering the full AI ecosystem:
+AITF adds attribute namespaces covering the full AI ecosystem. Attributes that OTel now covers use `gen_ai.*`; all others drop the former `aitf.` prefix:
 
 | Namespace | Domain | Key Attributes |
 |-----------|--------|----------------|
-| `aitf.agent.*` | Agent lifecycle | `name`, `id`, `type`, `framework`, `session.id`, `step.type/thought/action/observation`, `delegation.target_agent`, `team.topology` |
-| `aitf.mcp.*` | Model Context Protocol | `server.name/transport`, `tool.name/input/output/duration_ms/approval_required`, `resource.uri`, `sampling.model` |
-| `aitf.skill.*` | Skills framework | `name`, `version`, `category`, `provider`, `input/output`, `compose.pattern` |
-| `aitf.rag.*` | Retrieval-Augmented Generation | `pipeline.name/stage`, `retrieve.database/top_k/results_count`, `doc.id/score/provenance`, `quality.faithfulness/groundedness` |
-| `aitf.security.*` | Threat detection | `threat_detected`, `threat_type`, `owasp_category`, `risk_score`, `blocked`, `guardrail.name/result`, `pii.types/action` |
-| `aitf.compliance.*` | Regulatory mapping | `frameworks`, `nist_ai_rmf.controls`, `eu_ai_act.articles`, `csa_aicm.controls` |
-| `aitf.cost.*` | Token economics | `input_cost`, `output_cost`, `total_cost`, `budget.limit/used/remaining`, `attribution.user/team/project` |
-| `aitf.quality.*` | Output quality | `hallucination_score`, `confidence`, `factuality`, `toxicity_score`, `bias_score` |
-| `aitf.identity.*` | Agent identity | `agent_id`, `auth.method/result`, `authz.decision/resource`, `delegation.chain/scope_attenuated`, `trust.method/level` |
-| `aitf.model_ops.*` | LLMOps/MLOps lifecycle | `training.run_id/type/base_model/loss_final`, `evaluation.metrics/pass`, `deployment.strategy/environment`, `monitoring.drift_score` |
-| `aitf.asset.*` | AI asset inventory | `id`, `name`, `type`, `risk_classification`, `discovery.shadow_assets`, `audit.result/framework` |
-| `aitf.drift.*` | Model drift detection | `model_id`, `type`, `score`, `detection_method`, `p_value`, `remediation.action` |
-| `aitf.supply_chain.*` | Model provenance | `model.source/hash/license/signed`, `ai_bom.id/components` |
-| `aitf.a2a.*` | Google A2A protocol | `agent.name/skills`, `task.id/state`, `message.role`, `stream.event_type` |
-| `aitf.acp.*` | Agent Communication Protocol | `run.id/mode/status`, `message.role/parts_count`, `await.active/duration_ms` |
-| `aitf.memory.*` | Agent memory | `operation`, `store` (short_term/long_term/episodic), `key`, `security.poisoning_score/isolation_verified` |
-| `aitf.agentic_log.*` | Agentic audit log | `event_id`, `agent_id`, `goal_id`, `tool_used`, `outcome`, `confidence_score`, `anomaly_score`, `policy_evaluation` |
-| `aitf.latency.*` | Performance metrics | `total_ms`, `time_to_first_token_ms`, `tokens_per_second` |
+| `gen_ai.agent.*` | Agent lifecycle (OTel standard) | `name`, `id`, `description`, `step.type/thought/action/observation`, `delegation.target_agent`, `team.topology` |
+| `gen_ai.tool.*` | Tool calls (OTel standard) | `name`, `call.arguments`, `call.result` |
+| `gen_ai.conversation.id` | Session identifier (OTel standard) | Replaces former `aitf.agent.session.id` |
+| `gen_ai.provider.name` | Provider identifier (OTel standard) | Replaces former `gen_ai.system` |
+| `gen_ai.data_source.id` | RAG data source (OTel standard) | Replaces former `aitf.rag.retrieve.database` |
+| `gen_ai.retrieval.query.text` | RAG query (OTel standard) | Replaces former `aitf.rag.query` |
+| `mcp.*` | Model Context Protocol | `server.name/transport`, `tool.server/is_error/duration_ms/approval_required`, `resource.uri`, `sampling.model` |
+| `skill.*` | Skills framework | `name`, `version`, `category`, `provider`, `input/output`, `compose.pattern` |
+| `rag.*` | Retrieval-Augmented Generation | `pipeline.name/stage`, `retrieve.top_k/results_count`, `doc.id/score/provenance`, `quality.faithfulness/groundedness` |
+| `security.*` | Threat detection | `threat_detected`, `threat_type`, `owasp_category`, `risk_score`, `blocked`, `guardrail.name/result`, `pii.types/action` |
+| `compliance.*` | Regulatory mapping | `frameworks`, `nist_ai_rmf.controls`, `eu_ai_act.articles`, `csa_aicm.controls` |
+| `cost.*` | Token economics | `input_cost`, `output_cost`, `total_cost`, `budget.limit/used/remaining`, `attribution.user/team/project` |
+| `quality.*` | Output quality | `hallucination_score`, `confidence`, `factuality`, `toxicity_score`, `bias_score` |
+| `identity.*` | Agent identity | `agent_id`, `auth.method/result`, `authz.decision/resource`, `delegation.chain/scope_attenuated`, `trust.method/level` |
+| `model_ops.*` | LLMOps/MLOps lifecycle | `training.run_id/type/base_model/loss_final`, `evaluation.metrics/pass`, `deployment.strategy/environment`, `monitoring.drift_score` |
+| `asset.*` | AI asset inventory | `id`, `name`, `type`, `risk_classification`, `discovery.shadow_assets`, `audit.result/framework` |
+| `drift.*` | Model drift detection | `model_id`, `type`, `score`, `detection_method`, `p_value`, `remediation.action` |
+| `supply_chain.*` | Model provenance | `model.source/hash/license/signed`, `ai_bom.id/components` |
+| `a2a.*` | Google A2A protocol | `agent.name/skills`, `task.id/state`, `message.role`, `stream.event_type` |
+| `acp.*` | Agent Communication Protocol | `run.id/mode/status`, `message.role/parts_count`, `await.active/duration_ms` |
+| `memory.*` | Agent memory | `operation`, `store` (short_term/long_term/episodic), `key`, `security.poisoning_score/isolation_verified` |
+| `agentic_log.*` | Agentic audit log | `event_id`, `agent_id`, `goal_id`, `tool_used`, `outcome`, `confidence_score`, `anomaly_score`, `policy_evaluation` |
+| `latency.*` | Performance metrics | `total_ms`, `time_to_first_token_ms`, `tokens_per_second` |
 
 ## 4. Instrumentation Layer: 12 Instrumentors
 
@@ -236,7 +241,7 @@ Detects and handles PII in prompts, completions, and tool I/O with three modes:
 Tracks token-level cost across every LLM call:
 
 - Built-in pricing table for ~25 models (OpenAI, Anthropic, Google, Mistral, Meta, Cohere)
-- Calculates `aitf.cost.input_cost`, `aitf.cost.output_cost`, `aitf.cost.total_cost`
+- Calculates `cost.input_cost`, `cost.output_cost`, `cost.total_cost`
 - Budget tracking with `budget_limit`, `budget_used`, `budget_remaining`
 - Cost attribution by user, team, and project
 
@@ -245,7 +250,7 @@ Tracks token-level cost across every LLM call:
 Maps AI event types to compliance framework controls:
 
 - Eight frameworks: NIST AI RMF, MITRE ATLAS, ISO 42001, EU AI Act, SOC 2, GDPR, CCPA, CSA AICM
-- Classifies spans by name prefix and attaches `aitf.compliance.*` attributes
+- Classifies spans by name prefix and attaches `compliance.*` attributes
 - Provides `get_coverage_matrix()` for audit reporting
 
 ### 5.5 MemoryStateProcessor
@@ -265,16 +270,16 @@ The `OCSFMapper` converts OTel spans to OCSF Category 7 (AI System Activity) eve
 
 | Class UID | Event Class | OTel Span Triggers | What It Captures |
 |-----------|-------------|-------------------|------------------|
-| 7001 | `AIModelInferenceEvent` | `chat *`, `embeddings *`, `gen_ai.system` attr | Model, tokens, latency, cost, finish reason |
-| 7002 | `AIAgentActivityEvent` | `agent.*`, `aitf.agent.name` attr | Agent identity, step type, thought/action/observation, delegation |
+| 7001 | `AIModelInferenceEvent` | `chat *`, `embeddings *`, `gen_ai.provider.name` attr | Model, tokens, latency, cost, finish reason |
+| 7002 | `AIAgentActivityEvent` | `agent.*`, `gen_ai.agent.name` attr | Agent identity, step type, thought/action/observation, delegation |
 | 7003 | `AIToolExecutionEvent` | `mcp.tool.*`, `skill.invoke*` | Tool name/type, input/output, MCP server, approval status |
-| 7004 | `AIDataRetrievalEvent` | `rag.*`, `aitf.rag.retrieve.database` attr | Database, query, top_k, results count, scores |
-| 7005 | `AISecurityFindingEvent` | `aitf.security.threat_detected` attr | Finding type, OWASP category, risk score, confidence, blocked |
-| 7006 | `AISupplyChainEvent` | `supply_chain.*`, `aitf.supply_chain.model.source` attr | Model source/hash/license, signature verification, AI BOM |
+| 7004 | `AIDataRetrievalEvent` | `rag.*`, `gen_ai.data_source.id` attr | Database, query, top_k, results count, scores |
+| 7005 | `AISecurityFindingEvent` | `security.threat_detected` attr | Finding type, OWASP category, risk score, confidence, blocked |
+| 7006 | `AISupplyChainEvent` | `supply_chain.*`, `supply_chain.model.source` attr | Model source/hash/license, signature verification, AI BOM |
 | 7007 | `AIGovernanceEvent` | `governance.*`, `compliance.*` | Compliance frameworks, controls, violations, audit ID |
-| 7008 | `AIIdentityEvent` | `identity.*`, `aitf.identity.agent_id` attr | Auth method/result, credential type, delegation chain, scope |
+| 7008 | `AIIdentityEvent` | `identity.*`, `identity.agent_id` attr | Auth method/result, credential type, delegation chain, scope |
 | 7009 | `AIModelOpsEvent` | `model_ops.*`, `drift.*` | Training, evaluation, deployment, serving, monitoring, drift |
-| 7010 | `AIAssetInventoryEvent` | `asset.*`, `aitf.asset.id` attr | Asset type, owner, risk classification, discovery, audit |
+| 7010 | `AIAssetInventoryEvent` | `asset.*`, `asset.id` attr | Asset type, owner, risk classification, discovery, audit |
 
 ### 6.2 Mapping Flow
 
@@ -285,7 +290,7 @@ OTel Span (ReadableSpan)
 OCSFMapper.map_span()
     │
     ├── Classify by span name prefix + attributes
-    ├── Extract fields from aitf.*/gen_ai.* attributes
+    ├── Extract fields from gen_ai.*/security.*/mcp.*/etc. attributes
     ├── Determine activity_id from span name keywords
     │
     ▼
@@ -304,7 +309,7 @@ JSON serialization → SIEM / XDR / Data Lake
 
 ### 6.3 OCSF Event Example
 
-An OTel span named `chat gpt-4o` with `gen_ai.*` attributes produces:
+An OTel span named `chat gpt-4o` with `gen_ai.*` and AITF attributes produces:
 
 ```json
 {
@@ -476,7 +481,7 @@ All SDKs share the same OCSF JSON Schema (`spec/schema/aitf-ocsf-schema.json`) a
 
 - OTel has mature SDKs in every major language with battle-tested context propagation, batching, and retry logic.
 - OTLP is a universal wire format supported by every major observability and security vendor.
-- OTel spans natively carry arbitrary attributes — AITF's `aitf.security.*` attributes (threat types, risk scores, OWASP classifications) travel over standard OTLP without any protocol extension, making OTel a first-class security telemetry transport.
+- OTel spans natively carry arbitrary attributes — AITF's `security.*` attributes (threat types, risk scores, OWASP classifications) travel over standard OTLP without any protocol extension, making OTel a first-class security telemetry transport.
 - The `gen_ai.*` namespace already covers basic LLM inference — AITF builds on this rather than competing.
 - Modern security platforms (Elastic Security, Datadog Security, Grafana + Loki/Tempo) consume OTLP directly — teams get security analytics from the same OTel pipeline they already run.
 - Teams can adopt AITF incrementally: start with OTLP for both observability and security, add OCSF normalization later for SIEM-specific requirements.

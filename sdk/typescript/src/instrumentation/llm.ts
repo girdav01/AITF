@@ -20,7 +20,7 @@ import {
   SecurityAttributes,
 } from "../semantic-conventions/attributes";
 
-const TRACER_NAME = "aitf.instrumentation.llm";
+const TRACER_NAME = "instrumentation.llm";
 
 /** Known options that should not be passed as extra span attributes. */
 const KNOWN_OPTIONS = new Set([

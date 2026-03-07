@@ -16,7 +16,7 @@ from opentelemetry.trace import SpanKind, StatusCode
 
 from aitf.semantic_conventions.attributes import ACPAttributes
 
-_TRACER_NAME = "aitf.instrumentation.acp"
+_TRACER_NAME = "instrumentation.acp"
 
 
 class ACPInstrumentor:

@@ -13,7 +13,7 @@ import (
 	"github.com/girdav01/AITF/sdk/go/semconv"
 )
 
-const driftTracerName = "aitf.instrumentation.drift_detection"
+const driftTracerName = "instrumentation.drift_detection"
 
 // DriftDetectionInstrumentor traces model drift detection, baseline management,
 // investigation, and remediation operations. Aligned with CoSAI's identification

@@ -25,9 +25,9 @@
     "inference": {
       "vendor_to_aitf": {
         "openrouter.model": "gen_ai.request.model",
-        "openrouter.provider": "gen_ai.system",
-        "openrouter.route.provider": "aitf.openrouter.route_provider",
-        "openrouter.route.model": "aitf.openrouter.route_model",
+        "openrouter.provider": "gen_ai.provider.name",
+        "openrouter.route.provider": "openrouter.route_provider",
+        "openrouter.route.model": "openrouter.route_model",
         "openrouter.route.id": "gen_ai.response.id",
         "openrouter.api_base": "gen_ai.server.address",
 
@@ -37,30 +37,30 @@
         "openrouter.request.top_k": "gen_ai.request.top_k",
         "openrouter.request.frequency_penalty": "gen_ai.request.frequency_penalty",
         "openrouter.request.presence_penalty": "gen_ai.request.presence_penalty",
-        "openrouter.request.transforms": "aitf.openrouter.transforms",
-        "openrouter.request.route": "aitf.openrouter.route_preference",
+        "openrouter.request.transforms": "openrouter.transforms",
+        "openrouter.request.route": "openrouter.route_preference",
 
         "openrouter.usage.prompt_tokens": "gen_ai.usage.input_tokens",
         "openrouter.usage.completion_tokens": "gen_ai.usage.output_tokens",
         "openrouter.usage.total_tokens": "gen_ai.usage.total_tokens",
 
-        "openrouter.cost.prompt": "aitf.cost.input_cost",
-        "openrouter.cost.completion": "aitf.cost.output_cost",
-        "openrouter.cost.total": "aitf.cost.total_cost",
+        "openrouter.cost.prompt": "cost.input_cost",
+        "openrouter.cost.completion": "cost.output_cost",
+        "openrouter.cost.total": "cost.total_cost",
 
-        "openrouter.latency.total_ms": "aitf.latency.total_ms",
-        "openrouter.latency.tokens_per_second": "aitf.latency.tokens_per_second",
-        "openrouter.latency.time_to_first_token_ms": "aitf.latency.time_to_first_token_ms",
+        "openrouter.latency.total_ms": "latency.total_ms",
+        "openrouter.latency.tokens_per_second": "latency.tokens_per_second",
+        "openrouter.latency.time_to_first_token_ms": "latency.time_to_first_token_ms",
 
         "openrouter.response.finish_reason": "gen_ai.response.finish_reasons",
         "openrouter.response.id": "gen_ai.response.id",
         "openrouter.response.model": "gen_ai.response.model",
         "openrouter.response.streaming": "gen_ai.request.streaming",
 
-        "openrouter.prompt": "gen_ai.prompt",
-        "openrouter.completion": "gen_ai.completion",
+        "openrouter.prompt": "gen_ai.input.messages",
+        "openrouter.completion": "gen_ai.output.messages",
 
-        "gen_ai.system": "gen_ai.system",
+        "gen_ai.provider.name": "gen_ai.provider.name",
         "gen_ai.request.model": "gen_ai.request.model",
         "gen_ai.usage.input_tokens": "gen_ai.usage.input_tokens",
         "gen_ai.usage.output_tokens": "gen_ai.usage.output_tokens",
@@ -81,7 +81,7 @@
   },
 
   "provider_detection": {
-    "attribute_keys": ["openrouter.route.provider", "openrouter.provider", "gen_ai.system"],
+    "attribute_keys": ["openrouter.route.provider", "openrouter.provider", "gen_ai.provider.name"],
     "model_prefix_to_provider": {
       "anthropic/": "anthropic",
       "openai/": "openai",

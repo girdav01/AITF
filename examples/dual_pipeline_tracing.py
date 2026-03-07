@@ -229,7 +229,7 @@ print(f"    Events:    OCSF Category 7 JSON (7001 Model Inference, 7004 Data Ret
 print(f"    Enriched:  NIST AI RMF + EU AI Act + MITRE ATLAS compliance controls")
 
 print(f"\n  Both pipelines received the SAME security-enriched spans from a SINGLE instrumentation pass.")
-print(f"  OTLP carries full aitf.security.* context.  OCSF normalizes to Category 7 for SIEMs.")
+print(f"  OTLP carries full security.* context.  OCSF normalizes to Category 7 for SIEMs.")
 
 print(f"\n  Pipeline modes:")
 print(f"    from aitf import create_dual_pipeline_provider  # OTel + OCSF")

@@ -416,7 +416,7 @@ export class ComplianceProcessor implements SpanProcessor {
     if (name.startsWith("chat ") || name.startsWith("embeddings ")) {
       return "model_inference";
     }
-    if ("gen_ai.system" in attrs) {
+    if ("gen_ai.provider.name" in attrs) {
       return "model_inference";
     }
     if (name.startsWith("agent.")) {
@@ -429,7 +429,7 @@ export class ComplianceProcessor implements SpanProcessor {
       return "data_retrieval";
     }
     if (
-      Object.keys(attrs).some((k) => String(k).includes("aitf.security."))
+      Object.keys(attrs).some((k) => String(k).includes("security."))
     ) {
       return "security_finding";
     }

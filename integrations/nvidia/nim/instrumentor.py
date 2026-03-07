@@ -78,7 +78,7 @@ from aitf.semantic_conventions.attributes import (
     ModelOpsAttributes,
 )
 
-_TRACER_NAME = "aitf.integrations.nvidia.nim"
+_TRACER_NAME = "integrations.nvidia.nim"
 _GEN_AI_SYSTEM = "nvidia_nim"
 
 
@@ -259,16 +259,16 @@ class NIMInstrumentor:
             GenAIAttributes.SYSTEM: _GEN_AI_SYSTEM,
             GenAIAttributes.OPERATION_NAME: "model_load",
             GenAIAttributes.REQUEST_MODEL: model_name,
-            "aitf.nvidia.nim.operation": "model_load",
+            "nvidia.nim.operation": "model_load",
         }
         if gpu_type:
             attributes[ModelOpsAttributes.DEPLOYMENT_INFRA_GPU_TYPE] = gpu_type
         if gpu_count is not None:
             attributes[ModelOpsAttributes.TRAINING_COMPUTE_GPU_COUNT] = gpu_count
         if optimization:
-            attributes["aitf.nvidia.nim.optimization"] = optimization
+            attributes["nvidia.nim.optimization"] = optimization
         if model_profile:
-            attributes["aitf.nvidia.nim.model_profile"] = model_profile
+            attributes["nvidia.nim.model_profile"] = model_profile
 
         start = time.monotonic()
 
@@ -317,7 +317,7 @@ class NIMInstrumentor:
         attributes: dict[str, Any] = {
             GenAIAttributes.SYSTEM: _GEN_AI_SYSTEM,
             GenAIAttributes.REQUEST_MODEL: model,
-            "aitf.nvidia.nim.operation": "gpu_utilization",
+            "nvidia.nim.operation": "gpu_utilization",
         }
         if gpu_type:
             attributes[ModelOpsAttributes.DEPLOYMENT_INFRA_GPU_TYPE] = gpu_type
@@ -372,8 +372,8 @@ class NIMInstrumentor:
             GenAIAttributes.SYSTEM: _GEN_AI_SYSTEM,
             GenAIAttributes.OPERATION_NAME: "batch_inference",
             GenAIAttributes.REQUEST_MODEL: model,
-            "aitf.nvidia.nim.operation": "batch_inference",
-            "aitf.nvidia.nim.batch.size": batch_size,
+            "nvidia.nim.operation": "batch_inference",
+            "nvidia.nim.batch.size": batch_size,
         }
         if max_tokens is not None:
             attributes[GenAIAttributes.REQUEST_MAX_TOKENS] = max_tokens
@@ -423,8 +423,8 @@ class NIMInstrumentor:
 
         attributes: dict[str, Any] = {
             GenAIAttributes.SYSTEM: _GEN_AI_SYSTEM,
-            "aitf.nvidia.nim.operation": "health_check",
-            "aitf.nvidia.nim.health.check_type": check_type,
+            "nvidia.nim.operation": "health_check",
+            "nvidia.nim.health.check_type": check_type,
         }
         if endpoint:
             attributes[ModelOpsAttributes.DEPLOYMENT_ENDPOINT] = endpoint
@@ -658,15 +658,15 @@ class NIMInferenceSpan:
         """Set GPU utilization metrics observed during this inference."""
         if gpu_utilization_percent is not None:
             self._span.set_attribute(
-                "aitf.nvidia.nim.gpu.utilization_percent", gpu_utilization_percent
+                "nvidia.nim.gpu.utilization_percent", gpu_utilization_percent
             )
         if gpu_memory_used_mb is not None:
             self._span.set_attribute(
-                "aitf.nvidia.nim.gpu.memory_used_mb", gpu_memory_used_mb
+                "nvidia.nim.gpu.memory_used_mb", gpu_memory_used_mb
             )
         if gpu_memory_total_mb is not None:
             self._span.set_attribute(
-                "aitf.nvidia.nim.gpu.memory_total_mb", gpu_memory_total_mb
+                "nvidia.nim.gpu.memory_total_mb", gpu_memory_total_mb
             )
 
     def set_optimization_info(
@@ -683,12 +683,12 @@ class NIMInferenceSpan:
             tensor_parallelism: Tensor parallelism degree across GPUs.
         """
         if backend:
-            self._span.set_attribute("aitf.nvidia.nim.optimization", backend)
+            self._span.set_attribute("nvidia.nim.optimization", backend)
         if precision:
-            self._span.set_attribute("aitf.nvidia.nim.precision", precision)
+            self._span.set_attribute("nvidia.nim.precision", precision)
         if tensor_parallelism is not None:
             self._span.set_attribute(
-                "aitf.nvidia.nim.tensor_parallelism", tensor_parallelism
+                "nvidia.nim.tensor_parallelism", tensor_parallelism
             )
 
 
@@ -705,18 +705,18 @@ class NIMModelLoadSpan:
 
     def set_load_time_ms(self, load_time_ms: float) -> None:
         """Record the total model load time in milliseconds."""
-        self._span.set_attribute("aitf.nvidia.nim.model_load.time_ms", load_time_ms)
+        self._span.set_attribute("nvidia.nim.model_load.time_ms", load_time_ms)
 
     def set_gpu_memory_used_mb(self, memory_mb: int) -> None:
         """Record GPU memory consumed by the loaded model."""
         self._span.set_attribute(
-            "aitf.nvidia.nim.gpu.memory_used_mb", memory_mb
+            "nvidia.nim.gpu.memory_used_mb", memory_mb
         )
 
     def set_model_size_bytes(self, size_bytes: int) -> None:
         """Record model artifact size in bytes."""
         self._span.set_attribute(
-            "aitf.nvidia.nim.model_load.size_bytes", size_bytes
+            "nvidia.nim.model_load.size_bytes", size_bytes
         )
 
     def set_container_info(
@@ -727,11 +727,11 @@ class NIMModelLoadSpan:
         """Record NIM container metadata."""
         if container_image:
             self._span.set_attribute(
-                "aitf.nvidia.nim.container.image", container_image
+                "nvidia.nim.container.image", container_image
             )
         if container_tag:
             self._span.set_attribute(
-                "aitf.nvidia.nim.container.tag", container_tag
+                "nvidia.nim.container.tag", container_tag
             )
 
 
@@ -764,25 +764,25 @@ class NIMGPUUtilizationSpan:
         """
         if gpu_utilization_percent is not None:
             self._span.set_attribute(
-                "aitf.nvidia.nim.gpu.utilization_percent",
+                "nvidia.nim.gpu.utilization_percent",
                 gpu_utilization_percent,
             )
         if gpu_memory_used_mb is not None:
             self._span.set_attribute(
-                "aitf.nvidia.nim.gpu.memory_used_mb", gpu_memory_used_mb
+                "nvidia.nim.gpu.memory_used_mb", gpu_memory_used_mb
             )
         if gpu_memory_total_mb is not None:
             self._span.set_attribute(
-                "aitf.nvidia.nim.gpu.memory_total_mb", gpu_memory_total_mb
+                "nvidia.nim.gpu.memory_total_mb", gpu_memory_total_mb
             )
         if gpu_temperature_celsius is not None:
             self._span.set_attribute(
-                "aitf.nvidia.nim.gpu.temperature_celsius",
+                "nvidia.nim.gpu.temperature_celsius",
                 gpu_temperature_celsius,
             )
         if gpu_power_watts is not None:
             self._span.set_attribute(
-                "aitf.nvidia.nim.gpu.power_watts", gpu_power_watts
+                "nvidia.nim.gpu.power_watts", gpu_power_watts
             )
 
 
@@ -825,7 +825,7 @@ class NIMBatchInferenceSpan:
             )
         if requests_per_second is not None:
             self._span.set_attribute(
-                "aitf.nvidia.nim.batch.requests_per_second",
+                "nvidia.nim.batch.requests_per_second",
                 requests_per_second,
             )
 
@@ -840,7 +840,7 @@ class NIMBatchInferenceSpan:
         self._span.set_attribute(LatencyAttributes.TOTAL_MS, total_ms)
         if avg_per_request_ms is not None:
             self._span.set_attribute(
-                "aitf.nvidia.nim.batch.avg_request_latency_ms",
+                "nvidia.nim.batch.avg_request_latency_ms",
                 avg_per_request_ms,
             )
 
@@ -852,10 +852,10 @@ class NIMBatchInferenceSpan:
         """Record how many requests in the batch succeeded or failed."""
         if successful is not None:
             self._span.set_attribute(
-                "aitf.nvidia.nim.batch.successful", successful
+                "nvidia.nim.batch.successful", successful
             )
         if failed is not None:
-            self._span.set_attribute("aitf.nvidia.nim.batch.failed", failed)
+            self._span.set_attribute("nvidia.nim.batch.failed", failed)
 
 
 class NIMHealthCheckSpan:
@@ -907,9 +907,9 @@ class NIMHealthCheckSpan:
             "nim.model_status",
             attributes={
                 GenAIAttributes.REQUEST_MODEL: model,
-                "aitf.nvidia.nim.health.model_ready": ready,
+                "nvidia.nim.health.model_ready": ready,
                 **(
-                    {"aitf.nvidia.nim.health.model_reason": reason}
+                    {"nvidia.nim.health.model_reason": reason}
                     if reason
                     else {}
                 ),

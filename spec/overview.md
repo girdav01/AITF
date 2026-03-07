@@ -32,7 +32,7 @@ AITF is built on OpenTelemetry primitives:
 - **Logs/Events** for discrete occurrences
 - **Resources** for entity identification
 
-All AITF instrumentation produces standard OTel signals. The `gen_ai.*` namespace is preserved for OTel-compatible attributes. AITF-specific extensions use the `aitf.*` namespace.
+All AITF instrumentation produces standard OTel signals. The `gen_ai.*` namespace is preserved for OTel-compatible attributes. AITF-specific extensions use short namespaces (e.g., `agent.*`, `mcp.*`, `security.*`) without the `aitf.` prefix.
 
 ### 2.2 Security-First
 
@@ -106,7 +106,7 @@ Layer 4: Analytics          — SIEM, XDR, dashboards, compliance reporting
 
 AITF is designed to produce security-enriched OpenTelemetry signals (OTLP)
 and OCSF-normalized events from the same instrumentation. OTel spans carry
-full security context (`aitf.security.*` attributes) making OTLP a first-class
+full security context (`security.*` attributes) making OTLP a first-class
 transport for both observability and security analytics. The OCSF pipeline
 provides additional schema normalization for SIEMs that require OCSF-native
 ingestion. A single instrumentation pass feeds both pipelines.
@@ -122,10 +122,10 @@ ingestion. A single instrumentation pass feeds both pipelines.
 
 #### How It Works
 
-1. **Single instrumentation** — AITF instrumentors create standard OTel spans enriched with `gen_ai.*` and `aitf.*` attributes
+1. **Single instrumentation** — AITF instrumentors create standard OTel spans enriched with `gen_ai.*` and AITF extension attributes
 2. **Shared TracerProvider** — One `TracerProvider` with multiple `SpanProcessor` pipelines attached
 3. **Parallel export** — Each span is delivered to all configured exporters simultaneously:
-   - **OTLP exporter** sends the security-enriched OTel span (including `aitf.security.*` attributes) to OTLP-compatible backends for both observability and security analytics
+   - **OTLP exporter** sends the security-enriched OTel span (including `security.*` attributes) to OTLP-compatible backends for both observability and security analytics
    - **OCSF exporter** normalizes the span into an OCSF Category 7 event for SIEMs that require OCSF-native ingestion
    - **CEF/Immutable exporters** convert to additional formats as needed
 
@@ -162,7 +162,7 @@ ingestion. A single instrumentation pass feeds both pipelines.
 
 #### When to Use Each Pipeline
 
-- **OTLP-only** — Observability and security analytics through OTLP-compatible backends. OTel spans carry full security context (`aitf.security.*` attributes, risk scores, OWASP classifications) — sufficient when your security platform consumes OTLP natively (e.g., Elastic Security, Datadog Security, Grafana).
+- **OTLP-only** — Observability and security analytics through OTLP-compatible backends. OTel spans carry full security context (`security.*` attributes, risk scores, OWASP classifications) — sufficient when your security platform consumes OTLP natively (e.g., Elastic Security, Datadog Security, Grafana).
 - **OCSF-only** — OCSF-normalized security events for SIEMs that require OCSF-native ingestion (AWS Security Lake, Splunk). Use when your SIEM team needs structured OCSF events and you already have separate OTel infrastructure for observability.
 - **Dual (recommended)** — Production deployments serving both OTLP-native and OCSF-native consumers. One instrumentation pass, two export formats, full security context in both.
 
@@ -190,51 +190,51 @@ instrumentor.instrument_all()
 AITF defines a clear span hierarchy for AI operations:
 
 ```
-[Agent Session]                         aitf.agent.session
-  └─[Identity Auth]                    aitf.identity.authentication
-  └─[Agent Step: planning]              aitf.agent.step
+[Agent Session]                         agent.session
+  └─[Identity Auth]                    identity.authentication
+  └─[Agent Step: planning]              agent.step
       └─[LLM Inference]                gen_ai.inference
           ├─[gen_ai.content.prompt]     (event)
           └─[gen_ai.content.completion] (event)
-  └─[Agent Step: tool_use]             aitf.agent.step
-      ├─[Identity Authz]              aitf.identity.authorization
-      └─[MCP Tool Call]                aitf.mcp.tool.invoke
-          └─[Skill Execution]          aitf.skill.invoke
-  └─[Agent Step: rag]                  aitf.agent.step
-      └─[RAG Pipeline]                aitf.rag.pipeline
-          ├─[Vector Search]            aitf.rag.retrieve
+  └─[Agent Step: tool_use]             agent.step
+      ├─[Identity Authz]              identity.authorization
+      └─[MCP Tool Call]                mcp.tool.invoke
+          └─[Skill Execution]          skill.invoke
+  └─[Agent Step: rag]                  agent.step
+      └─[RAG Pipeline]                rag.pipeline
+          ├─[Vector Search]            rag.retrieve
           └─[LLM Generation]          gen_ai.inference
-  └─[Agent Step: delegation]           aitf.agent.step
-      ├─[Identity Delegation]         aitf.identity.delegation
-      ├─[Trust Establishment]         aitf.identity.trust
-      └─[Sub-Agent Session]           aitf.agent.session
+  └─[Agent Step: delegation]           agent.step
+      ├─[Identity Delegation]         identity.delegation
+      ├─[Trust Establishment]         identity.trust
+      └─[Sub-Agent Session]           agent.session
           └─ ...
 
-[Model Operations Pipeline]            aitf.model_ops.*
-  └─[Training Run]                    aitf.model_ops.training
-      └─[Evaluation]                  aitf.model_ops.evaluation
-          └─[Registry: register]      aitf.model_ops.registry
-              └─[Deployment]          aitf.model_ops.deployment
-                  └─[Monitoring]      aitf.model_ops.monitoring
+[Model Operations Pipeline]            model_ops.*
+  └─[Training Run]                    model_ops.training
+      └─[Evaluation]                  model_ops.evaluation
+          └─[Registry: register]      model_ops.registry
+              └─[Deployment]          model_ops.deployment
+                  └─[Monitoring]      model_ops.monitoring
 
-[Serving Request]                       aitf.model_ops.serving
-  ├─[Route Decision]                  aitf.model_ops.serving (route)
-  ├─[Cache Lookup]                    aitf.model_ops.serving (cache_lookup)
+[Serving Request]                       model_ops.serving
+  ├─[Route Decision]                  model_ops.serving (route)
+  ├─[Cache Lookup]                    model_ops.serving (cache_lookup)
   ├─[LLM Inference]                   gen_ai.inference
-  └─[Fallback]                        aitf.model_ops.serving (fallback)
+  └─[Fallback]                        model_ops.serving (fallback)
 
-[Asset Inventory]                       aitf.asset.*
-  ├─[Register]                        aitf.asset.register
-  ├─[Discover]                        aitf.asset.discover
-  ├─[Audit]                           aitf.asset.audit
-  ├─[Classify]                        aitf.asset.classify
-  └─[Decommission]                    aitf.asset.decommission
+[Asset Inventory]                       asset.*
+  ├─[Register]                        asset.register
+  ├─[Discover]                        asset.discover
+  ├─[Audit]                           asset.audit
+  ├─[Classify]                        asset.classify
+  └─[Decommission]                    asset.decommission
 
-[Drift Detection]                       aitf.drift.*
-  ├─[Detect]                          aitf.drift.detect
-  ├─[Baseline]                        aitf.drift.baseline
-  ├─[Investigate]                     aitf.drift.investigate
-  └─[Remediate]                       aitf.drift.remediate
+[Drift Detection]                       drift.*
+  ├─[Detect]                          drift.detect
+  ├─[Baseline]                        drift.baseline
+  ├─[Investigate]                     drift.investigate
+  └─[Remediate]                       drift.remediate
 ```
 
 ## 4. Namespace Registry
@@ -244,7 +244,7 @@ AITF defines a clear span hierarchy for AI operations:
 | Namespace | Description |
 |-----------|-------------|
 | `gen_ai.*` | Standard OTel GenAI attributes |
-| `gen_ai.system` | AI system identifier (e.g., "openai", "anthropic") |
+| `gen_ai.provider.name` | AI provider identifier (e.g., "openai", "anthropic") |
 | `gen_ai.request.*` | Request parameters (model, temperature, etc.) |
 | `gen_ai.response.*` | Response attributes (finish_reason, id) |
 | `gen_ai.usage.*` | Token usage (input_tokens, output_tokens) |
@@ -252,28 +252,28 @@ AITF defines a clear span hierarchy for AI operations:
 
 ### 4.2 AITF Extensions
 
-| Namespace | Description |
-|-----------|-------------|
-| `aitf.agent.*` | Agent lifecycle, reasoning, memory, delegation |
-| `aitf.mcp.*` | MCP protocol (servers, tools, resources, prompts) |
-| `aitf.skill.*` | Skill discovery, invocation, results, registry |
-| `aitf.rag.*` | RAG pipeline stages, quality metrics |
-| `aitf.security.*` | Security events, threat detection, guardrails |
-| `aitf.compliance.*` | Regulatory framework mapping, audit |
-| `aitf.cost.*` | Token costs, budget tracking, attribution |
-| `aitf.quality.*` | Output quality (hallucination, confidence) |
-| `aitf.supply_chain.*` | Model provenance, AI-BOM, integrity |
-| `aitf.identity.*` | Agent identity lifecycle, authentication, authorization, delegation, trust |
-| `aitf.model_ops.*` | LLMOps/MLOps lifecycle (training, evaluation, registry, deployment, serving, monitoring, prompts) |
-| `aitf.asset.*` | AI asset inventory (registration, discovery, audit, risk classification) |
-| `aitf.drift.*` | Structured model drift detection (baseline, investigation, remediation) |
-| `aitf.guardrail.*` | Content filtering, safety checks, policies |
-| `aitf.memory.*` | Agent memory operations (store, retrieve) |
-| `aitf.memory.security.*` | Memory security (poisoning detection, integrity, isolation) |
+| Namespace | Description | Notes |
+|-----------|-------------|-------|
+| `agent.*` | Agent lifecycle, reasoning, memory, delegation | `gen_ai.agent.{name,id,description,version}` are OTel standard |
+| `mcp.*` | MCP protocol (servers, tools, resources, prompts) | `gen_ai.tool.*` used for tool invocation attributes |
+| `skill.*` | Skill discovery, invocation, results, registry | |
+| `rag.*` | RAG pipeline stages, quality metrics | |
+| `security.*` | Security events, threat detection, guardrails | |
+| `compliance.*` | Regulatory framework mapping, audit | |
+| `cost.*` | Token costs, budget tracking, attribution | |
+| `quality.*` | Output quality (hallucination, confidence) | |
+| `supply_chain.*` | Model provenance, AI-BOM, integrity | |
+| `identity.*` | Agent identity lifecycle, authentication, authorization, delegation, trust | |
+| `model_ops.*` | LLMOps/MLOps lifecycle (training, evaluation, registry, deployment, serving, monitoring, prompts) | |
+| `asset.*` | AI asset inventory (registration, discovery, audit, risk classification) | |
+| `drift.*` | Structured model drift detection (baseline, investigation, remediation) | |
+| `guardrail.*` | Content filtering, safety checks, policies | |
+| `memory.*` | Agent memory operations (store, retrieve) | |
+| `memory.security.*` | Memory security (poisoning detection, integrity, isolation) | |
 
 ## 5. OCSF Integration
 
-OCSF (Open Cybersecurity Schema Framework) provides an additional schema normalization layer in AITF's dual-pipeline architecture.  While OTLP carries security-enriched spans (including `aitf.security.*` attributes) directly to OTLP-compatible backends for both observability and security analytics, the OCSF pipeline normalizes those same spans into OCSF Category 7 events for SIEMs and data lakes that require OCSF-native ingestion (Splunk, AWS Security Lake, QRadar, Sentinel).
+OCSF (Open Cybersecurity Schema Framework) provides an additional schema normalization layer in AITF's dual-pipeline architecture.  While OTLP carries security-enriched spans (including `security.*` attributes) directly to OTLP-compatible backends for both observability and security analytics, the OCSF pipeline normalizes those same spans into OCSF Category 7 events for SIEMs and data lakes that require OCSF-native ingestion (Splunk, AWS Security Lake, QRadar, Sentinel).
 
 Both pipelines consume the same OTel spans produced by AITF instrumentors — there is no separate instrumentation step for OCSF.
 
@@ -295,13 +295,13 @@ AITF uses a consistent attribute mapping between OTel spans and OCSF events:
 
 | OTel Span Attribute | OCSF Field | Example |
 |---------------------|------------|---------|
-| `gen_ai.system` | `unmapped.gen_ai_system` | `"openai"` |
+| `gen_ai.provider.name` | `unmapped.gen_ai_provider_name` | `"openai"` |
 | `gen_ai.request.model` | `ai_model.name` | `"gpt-4o"` |
 | `gen_ai.usage.input_tokens` | `ai_model.input_tokens` | `150` |
 | `gen_ai.usage.output_tokens` | `ai_model.output_tokens` | `42` |
-| `aitf.agent.name` | `actor.agent.name` | `"ResearchBot"` |
-| `aitf.security.threat_type` | `finding_info.title` | `"prompt_injection"` |
-| `aitf.cost.total` | `ai_model.cost.total` | `0.0032` |
+| `gen_ai.agent.name` | `actor.agent.name` | `"ResearchBot"` |
+| `security.threat_type` | `finding_info.title` | `"prompt_injection"` |
+| `cost.total` | `ai_model.cost.total` | `0.0032` |
 
 The full mapping is implemented in `OCSFMapper` and can be extended via vendor mapping files.
 
@@ -342,21 +342,21 @@ AITF follows semantic versioning:
 
 Current status:
 - `gen_ai.*` — Stable (following OTel)
-- `aitf.agent.*` — Stable
-- `aitf.mcp.*` — Stable
-- `aitf.skill.*` — Stable
-- `aitf.rag.*` — Stable
-- `aitf.security.*` — Stable
-- `aitf.compliance.*` — Stable
-- `aitf.cost.*` — Stable
-- `aitf.quality.*` — Experimental
-- `aitf.supply_chain.*` — Experimental
-- `aitf.identity.*` — Stable
-- `aitf.model_ops.*` — Stable
-- `aitf.asset.*` — Stable
-- `aitf.drift.*` — Stable
-- `aitf.memory.*` — Experimental
-- `aitf.memory.security.*` — Stable
+- `agent.*` — Stable
+- `mcp.*` — Stable
+- `skill.*` — Stable
+- `rag.*` — Stable
+- `security.*` — Stable
+- `compliance.*` — Stable
+- `cost.*` — Stable
+- `quality.*` — Experimental
+- `supply_chain.*` — Experimental
+- `identity.*` — Stable
+- `model_ops.*` — Stable
+- `asset.*` — Stable
+- `drift.*` — Stable
+- `memory.*` — Experimental
+- `memory.security.*` — Stable
 
 ## 8. Related Documents
 

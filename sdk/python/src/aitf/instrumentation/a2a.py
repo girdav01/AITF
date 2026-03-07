@@ -16,7 +16,7 @@ from opentelemetry.trace import SpanKind, StatusCode
 
 from aitf.semantic_conventions.attributes import A2AAttributes
 
-_TRACER_NAME = "aitf.instrumentation.a2a"
+_TRACER_NAME = "instrumentation.a2a"
 
 
 class A2AInstrumentor:

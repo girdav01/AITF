@@ -13,7 +13,7 @@ import (
 	"github.com/girdav01/AITF/sdk/go/semconv"
 )
 
-const agentTracerName = "aitf.instrumentation.agent"
+const agentTracerName = "instrumentation.agent"
 
 // AgentInstrumentor traces AI agent operations.
 type AgentInstrumentor struct {

@@ -53,24 +53,24 @@ from aitf.semantic_conventions.attributes import RAGAttributes
 
 logger = logging.getLogger(__name__)
 
-_TRACER_NAME = "aitf.integration.pinecone"
+_TRACER_NAME = "integration.pinecone"
 
 # ---------------------------------------------------------------------------
 # Attribute keys specific to Pinecone that extend the base RAG conventions
 # ---------------------------------------------------------------------------
-_PINECONE_NAMESPACE = "aitf.rag.retrieve.namespace"
-_PINECONE_VECTOR_DIMENSIONS = "aitf.rag.retrieve.vector_dimensions"
-_PINECONE_VECTOR_COUNT = "aitf.rag.retrieve.vector_count"
-_PINECONE_INCLUDE_VALUES = "aitf.rag.retrieve.include_values"
-_PINECONE_INCLUDE_METADATA = "aitf.rag.retrieve.include_metadata"
-_PINECONE_SCORE_MIN = "aitf.rag.retrieve.score_min"
-_PINECONE_SCORE_MAX = "aitf.rag.retrieve.score_max"
-_PINECONE_SCORE_MEAN = "aitf.rag.retrieve.score_mean"
-_PINECONE_SPARSE_VECTOR = "aitf.rag.retrieve.sparse_vector"
-_PINECONE_IDS = "aitf.rag.retrieve.ids"
-_PINECONE_DELETE_ALL = "aitf.rag.retrieve.delete_all"
-_PINECONE_UPSERTED_COUNT = "aitf.rag.retrieve.upserted_count"
-_PINECONE_OPERATION = "aitf.rag.retrieve.operation"
+_PINECONE_NAMESPACE = "rag.retrieve.namespace"
+_PINECONE_VECTOR_DIMENSIONS = "rag.retrieve.vector_dimensions"
+_PINECONE_VECTOR_COUNT = "rag.retrieve.vector_count"
+_PINECONE_INCLUDE_VALUES = "rag.retrieve.include_values"
+_PINECONE_INCLUDE_METADATA = "rag.retrieve.include_metadata"
+_PINECONE_SCORE_MIN = "rag.retrieve.score_min"
+_PINECONE_SCORE_MAX = "rag.retrieve.score_max"
+_PINECONE_SCORE_MEAN = "rag.retrieve.score_mean"
+_PINECONE_SPARSE_VECTOR = "rag.retrieve.sparse_vector"
+_PINECONE_IDS = "rag.retrieve.ids"
+_PINECONE_DELETE_ALL = "rag.retrieve.delete_all"
+_PINECONE_UPSERTED_COUNT = "rag.retrieve.upserted_count"
+_PINECONE_OPERATION = "rag.retrieve.operation"
 
 
 class PineconeInstrumentor:
@@ -214,7 +214,7 @@ class PineconeInstrumentor:
                 try:
                     result = original(index_self, *args, **kwargs)
                     elapsed_ms = (time.monotonic() - start) * 1000
-                    span.set_attribute("aitf.latency.total_ms", elapsed_ms)
+                    span.set_attribute("latency.total_ms", elapsed_ms)
 
                     # Post-call enrichment
                     if method_name == "query":
@@ -228,7 +228,7 @@ class PineconeInstrumentor:
                     return result
                 except Exception as exc:
                     elapsed_ms = (time.monotonic() - start) * 1000
-                    span.set_attribute("aitf.latency.total_ms", elapsed_ms)
+                    span.set_attribute("latency.total_ms", elapsed_ms)
                     span.set_status(StatusCode.ERROR, str(exc))
                     span.record_exception(exc)
                     raise

@@ -14,7 +14,7 @@ import (
 	"github.com/girdav01/AITF/sdk/go/semconv"
 )
 
-const agenticLogTracerName = "aitf.instrumentation.agentic_log"
+const agenticLogTracerName = "instrumentation.agentic_log"
 
 // AgenticLogInstrumentor traces agentic log entries (Table 10.1 minimal fields).
 type AgenticLogInstrumentor struct {

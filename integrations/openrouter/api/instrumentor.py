@@ -44,19 +44,19 @@ from aitf.semantic_conventions.attributes import (
 
 logger = logging.getLogger(__name__)
 
-_TRACER_NAME = "aitf.integration.openrouter"
+_TRACER_NAME = "integration.openrouter"
 
 # ---------------------------------------------------------------------------
 # Attribute constants specific to OpenRouter telemetry
 # ---------------------------------------------------------------------------
 
-_OPENROUTER_ROUTE_PROVIDER = "aitf.openrouter.route_provider"
-_OPENROUTER_ROUTE_MODEL = "aitf.openrouter.route_model"
-_OPENROUTER_ROUTE_PREFERENCE = "aitf.openrouter.route_preference"
-_OPENROUTER_TRANSFORMS = "aitf.openrouter.transforms"
-_OPENROUTER_COST_INPUT = "aitf.cost.input_cost"
-_OPENROUTER_COST_OUTPUT = "aitf.cost.output_cost"
-_OPENROUTER_COST_TOTAL = "aitf.cost.total_cost"
+_OPENROUTER_ROUTE_PROVIDER = "openrouter.route_provider"
+_OPENROUTER_ROUTE_MODEL = "openrouter.route_model"
+_OPENROUTER_ROUTE_PREFERENCE = "openrouter.route_preference"
+_OPENROUTER_TRANSFORMS = "openrouter.transforms"
+_OPENROUTER_COST_INPUT = "cost.input_cost"
+_OPENROUTER_COST_OUTPUT = "cost.output_cost"
+_OPENROUTER_COST_TOTAL = "cost.total_cost"
 
 # Provider prefix mapping (mirrors openrouter.json)
 _MODEL_PREFIX_TO_PROVIDER: dict[str, str] = {

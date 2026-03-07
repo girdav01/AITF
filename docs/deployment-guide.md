@@ -1325,17 +1325,17 @@ aitf.instrument_all()
 All AITF data is available as standard OTel span attributes, visible in any tracing backend:
 
 ```
-gen_ai.system           = "openai"
-gen_ai.request.model    = "gpt-4o"
-gen_ai.operation.name   = "chat"
+gen_ai.provider.name       = "openai"
+gen_ai.request.model       = "gpt-4o"
+gen_ai.operation.name      = "chat"
 gen_ai.usage.input_tokens  = 25
 gen_ai.usage.output_tokens = 45
-aitf.cost.total_usd     = 0.0005125
-aitf.security.risk_level = "low"
-aitf.agent.name         = "research-agent"
-aitf.agent.framework    = "langchain"
-aitf.mcp.server.name    = "filesystem"
-aitf.mcp.tool.name      = "read_file"
+cost.total_usd             = 0.0005125
+security.risk_level        = "low"
+gen_ai.agent.name          = "research-agent"
+gen_ai.agent.framework     = "langchain"
+mcp.server.name            = "filesystem"
+gen_ai.tool.name           = "read_file"
 ```
 
 ### Format and Transport Decision Matrix
@@ -1445,7 +1445,7 @@ Most production environments use multiple formats simultaneously. Here are commo
 
 **Pattern A: OCSF + OTLP (Modern Stack)**
 
-Both pipelines carry security context. OTLP delivers security-enriched spans (with `aitf.security.*` attributes) to OTLP-compatible platforms. OCSF provides additional normalization for SIEMs that require OCSF-native ingestion.
+Both pipelines carry security context. OTLP delivers security-enriched spans (with `security.*` attributes) to OTLP-compatible platforms. OCSF provides additional normalization for SIEMs that require OCSF-native ingestion.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -1873,7 +1873,7 @@ with aitf.agent.trace_session(
     with session.memory_access(
         operation="store", store="short_term", key="search_results"
     ) as mem_span:
-        mem_span.set_attribute("aitf.memory.provenance", "tool_result")
+        mem_span.set_attribute("memory.provenance", "tool_result")
 
     # Step 4: Reasoning + response
     with session.step("reasoning") as step:
@@ -3235,8 +3235,8 @@ vendor_mapper = VendorMapper(vendors=["langchain"])
 result = vendor_mapper.normalize_span(span)
 if result:
     vendor, event_type, aitf_attrs = result
-    # aitf_attrs now uses standard AITF keys like gen_ai.request.model,
-    # aitf.agent.name, etc. — ready for OCSFMapper
+    # aitf_attrs now uses standard keys like gen_ai.request.model,
+    # gen_ai.agent.name, etc. — ready for OCSFMapper
 ```
 
 ### Loading Custom Vendor Mappings

@@ -74,7 +74,7 @@ from aitf.semantic_conventions.attributes import (
 
 logger = logging.getLogger(__name__)
 
-_TRACER_NAME = "aitf.integration.openai.gpt_api"
+_TRACER_NAME = "integration.openai.gpt_api"
 
 # ---------------------------------------------------------------------------
 # Approximate pricing per 1 M tokens (USD).  Updated periodically; the

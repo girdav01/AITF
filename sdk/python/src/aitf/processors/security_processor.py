@@ -145,7 +145,7 @@ class SecurityProcessor(SpanProcessor):
         # Only process AI-related spans
         attrs = span.attributes or {}
         if not any(
-            key.startswith(("gen_ai.", "aitf.")) for key in attrs.keys()
+            key.startswith(("gen_ai.", "agent.", "mcp.", "skill.", "security.", "cost.")) for key in attrs.keys()
         ):
             return
 
@@ -167,7 +167,7 @@ class SecurityProcessor(SpanProcessor):
                         content_to_analyze.append(str(val))
 
         # Also check tool input/output attributes
-        for key in ("aitf.mcp.tool.input", "aitf.mcp.tool.output", "aitf.skill.input"):
+        for key in ("gen_ai.tool.call.arguments", "gen_ai.tool.call.result", "skill.input"):
             val = attrs.get(key)
             if val:
                 content_to_analyze.append(str(val))

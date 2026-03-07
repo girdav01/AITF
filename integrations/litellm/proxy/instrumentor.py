@@ -61,36 +61,36 @@ from aitf.semantic_conventions.attributes import (
 
 logger = logging.getLogger(__name__)
 
-_TRACER_NAME = "aitf.integration.litellm.proxy"
+_TRACER_NAME = "integration.litellm.proxy"
 
 # ---------------------------------------------------------------------------
 # Attribute constants specific to LiteLLM Proxy telemetry
 # ---------------------------------------------------------------------------
 
-_LITELLM_PROXY_VERSION = "aitf.litellm.proxy.version"
-_LITELLM_ROUTER_STRATEGY = "aitf.litellm.router.strategy"
-_LITELLM_ROUTER_NUM_DEPLOYMENTS = "aitf.litellm.router.num_deployments"
-_LITELLM_ROUTER_HEALTHY_DEPLOYMENTS = "aitf.litellm.router.healthy_deployments"
-_LITELLM_ROUTER_COOLDOWN_DEPLOYMENTS = "aitf.litellm.router.cooldown_deployments"
-_LITELLM_BUDGET_USER = "aitf.litellm.budget.user"
-_LITELLM_BUDGET_TEAM = "aitf.litellm.budget.team"
-_LITELLM_BUDGET_API_KEY = "aitf.litellm.budget.api_key"
-_LITELLM_BUDGET_MAX = "aitf.litellm.budget.max_budget"
-_LITELLM_BUDGET_CURRENT_SPEND = "aitf.litellm.budget.current_spend"
-_LITELLM_BUDGET_REMAINING = "aitf.litellm.budget.remaining"
-_LITELLM_BUDGET_RESET_AT = "aitf.litellm.budget.reset_at"
-_LITELLM_RATE_LIMIT_KEY = "aitf.litellm.rate_limit.key"
-_LITELLM_RATE_LIMIT_TYPE = "aitf.litellm.rate_limit.type"
-_LITELLM_RATE_LIMIT_MAX_RPM = "aitf.litellm.rate_limit.max_rpm"
-_LITELLM_RATE_LIMIT_MAX_TPM = "aitf.litellm.rate_limit.max_tpm"
-_LITELLM_RATE_LIMIT_CURRENT_RPM = "aitf.litellm.rate_limit.current_rpm"
-_LITELLM_RATE_LIMIT_CURRENT_TPM = "aitf.litellm.rate_limit.current_tpm"
-_LITELLM_RATE_LIMIT_EXCEEDED = "aitf.litellm.rate_limit.exceeded"
-_LITELLM_SPEND_USER = "aitf.litellm.spend.user"
-_LITELLM_SPEND_TEAM = "aitf.litellm.spend.team"
-_LITELLM_SPEND_API_KEY = "aitf.litellm.spend.api_key"
-_LITELLM_SPEND_REQUEST_COST = "aitf.litellm.spend.request_cost"
-_LITELLM_SPEND_TOTAL_SPEND = "aitf.litellm.spend.total_spend"
+_LITELLM_PROXY_VERSION = "litellm.proxy.version"
+_LITELLM_ROUTER_STRATEGY = "litellm.router.strategy"
+_LITELLM_ROUTER_NUM_DEPLOYMENTS = "litellm.router.num_deployments"
+_LITELLM_ROUTER_HEALTHY_DEPLOYMENTS = "litellm.router.healthy_deployments"
+_LITELLM_ROUTER_COOLDOWN_DEPLOYMENTS = "litellm.router.cooldown_deployments"
+_LITELLM_BUDGET_USER = "litellm.budget.user"
+_LITELLM_BUDGET_TEAM = "litellm.budget.team"
+_LITELLM_BUDGET_API_KEY = "litellm.budget.api_key"
+_LITELLM_BUDGET_MAX = "litellm.budget.max_budget"
+_LITELLM_BUDGET_CURRENT_SPEND = "litellm.budget.current_spend"
+_LITELLM_BUDGET_REMAINING = "litellm.budget.remaining"
+_LITELLM_BUDGET_RESET_AT = "litellm.budget.reset_at"
+_LITELLM_RATE_LIMIT_KEY = "litellm.rate_limit.key"
+_LITELLM_RATE_LIMIT_TYPE = "litellm.rate_limit.type"
+_LITELLM_RATE_LIMIT_MAX_RPM = "litellm.rate_limit.max_rpm"
+_LITELLM_RATE_LIMIT_MAX_TPM = "litellm.rate_limit.max_tpm"
+_LITELLM_RATE_LIMIT_CURRENT_RPM = "litellm.rate_limit.current_rpm"
+_LITELLM_RATE_LIMIT_CURRENT_TPM = "litellm.rate_limit.current_tpm"
+_LITELLM_RATE_LIMIT_EXCEEDED = "litellm.rate_limit.exceeded"
+_LITELLM_SPEND_USER = "litellm.spend.user"
+_LITELLM_SPEND_TEAM = "litellm.spend.team"
+_LITELLM_SPEND_API_KEY = "litellm.spend.api_key"
+_LITELLM_SPEND_REQUEST_COST = "litellm.spend.request_cost"
+_LITELLM_SPEND_TOTAL_SPEND = "litellm.spend.total_spend"
 
 
 class LiteLLMProxyInstrumentor:
@@ -790,7 +790,7 @@ class RouteDecisionSpan:
     def set_selected_deployment(self, deployment_id: str) -> None:
         """Record the specific deployment endpoint selected."""
         self._span.set_attribute(
-            "aitf.litellm.router.selected_deployment", deployment_id
+            "litellm.router.selected_deployment", deployment_id
         )
 
     def set_latency_ms(self, latency_ms: float) -> None:
@@ -828,9 +828,9 @@ class FallbackSpan:
         self._span.add_event(
             "litellm.proxy.fallback.attempt",
             attributes={
-                "aitf.litellm.fallback.attempt_index": attempt_index,
-                "aitf.litellm.fallback.attempted_model": model,
-                "aitf.litellm.fallback.error": error,
+                "litellm.fallback.attempt_index": attempt_index,
+                "litellm.fallback.attempted_model": model,
+                "litellm.fallback.error": error,
             },
         )
 
@@ -847,7 +847,7 @@ class BudgetCheckSpan:
 
     def set_allowed(self, allowed: bool) -> None:
         """Record whether the request was allowed within budget."""
-        self._span.set_attribute("aitf.litellm.budget.allowed", allowed)
+        self._span.set_attribute("litellm.budget.allowed", allowed)
         if not allowed:
             self._span.add_event("litellm.proxy.budget_exceeded")
 
@@ -893,7 +893,7 @@ class RateLimitSpan:
     def set_retry_after(self, seconds: float) -> None:
         """Record retry-after header value in seconds."""
         self._span.set_attribute(
-            "aitf.litellm.rate_limit.retry_after_seconds", seconds
+            "litellm.rate_limit.retry_after_seconds", seconds
         )
 
 

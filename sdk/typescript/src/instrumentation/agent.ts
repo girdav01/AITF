@@ -19,7 +19,7 @@ import {
   MemoryAttributes,
 } from "../semantic-conventions/attributes";
 
-const TRACER_NAME = "aitf.instrumentation.agent";
+const TRACER_NAME = "instrumentation.agent";
 
 /** Options for tracing an agent session. */
 export interface TraceSessionOptions {

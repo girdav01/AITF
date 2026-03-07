@@ -15,9 +15,9 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.trace import SpanKind, StatusCode
 
-from aitf.semantic_conventions.attributes import AgentAttributes, MemoryAttributes
+from aitf.semantic_conventions.attributes import AgentAttributes, GenAIAttributes, MemoryAttributes
 
-_TRACER_NAME = "aitf.instrumentation.agent"
+_TRACER_NAME = "instrumentation.agent"
 
 
 class AgentInstrumentor:
@@ -72,16 +72,16 @@ class AgentInstrumentor:
         agent_id = agent_id or str(uuid.uuid4())
 
         attributes: dict[str, Any] = {
-            AgentAttributes.NAME: agent_name,
-            AgentAttributes.ID: agent_id,
+            GenAIAttributes.AGENT_NAME: agent_name,
+            GenAIAttributes.AGENT_ID: agent_id,
             AgentAttributes.TYPE: agent_type,
             AgentAttributes.FRAMEWORK: framework,
-            AgentAttributes.SESSION_ID: session_id,
+            GenAIAttributes.CONVERSATION_ID: session_id,
         }
         if version:
-            attributes[AgentAttributes.VERSION] = version
+            attributes[GenAIAttributes.AGENT_VERSION] = version
         if description:
-            attributes[AgentAttributes.DESCRIPTION] = description
+            attributes[GenAIAttributes.AGENT_DESCRIPTION] = description
         if team_name:
             attributes[AgentAttributes.TEAM_NAME] = team_name
         if workflow_id:
@@ -181,7 +181,7 @@ class AgentSession:
         """Create a child span for an agent step."""
         self._step_count += 1
         attributes: dict[str, Any] = {
-            AgentAttributes.NAME: self._agent_name,
+            GenAIAttributes.AGENT_NAME: self._agent_name,
             AgentAttributes.STEP_TYPE: step_type,
             AgentAttributes.STEP_INDEX: self._step_count,
         }
@@ -193,7 +193,7 @@ class AgentSession:
                 continue
             if not isinstance(value, _ALLOWED_VALUE_TYPES):
                 continue
-            attr_key = f"aitf.agent.step.{key}"
+            attr_key = f"agent.step.{key}"
             attributes[attr_key] = value
 
         with self._tracer.start_as_current_span(
@@ -223,7 +223,7 @@ class AgentSession:
         self._step_count += 1
         target_agent_id = target_agent_id or str(uuid.uuid4())
         attributes: dict[str, Any] = {
-            AgentAttributes.NAME: self._agent_name,
+            GenAIAttributes.AGENT_NAME: self._agent_name,
             AgentAttributes.STEP_TYPE: AgentAttributes.StepType.DELEGATION,
             AgentAttributes.STEP_INDEX: self._step_count,
             AgentAttributes.DELEGATION_TARGET_AGENT: target_agent,
@@ -257,7 +257,7 @@ class AgentSession:
     ) -> Generator[trace.Span, None, None]:
         """Create a memory access span."""
         attributes: dict[str, Any] = {
-            AgentAttributes.NAME: self._agent_name,
+            GenAIAttributes.AGENT_NAME: self._agent_name,
             MemoryAttributes.OPERATION: operation,
             MemoryAttributes.STORE: store,
         }
