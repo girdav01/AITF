@@ -113,7 +113,7 @@ export class PIIProcessor implements SpanProcessor {
     const attrs = span.attributes ?? {};
 
     const hasAiPrefix = Object.keys(attrs).some(
-      (key) => key.startsWith("gen_ai.") || key.startsWith("aitf.")
+      (key) => key.startsWith("gen_ai.") || key.startsWith("")
     );
     if (!hasAiPrefix) {
       return;
@@ -134,10 +134,10 @@ export class PIIProcessor implements SpanProcessor {
 
     // Check relevant span attributes
     for (const key of [
-      "aitf.mcp.tool.input",
-      "aitf.mcp.tool.output",
-      "aitf.skill.input",
-      "aitf.skill.output",
+      "mcp.tool.input",
+      "mcp.tool.output",
+      "skill.input",
+      "skill.output",
     ]) {
       const val = attrs[key];
       if (typeof val === "string") {

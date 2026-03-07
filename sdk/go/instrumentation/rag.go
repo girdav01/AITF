@@ -11,7 +11,7 @@ import (
 	"github.com/girdav01/AITF/sdk/go/semconv"
 )
 
-const ragTracerName = "aitf.instrumentation.rag"
+const ragTracerName = "instrumentation.rag"
 
 // RAGInstrumentor traces RAG pipeline operations.
 type RAGInstrumentor struct {

@@ -14,7 +14,7 @@ import {
 } from "@opentelemetry/api";
 import { SkillAttributes } from "../semantic-conventions/attributes";
 
-const TRACER_NAME = "aitf.instrumentation.skills";
+const TRACER_NAME = "instrumentation.skills";
 
 /** Options for tracing a skill invocation. */
 export interface TraceInvokeOptions {
@@ -271,7 +271,7 @@ export class SkillInstrumentor {
       [SkillAttributes.SOURCE]: options.source,
     };
     if (options.filterCategory) {
-      attributes["aitf.skill.filter.category"] = options.filterCategory;
+      attributes["skill.filter.category"] = options.filterCategory;
     }
 
     return tracer.startActiveSpan(

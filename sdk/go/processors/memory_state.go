@@ -186,7 +186,7 @@ func (p *MemoryStateProcessor) OnEnd(span sdktrace.ReadOnlySpan) {
 	}
 
 	// Only process memory-related spans.
-	operationRaw, ok := attrMap["aitf.memory.operation"]
+	operationRaw, ok := attrMap["memory.operation"]
 	if !ok {
 		return
 	}
@@ -195,15 +195,15 @@ func (p *MemoryStateProcessor) OnEnd(span sdktrace.ReadOnlySpan) {
 		return
 	}
 
-	memoryKey := attrString(attrMap, "aitf.memory.key", "")
-	store := attrString(attrMap, "aitf.memory.store", "unknown")
-	provenance := attrString(attrMap, "aitf.memory.provenance", "unknown")
-	sessionID := attrString(attrMap, "aitf.agent.session.id", "unknown")
-	contentHash := attrString(attrMap, "aitf.memory.security.content_hash", "")
-	contentSize := attrInt(attrMap, "aitf.memory.security.content_size", 0)
-	poisoningScore := attrFloat(attrMap, "aitf.memory.security.poisoning_score")
-	crossSession := attrBool(attrMap, "aitf.memory.security.cross_session")
-	integrityHash := attrString(attrMap, "aitf.memory.security.integrity_hash", "")
+	memoryKey := attrString(attrMap, "memory.key", "")
+	store := attrString(attrMap, "memory.store", "unknown")
+	provenance := attrString(attrMap, "memory.provenance", "unknown")
+	sessionID := attrString(attrMap, "gen_ai.conversation.id", "unknown")
+	contentHash := attrString(attrMap, "memory.security.content_hash", "")
+	contentSize := attrInt(attrMap, "memory.security.content_size", 0)
+	poisoningScore := attrFloat(attrMap, "memory.security.poisoning_score")
+	crossSession := attrBool(attrMap, "memory.security.cross_session")
+	integrityHash := attrString(attrMap, "memory.security.integrity_hash", "")
 
 	spanID := "unknown"
 	if span.SpanContext().HasSpanID() {

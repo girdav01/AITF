@@ -16,7 +16,7 @@ import {
 } from "@opentelemetry/api";
 import { ModelOpsAttributes } from "../semantic-conventions/attributes";
 
-const TRACER_NAME = "aitf.instrumentation.model_ops";
+const TRACER_NAME = "instrumentation.model_ops";
 
 // ---------------------------------------------------------------------------
 // Option interfaces

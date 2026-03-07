@@ -126,7 +126,7 @@ class PIIProcessor(SpanProcessor):
     def on_end(self, span: ReadableSpan) -> None:
         """Detect PII in span content."""
         attrs = span.attributes or {}
-        if not any(key.startswith(("gen_ai.", "aitf.")) for key in attrs.keys()):
+        if not any(key.startswith(("gen_ai.", "agent.", "mcp.", "skill.", "security.", "cost.")) for key in attrs.keys()):
             return
 
         all_detections: list[PIIDetection] = []
@@ -141,10 +141,10 @@ class PIIProcessor(SpanProcessor):
 
         # Check relevant span attributes
         for key in (
-            "aitf.mcp.tool.input",
-            "aitf.mcp.tool.output",
-            "aitf.skill.input",
-            "aitf.skill.output",
+            "gen_ai.tool.call.arguments",
+            "gen_ai.tool.call.result",
+            "skill.input",
+            "skill.output",
         ):
             val = attrs.get(key)
             if isinstance(val, str):

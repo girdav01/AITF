@@ -219,7 +219,7 @@ with mcp.trace_server_connect(
         mime_type="text/x-python",
     ) as span:
         source_code = fs_read_file("payments.py")
-        span.set_attribute("aitf.mcp.resource.size_bytes", len(source_code))
+        span.set_attribute("mcp.resource.size_bytes", len(source_code))
 
     print(f"    Read {len(source_code)} bytes")
 

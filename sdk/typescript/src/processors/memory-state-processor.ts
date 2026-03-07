@@ -179,28 +179,28 @@ export class MemoryStateProcessor implements SpanProcessor {
     const attrs = span.attributes ?? {};
 
     // Only process memory-related spans
-    const operation = attrs["aitf.memory.operation"];
+    const operation = attrs["memory.operation"];
     if (!operation) {
       return;
     }
 
     const operationStr = String(operation);
-    const memoryKey = String(attrs["aitf.memory.key"] ?? "");
-    const store = String(attrs["aitf.memory.store"] ?? "unknown");
-    const provenance = String(attrs["aitf.memory.provenance"] ?? "unknown");
-    const sessionId = String(attrs["aitf.agent.session.id"] ?? "unknown");
-    const contentHash = attrs["aitf.memory.security.content_hash"]
-      ? String(attrs["aitf.memory.security.content_hash"])
+    const memoryKey = String(attrs["memory.key"] ?? "");
+    const store = String(attrs["memory.store"] ?? "unknown");
+    const provenance = String(attrs["memory.provenance"] ?? "unknown");
+    const sessionId = String(attrs["gen_ai.conversation.id"] ?? "unknown");
+    const contentHash = attrs["memory.security.content_hash"]
+      ? String(attrs["memory.security.content_hash"])
       : null;
-    const contentSize = typeof attrs["aitf.memory.security.content_size"] === "number"
-      ? attrs["aitf.memory.security.content_size"]
+    const contentSize = typeof attrs["memory.security.content_size"] === "number"
+      ? attrs["memory.security.content_size"]
       : 0;
-    const poisoningScore = typeof attrs["aitf.memory.security.poisoning_score"] === "number"
-      ? attrs["aitf.memory.security.poisoning_score"]
+    const poisoningScore = typeof attrs["memory.security.poisoning_score"] === "number"
+      ? attrs["memory.security.poisoning_score"]
       : null;
-    const crossSession = attrs["aitf.memory.security.cross_session"] === true;
-    const integrityHash = attrs["aitf.memory.security.integrity_hash"]
-      ? String(attrs["aitf.memory.security.integrity_hash"])
+    const crossSession = attrs["memory.security.cross_session"] === true;
+    const integrityHash = attrs["memory.security.integrity_hash"]
+      ? String(attrs["memory.security.integrity_hash"])
       : null;
 
     const spanId = span.spanContext()

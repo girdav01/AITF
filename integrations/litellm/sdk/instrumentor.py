@@ -44,17 +44,17 @@ from aitf.semantic_conventions.attributes import (
 
 logger = logging.getLogger(__name__)
 
-_TRACER_NAME = "aitf.integration.litellm.sdk"
+_TRACER_NAME = "integration.litellm.sdk"
 
 # ---------------------------------------------------------------------------
 # Attribute constants specific to LiteLLM SDK telemetry
 # ---------------------------------------------------------------------------
 
-_LITELLM_PROVIDER = "aitf.litellm.provider"
-_LITELLM_CUSTOM_LLM_PROVIDER = "aitf.litellm.custom_llm_provider"
-_LITELLM_API_BASE = "aitf.litellm.api_base"
-_LITELLM_CACHE_HIT = "aitf.litellm.cache_hit"
-_LITELLM_RESPONSE_COST = "aitf.litellm.response_cost"
+_LITELLM_PROVIDER = "litellm.provider"
+_LITELLM_CUSTOM_LLM_PROVIDER = "litellm.custom_llm_provider"
+_LITELLM_API_BASE = "litellm.api_base"
+_LITELLM_CACHE_HIT = "litellm.cache_hit"
+_LITELLM_RESPONSE_COST = "litellm.response_cost"
 
 # LiteLLM provider prefixes (e.g., "openai/gpt-4o" → provider="openai")
 _PROVIDER_PREFIXES = {

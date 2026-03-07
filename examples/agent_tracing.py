@@ -147,7 +147,7 @@ with agent_instr.trace_session(
         key="user_prefs:alice",
     ) as mem_span:
         prefs = get_user_preferences("alice")
-        mem_span.set_attribute("aitf.memory.provenance", "user_profile_db")
+        mem_span.set_attribute("memory.provenance", "user_profile_db")
 
     print(f"    Preferred airlines: {prefs['preferred_airlines']}")
     print(f"    Budget: ${prefs['max_budget']}, Nonstop: {prefs['prefer_nonstop']}")
@@ -236,7 +236,7 @@ with agent_instr.trace_session(
         store="short_term",
         key=f"booking:{booking['confirmation']}",
     ) as mem_span:
-        mem_span.set_attribute("aitf.memory.provenance", "tool_result")
+        mem_span.set_attribute("memory.provenance", "tool_result")
 
     with session.step("response") as step:
         reply = (

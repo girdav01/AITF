@@ -98,7 +98,7 @@ result = vendor_mapper.normalize_span(lc_chat)
 if result:
     vendor, event_type, aitf_attrs = result
     print(f"      LangChain native → AITF normalized:")
-    print(f"        ls_provider           → gen_ai.system         = {aitf_attrs.get('gen_ai.system')}")
+    print(f"        ls_provider           → gen_ai.provider.name  = {aitf_attrs.get('gen_ai.provider.name')}")
     print(f"        ls_model_name         → gen_ai.request.model  = {aitf_attrs.get('gen_ai.request.model')}")
     print(f"        llm.token_count.*     → gen_ai.usage.*        = {aitf_attrs.get('gen_ai.usage.input_tokens')} in / {aitf_attrs.get('gen_ai.usage.output_tokens')} out")
     print(f"        OCSF class:  {vendor_mapper.get_ocsf_class_uid(vendor, event_type)} (AI Model Inference)")
@@ -118,9 +118,9 @@ result = vendor_mapper.normalize_span(lc_rag)
 if result:
     vendor, event_type, aitf_attrs = result
     print(f"      LangChain native → AITF normalized:")
-    print(f"        langchain.retriever.name  → aitf.rag.retrieve.database  = {aitf_attrs.get('aitf.rag.retrieve.database')}")
-    print(f"        langchain.retriever.k     → aitf.rag.retrieve.top_k     = {aitf_attrs.get('aitf.rag.retrieve.top_k')}")
-    print(f"        langchain.retriever.query  → aitf.rag.query             = {aitf_attrs.get('aitf.rag.query')}")
+    print(f"        langchain.retriever.name  → gen_ai.data_source.id       = {aitf_attrs.get('gen_ai.data_source.id')}")
+    print(f"        langchain.retriever.k     → rag.retrieve.top_k         = {aitf_attrs.get('rag.retrieve.top_k')}")
+    print(f"        langchain.retriever.query  → rag.query                 = {aitf_attrs.get('rag.query')}")
     print(f"        OCSF class:  {vendor_mapper.get_ocsf_class_uid(vendor, event_type)} (AI Data Retrieval)")
 
 # Step C: LangChain Agent with tool call
@@ -134,7 +134,7 @@ lc_agent = make_span("AgentExecutor", {
 result = vendor_mapper.normalize_span(lc_agent)
 if result:
     vendor, event_type, aitf_attrs = result
-    print(f"      langchain.agent.name → aitf.agent.name = {aitf_attrs.get('aitf.agent.name')}")
+    print(f"      langchain.agent.name → gen_ai.agent.name = {aitf_attrs.get('gen_ai.agent.name')}")
     print(f"      OCSF class:  {vendor_mapper.get_ocsf_class_uid(vendor, event_type)} (AI Agent Activity)")
 
 
@@ -250,7 +250,7 @@ autogen_mapping = {
         "inference": {
             "vendor_to_aitf": {
                 "autogen.llm.model": "gen_ai.request.model",
-                "autogen.llm.provider": "gen_ai.system",
+                "autogen.llm.provider": "gen_ai.provider.name",
             },
             "ocsf_class_uid": 7001,
             "ocsf_activity_id_map": {"chat": 1, "default": 1},
@@ -258,12 +258,12 @@ autogen_mapping = {
         },
         "agent": {
             "vendor_to_aitf": {
-                "autogen.agent.name": "aitf.agent.name",
-                "autogen.agent.type": "aitf.agent.type",
+                "autogen.agent.name": "gen_ai.agent.name",
+                "autogen.agent.type": "agent.type",
             },
             "ocsf_class_uid": 7002,
             "ocsf_activity_id_map": {"default": 3},
-            "defaults": {"aitf.agent.framework": "autogen"},
+            "defaults": {"agent.framework": "autogen"},
         },
     },
     "provider_detection": {

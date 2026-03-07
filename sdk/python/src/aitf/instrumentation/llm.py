@@ -23,7 +23,7 @@ from aitf.semantic_conventions.attributes import (
     SecurityAttributes,
 )
 
-_TRACER_NAME = "aitf.instrumentation.llm"
+_TRACER_NAME = "instrumentation.llm"
 
 
 class LLMInstrumentor:
@@ -79,7 +79,7 @@ class LLMInstrumentor:
         tracer = self.get_tracer()
         span_name = f"{operation} {model}"
         attributes: dict[str, Any] = {
-            GenAIAttributes.SYSTEM: system,
+            GenAIAttributes.PROVIDER_NAME: system,
             GenAIAttributes.OPERATION_NAME: operation,
             GenAIAttributes.REQUEST_MODEL: model,
         }
@@ -203,7 +203,7 @@ class InferenceSpan:
             attributes={
                 GenAIAttributes.TOOL_NAME: name,
                 GenAIAttributes.TOOL_CALL_ID: call_id,
-                GenAIAttributes.TOOL_ARGUMENTS: arguments,
+                GenAIAttributes.TOOL_CALL_ARGUMENTS: arguments,
             },
         )
 
@@ -214,7 +214,7 @@ class InferenceSpan:
             attributes={
                 GenAIAttributes.TOOL_NAME: name,
                 GenAIAttributes.TOOL_CALL_ID: call_id,
-                GenAIAttributes.TOOL_RESULT: result,
+                GenAIAttributes.TOOL_CALL_RESULT: result,
             },
         )
 

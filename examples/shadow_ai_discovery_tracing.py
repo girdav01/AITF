@@ -553,7 +553,7 @@ print(f"  Shadow (unregistered): {len(shadow_results)}")
 # author: AITF Project
 # date: 2026/02/16
 # tags:
-#   - aitf.asset.shadow
+#   - asset.shadow
 #   - owasp.llm03
 #   - mitre.atlas.AML.T0040
 # logsource:

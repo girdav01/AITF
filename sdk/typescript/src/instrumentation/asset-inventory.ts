@@ -16,7 +16,7 @@ import {
 } from "@opentelemetry/api";
 import { AssetInventoryAttributes } from "../semantic-conventions/attributes";
 
-const TRACER_NAME = "aitf.instrumentation.asset_inventory";
+const TRACER_NAME = "instrumentation.asset_inventory";
 
 // ---------------------------------------------------------------------------
 // Option interfaces

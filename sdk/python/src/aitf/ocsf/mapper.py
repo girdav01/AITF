@@ -104,17 +104,18 @@ class OCSFMapper:
             name.startswith("chat ")
             or name.startswith("embeddings ")
             or name.startswith("text_completion ")
+            or GenAIAttributes.PROVIDER_NAME in attrs
             or GenAIAttributes.SYSTEM in attrs
         )
 
     def _is_agent_span(self, name: str, attrs: dict) -> bool:
-        return name.startswith("agent.") or AgentAttributes.NAME in attrs
+        return name.startswith("agent.") or GenAIAttributes.AGENT_NAME in attrs
 
     def _is_tool_span(self, name: str, attrs: dict) -> bool:
         return (
             name.startswith("mcp.tool.")
             or name.startswith("skill.invoke")
-            or MCPAttributes.TOOL_NAME in attrs
+            or GenAIAttributes.TOOL_NAME in attrs
             or SkillAttributes.NAME in attrs
         )
 
@@ -130,7 +131,7 @@ class OCSFMapper:
     def _map_inference(self, span: ReadableSpan, attrs: dict) -> AIModelInferenceEvent:
         """Map inference span to OCSF 7001."""
         model_id = str(attrs.get(GenAIAttributes.REQUEST_MODEL, "unknown"))
-        system = str(attrs.get(GenAIAttributes.SYSTEM, "unknown"))
+        system = str(attrs.get(GenAIAttributes.PROVIDER_NAME) or attrs.get(GenAIAttributes.SYSTEM, "unknown"))
         operation = str(attrs.get(GenAIAttributes.OPERATION_NAME, "chat"))
 
         # Activity: 1=chat, 2=text_completion, 3=embeddings
@@ -190,9 +191,9 @@ class OCSFMapper:
     def _map_agent_activity(self, span: ReadableSpan, attrs: dict) -> AIAgentActivityEvent:
         """Map agent span to OCSF 7002."""
         name = span.name or ""
-        agent_name = str(attrs.get(AgentAttributes.NAME, "unknown"))
-        agent_id = str(attrs.get(AgentAttributes.ID, "unknown"))
-        session_id = str(attrs.get(AgentAttributes.SESSION_ID, "unknown"))
+        agent_name = str(attrs.get(GenAIAttributes.AGENT_NAME, "unknown"))
+        agent_id = str(attrs.get(GenAIAttributes.AGENT_ID, "unknown"))
+        session_id = str(attrs.get(GenAIAttributes.CONVERSATION_ID, "unknown"))
 
         # Determine activity from span name
         if "session" in name:
@@ -224,8 +225,8 @@ class OCSFMapper:
     def _map_tool_execution(self, span: ReadableSpan, attrs: dict) -> AIToolExecutionEvent:
         """Map tool/MCP/skill span to OCSF 7003."""
         # Determine tool type
-        if MCPAttributes.TOOL_NAME in attrs:
-            tool_name = str(attrs[MCPAttributes.TOOL_NAME])
+        if GenAIAttributes.TOOL_NAME in attrs:
+            tool_name = str(attrs[GenAIAttributes.TOOL_NAME])
             tool_type = "mcp_tool"
             activity_id = 2  # MCP Tool Invoke
         elif SkillAttributes.NAME in attrs:
@@ -241,8 +242,8 @@ class OCSFMapper:
             activity_id=activity_id,
             tool_name=tool_name,
             tool_type=tool_type,
-            tool_input=_opt_str(attrs.get(MCPAttributes.TOOL_INPUT) or attrs.get(SkillAttributes.INPUT)),
-            tool_output=_opt_str(attrs.get(MCPAttributes.TOOL_OUTPUT) or attrs.get(SkillAttributes.OUTPUT)),
+            tool_input=_opt_str(attrs.get(GenAIAttributes.TOOL_CALL_ARGUMENTS) or attrs.get(SkillAttributes.INPUT)),
+            tool_output=_opt_str(attrs.get(GenAIAttributes.TOOL_CALL_RESULT) or attrs.get(SkillAttributes.OUTPUT)),
             is_error=bool(attrs.get(MCPAttributes.TOOL_IS_ERROR, False)),
             duration_ms=_opt_float(attrs.get(MCPAttributes.TOOL_DURATION_MS) or attrs.get(SkillAttributes.DURATION_MS)),
             mcp_server=_opt_str(attrs.get(MCPAttributes.TOOL_SERVER)),

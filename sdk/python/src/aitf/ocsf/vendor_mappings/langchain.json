@@ -49,7 +49,7 @@
   "attribute_mappings": {
     "inference": {
       "vendor_to_aitf": {
-        "ls_provider": "gen_ai.system",
+        "ls_provider": "gen_ai.provider.name",
         "ls_model_name": "gen_ai.request.model",
         "ls_model_type": "gen_ai.operation.name",
         "ls_temperature": "gen_ai.request.temperature",
@@ -58,10 +58,10 @@
 
         "openai.model": "gen_ai.request.model",
         "openai.api_base": "gen_ai.server.address",
-        "openai.api_type": "gen_ai.system",
+        "openai.api_type": "gen_ai.provider.name",
 
-        "llm.input_messages": "gen_ai.prompt",
-        "llm.output_messages": "gen_ai.completion",
+        "llm.input_messages": "gen_ai.input.messages",
+        "llm.output_messages": "gen_ai.output.messages",
         "llm.token_count.prompt": "gen_ai.usage.input_tokens",
         "llm.token_count.completion": "gen_ai.usage.output_tokens",
         "llm.token_count.total": "gen_ai.usage.total_tokens",
@@ -84,19 +84,19 @@
 
     "agent": {
       "vendor_to_aitf": {
-        "langchain.agent.name": "aitf.agent.name",
-        "langchain.agent.type": "aitf.agent.type",
-        "langchain.run.session_id": "aitf.agent.session_id",
-        "langchain.run.id": "aitf.agent.id",
-        "langchain.run.parent_id": "aitf.agent.parent_id",
-        "langchain.run.name": "aitf.agent.name",
-        "langchain.run.tags": "aitf.agent.tags",
+        "langchain.agent.name": "gen_ai.agent.name",
+        "langchain.agent.type": "agent.type",
+        "langchain.run.session_id": "gen_ai.conversation.id",
+        "langchain.run.id": "gen_ai.agent.id",
+        "langchain.run.parent_id": "agent.parent_id",
+        "langchain.run.name": "gen_ai.agent.name",
+        "langchain.run.tags": "agent.tags",
 
-        "langgraph.node": "aitf.agent.step_type",
-        "langgraph.step": "aitf.agent.step_index",
-        "langgraph.thread_id": "aitf.agent.session_id",
-        "langgraph.checkpoint_ns": "aitf.agent.checkpoint",
-        "langgraph.triggers": "aitf.agent.step_action"
+        "langgraph.node": "agent.step.type",
+        "langgraph.step": "agent.step.index",
+        "langgraph.thread_id": "gen_ai.conversation.id",
+        "langgraph.checkpoint_ns": "agent.checkpoint",
+        "langgraph.triggers": "agent.step.action"
       },
       "ocsf_class_uid": 7002,
       "ocsf_activity_id_map": {
@@ -108,23 +108,23 @@
         "default": 99
       },
       "defaults": {
-        "aitf.agent.framework": "langchain",
-        "aitf.agent.type": "autonomous"
+        "agent.framework": "langchain",
+        "agent.type": "autonomous"
       }
     },
 
     "tool": {
       "vendor_to_aitf": {
-        "langchain.tool.name": "aitf.mcp.tool.name",
-        "langchain.tool.description": "aitf.mcp.tool.description",
-        "langchain.tool.input": "aitf.mcp.tool.input",
-        "langchain.tool.output": "aitf.mcp.tool.output",
-        "langchain.tool.error": "aitf.mcp.tool.is_error",
+        "langchain.tool.name": "gen_ai.tool.name",
+        "langchain.tool.description": "gen_ai.tool.description",
+        "langchain.tool.input": "gen_ai.tool.call.arguments",
+        "langchain.tool.output": "gen_ai.tool.call.result",
+        "langchain.tool.error": "mcp.tool.is_error",
 
-        "tool.name": "aitf.mcp.tool.name",
-        "tool.id": "aitf.mcp.tool.call_id",
-        "tool.input": "aitf.mcp.tool.input",
-        "tool.output": "aitf.mcp.tool.output"
+        "tool.name": "gen_ai.tool.name",
+        "tool.id": "gen_ai.tool.call.id",
+        "tool.input": "gen_ai.tool.call.arguments",
+        "tool.output": "gen_ai.tool.call.result"
       },
       "ocsf_class_uid": 7003,
       "ocsf_activity_id_map": {
@@ -140,16 +140,16 @@
 
     "retrieval": {
       "vendor_to_aitf": {
-        "langchain.retriever.name": "aitf.rag.pipeline.name",
-        "langchain.retriever.type": "aitf.rag.retrieve.database",
-        "langchain.retriever.k": "aitf.rag.retrieve.top_k",
-        "langchain.retriever.query": "aitf.rag.query",
-        "langchain.retriever.documents": "aitf.rag.retrieve.results_count",
-        "langchain.retriever.score_threshold": "aitf.rag.retrieve.min_score",
+        "langchain.retriever.name": "rag.pipeline.name",
+        "langchain.retriever.type": "rag.retrieve.database",
+        "langchain.retriever.k": "rag.retrieve.top_k",
+        "langchain.retriever.query": "rag.query",
+        "langchain.retriever.documents": "rag.retrieve.results_count",
+        "langchain.retriever.score_threshold": "rag.retrieve.min_score",
 
-        "retriever.query": "aitf.rag.query",
-        "retriever.documents.count": "aitf.rag.retrieve.results_count",
-        "retriever.embeddings.model": "aitf.rag.query.embedding_model"
+        "retriever.query": "rag.query",
+        "retriever.documents.count": "rag.retrieve.results_count",
+        "retriever.embeddings.model": "rag.query.embedding_model"
       },
       "ocsf_class_uid": 7004,
       "ocsf_activity_id_map": {
@@ -160,13 +160,13 @@
         "default": 1
       },
       "defaults": {
-        "aitf.rag.pipeline.stage": "retrieve"
+        "rag.pipeline.stage": "retrieve"
       }
     }
   },
 
   "provider_detection": {
-    "attribute_keys": ["ls_provider", "openai.api_type", "gen_ai.system"],
+    "attribute_keys": ["ls_provider", "openai.api_type", "gen_ai.provider.name"],
     "model_prefix_to_provider": {
       "gpt-": "openai",
       "o1": "openai",

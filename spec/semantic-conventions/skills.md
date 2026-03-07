@@ -20,7 +20,7 @@ Skill Sources:
 
 ---
 
-## Span: `aitf.skill.discover`
+## Span: `skill.discover`
 
 Represents discovering available skills from a registry or source.
 
@@ -36,26 +36,26 @@ Format: `skill.discover {source}`
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.skill.source` | string | Discovery source (`"mcp:server"`, `"registry"`, `"local"`) |
+| `skill.source` | string | Discovery source (`"mcp:server"`, `"registry"`, `"local"`) |
 
 ### Recommended Attributes
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.skill.count` | int | Number of skills discovered |
-| `aitf.skill.names` | string[] | Names of discovered skills |
-| `aitf.skill.filter.category` | string | Category filter applied |
-| `aitf.skill.filter.capabilities` | string[] | Capability filter applied |
+| `skill.count` | int | Number of skills discovered |
+| `skill.names` | string[] | Names of discovered skills |
+| `skill.filter.category` | string | Category filter applied |
+| `skill.filter.capabilities` | string[] | Capability filter applied |
 
 ---
 
-## Span: `aitf.skill.invoke`
+## Span: `skill.invoke`
 
 Represents a skill invocation. This is the primary skills telemetry span.
 
 ### Span Name
 
-Format: `skill.invoke {aitf.skill.name}`
+Format: `skill.invoke {skill.name}`
 
 ### Span Kind
 
@@ -65,24 +65,24 @@ Format: `skill.invoke {aitf.skill.name}`
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.skill.name` | string | Skill name |
-| `aitf.skill.version` | string | Skill version |
+| `skill.name` | string | Skill name |
+| `skill.version` | string | Skill version |
 
 ### Recommended Attributes
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.skill.id` | string | Unique skill ID |
-| `aitf.skill.provider` | string | `"builtin"`, `"marketplace"`, `"custom"`, `"mcp"` |
-| `aitf.skill.category` | string | Skill category |
-| `aitf.skill.description` | string | Skill description |
-| `aitf.skill.input` | string | Input parameters (JSON) |
-| `aitf.skill.output` | string | Output (may be redacted) |
-| `aitf.skill.status` | string | `"success"`, `"error"`, `"timeout"`, `"denied"`, `"retry"` |
-| `aitf.skill.duration_ms` | double | Execution time (ms) |
-| `aitf.skill.retry_count` | int | Number of retries |
-| `aitf.skill.source` | string | Where skill was sourced |
-| `aitf.skill.permissions` | string[] | Required permissions |
+| `skill.id` | string | Unique skill ID |
+| `skill.provider` | string | `"builtin"`, `"marketplace"`, `"custom"`, `"mcp"` |
+| `skill.category` | string | Skill category |
+| `skill.description` | string | Skill description |
+| `skill.input` | string | Input parameters (JSON) |
+| `skill.output` | string | Output (may be redacted) |
+| `skill.status` | string | `"success"`, `"error"`, `"timeout"`, `"denied"`, `"retry"` |
+| `skill.duration_ms` | double | Execution time (ms) |
+| `skill.retry_count` | int | Number of retries |
+| `skill.source` | string | Where skill was sourced |
+| `skill.permissions` | string[] | Required permissions |
 
 ### Events
 
@@ -115,7 +115,7 @@ Emitted when a skill encounters an error.
 
 ---
 
-## Span: `aitf.skill.compose`
+## Span: `skill.compose`
 
 Represents composing multiple skills into a workflow.
 
@@ -131,16 +131,16 @@ Format: `skill.compose {workflow_name}`
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.skill.compose.name` | string | Workflow/composition name |
-| `aitf.skill.compose.skills` | string[] | Skills in composition |
+| `skill.compose.name` | string | Workflow/composition name |
+| `skill.compose.skills` | string[] | Skills in composition |
 
 ### Recommended Attributes
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.skill.compose.pattern` | string | `"sequential"`, `"parallel"`, `"conditional"`, `"iterative"` |
-| `aitf.skill.compose.total_skills` | int | Total skills in composition |
-| `aitf.skill.compose.completed_skills` | int | Successfully completed skills |
+| `skill.compose.pattern` | string | `"sequential"`, `"parallel"`, `"conditional"`, `"iterative"` |
+| `skill.compose.total_skills` | int | Total skills in composition |
+| `skill.compose.completed_skills` | int | Successfully completed skills |
 
 ---
 
@@ -178,14 +178,14 @@ When an agent needs a capability, AITF traces the skill resolution process:
 5. Skill invocation
 ```
 
-### Span: `aitf.skill.resolve`
+### Span: `skill.resolve`
 
 | Attribute | Type | Notes |
 |-----------|------|-------|
-| `aitf.skill.resolve.capability` | string | Requested capability |
-| `aitf.skill.resolve.candidates` | int | Number of candidates found |
-| `aitf.skill.resolve.selected` | string | Selected skill name |
-| `aitf.skill.resolve.reason` | string | Why this skill was selected |
+| `skill.resolve.capability` | string | Requested capability |
+| `skill.resolve.candidates` | int | Number of candidates found |
+| `skill.resolve.selected` | string | Selected skill name |
+| `skill.resolve.reason` | string | Why this skill was selected |
 
 ---
 
@@ -195,55 +195,55 @@ When an agent needs a capability, AITF traces the skill resolution process:
 Span: agent.step.tool_use research-agent
   │
   ├─ Span: skill.discover mcp:filesystem
-  │    aitf.skill.source: "mcp:filesystem"
-  │    aitf.skill.count: 5
-  │    aitf.skill.names: ["read_file", "write_file", "list_dir", "search", "move_file"]
+  │    skill.source: "mcp:filesystem"
+  │    skill.count: 5
+  │    skill.names: ["read_file", "write_file", "list_dir", "search", "move_file"]
   │
   ├─ Span: skill.invoke web-search
-  │    aitf.skill.name: "web-search"
-  │    aitf.skill.version: "2.1.0"
-  │    aitf.skill.provider: "builtin"
-  │    aitf.skill.category: "search"
-  │    aitf.skill.input: "{\"query\": \"AITF framework\", \"max_results\": 5}"
-  │    aitf.skill.output: "[{\"title\": \"AI Telemetry Framework\", ...}]"
-  │    aitf.skill.status: "success"
-  │    aitf.skill.duration_ms: 850.0
-  │    aitf.skill.source: "api:search"
+  │    skill.name: "web-search"
+  │    skill.version: "2.1.0"
+  │    skill.provider: "builtin"
+  │    skill.category: "search"
+  │    skill.input: "{\"query\": \"AITF framework\", \"max_results\": 5}"
+  │    skill.output: "[{\"title\": \"AI Telemetry Framework\", ...}]"
+  │    skill.status: "success"
+  │    skill.duration_ms: 850.0
+  │    skill.source: "api:search"
   │    Events:
   │      skill.input: {content: "{\"query\": \"AITF framework\"}"}
   │      skill.output: {content: "[{\"title\": ...}]", type: "application/json"}
   │
   └─ Span: skill.invoke read_file
-       aitf.skill.name: "read_file"
-       aitf.skill.version: "1.0.0"
-       aitf.skill.provider: "mcp"
-       aitf.skill.category: "code"
-       aitf.skill.source: "mcp:filesystem"
-       aitf.skill.permissions: ["file_read"]
+       skill.name: "read_file"
+       skill.version: "1.0.0"
+       skill.provider: "mcp"
+       skill.category: "code"
+       skill.source: "mcp:filesystem"
+       skill.permissions: ["file_read"]
        │
        └─ Span: mcp.tool.invoke read_file    (underlying MCP call)
-            aitf.mcp.tool.server: "filesystem"
+            mcp.tool.server: "filesystem"
 ```
 
 ## Example: Skill Composition
 
 ```
 Span: skill.compose research-and-write
-  aitf.skill.compose.pattern: "sequential"
-  aitf.skill.compose.skills: ["web-search", "summarize", "write-doc"]
-  aitf.skill.compose.total_skills: 3
+  skill.compose.pattern: "sequential"
+  skill.compose.skills: ["web-search", "summarize", "write-doc"]
+  skill.compose.total_skills: 3
   │
   ├─ Span: skill.invoke web-search
-  │    aitf.skill.status: "success"
-  │    aitf.skill.duration_ms: 850.0
+  │    skill.status: "success"
+  │    skill.duration_ms: 850.0
   │
   ├─ Span: skill.invoke summarize
-  │    aitf.skill.status: "success"
-  │    aitf.skill.duration_ms: 1200.0
+  │    skill.status: "success"
+  │    skill.duration_ms: 1200.0
   │    └─ Span: chat gpt-4o    (LLM call within skill)
   │
   └─ Span: skill.invoke write-doc
-       aitf.skill.status: "success"
-       aitf.skill.duration_ms: 350.0
+       skill.status: "success"
+       skill.duration_ms: 350.0
        └─ Span: mcp.tool.invoke write_file
 ```

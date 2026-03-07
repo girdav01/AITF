@@ -122,19 +122,19 @@ class MemoryStateProcessor(SpanProcessor):
         attrs = span.attributes or {}
 
         # Only process memory-related spans
-        operation = attrs.get("aitf.memory.operation")
+        operation = attrs.get("memory.operation")
         if not operation:
             return
 
-        memory_key = attrs.get("aitf.memory.key", "")
-        store = attrs.get("aitf.memory.store", "unknown")
-        provenance = attrs.get("aitf.memory.provenance", "unknown")
-        session_id = attrs.get("aitf.agent.session.id", "unknown")
-        content_hash = attrs.get("aitf.memory.security.content_hash")
-        content_size = attrs.get("aitf.memory.security.content_size", 0)
-        poisoning_score = attrs.get("aitf.memory.security.poisoning_score")
-        cross_session = attrs.get("aitf.memory.security.cross_session", False)
-        integrity_hash = attrs.get("aitf.memory.security.integrity_hash")
+        memory_key = attrs.get("memory.key", "")
+        store = attrs.get("memory.store", "unknown")
+        provenance = attrs.get("memory.provenance", "unknown")
+        session_id = attrs.get("agent.session.id", "unknown")
+        content_hash = attrs.get("memory.security.content_hash")
+        content_size = attrs.get("memory.security.content_size", 0)
+        poisoning_score = attrs.get("memory.security.poisoning_score")
+        cross_session = attrs.get("memory.security.cross_session", False)
+        integrity_hash = attrs.get("memory.security.integrity_hash")
 
         span_id = format(span.context.span_id, "016x") if span.context else "unknown"
 

@@ -14,9 +14,9 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.trace import SpanKind, StatusCode
 
-from aitf.semantic_conventions.attributes import MCPAttributes
+from aitf.semantic_conventions.attributes import GenAIAttributes, MCPAttributes
 
-_TRACER_NAME = "aitf.instrumentation.mcp"
+_TRACER_NAME = "instrumentation.mcp"
 
 
 class MCPInstrumentor:
@@ -92,11 +92,11 @@ class MCPInstrumentor:
         tracer = self.get_tracer()
         start = time.monotonic()
         attributes: dict[str, Any] = {
-            MCPAttributes.TOOL_NAME: tool_name,
+            GenAIAttributes.TOOL_NAME: tool_name,
             MCPAttributes.TOOL_SERVER: server_name,
         }
         if tool_input is not None:
-            attributes[MCPAttributes.TOOL_INPUT] = tool_input
+            attributes[GenAIAttributes.TOOL_CALL_ARGUMENTS] = tool_input
         if approval_required:
             attributes[MCPAttributes.TOOL_APPROVAL_REQUIRED] = True
 
@@ -286,7 +286,7 @@ class MCPToolInvocation:
         return self._span
 
     def set_output(self, output: str, output_type: str = "text") -> None:
-        self._span.set_attribute(MCPAttributes.TOOL_OUTPUT, output)
+        self._span.set_attribute(GenAIAttributes.TOOL_CALL_RESULT, output)
         self._span.add_event(
             "mcp.tool.output",
             attributes={

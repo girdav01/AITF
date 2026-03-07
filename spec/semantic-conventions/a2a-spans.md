@@ -36,15 +36,15 @@ Represents fetching and parsing an A2A Agent Card from `/.well-known/agent.json`
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.a2a.agent.url` | string | **Required** | Agent service endpoint URL | MITRE ATLAS [AML.T0040](https://atlas.mitre.org/techniques/AML.T0040), NIST AI RMF MAP-1.5 |
-| `aitf.a2a.agent.name` | string | **Recommended** | Discovered agent name | OWASP LLM06 (Excessive Agency) |
-| `aitf.a2a.agent.version` | string | **Recommended** | Agent version | NIST AI RMF MAP-1.1 |
-| `aitf.a2a.agent.provider.organization` | string | **Optional** | Provider organization | EU AI Act Art.13 (Transparency) |
-| `aitf.a2a.agent.skills` | string[] | **Recommended** | Skill IDs available | OWASP LLM06, NIST AI RMF MAP-1.1 |
-| `aitf.a2a.agent.capabilities.streaming` | boolean | **Recommended** | Whether streaming is supported | — |
-| `aitf.a2a.agent.capabilities.push_notifications` | boolean | **Optional** | Whether push notifications are supported | — |
-| `aitf.a2a.protocol.version` | string | **Recommended** | A2A protocol version | NIST AI RMF MAP-1.1 |
-| `aitf.a2a.transport` | string | **Recommended** | Transport: `"jsonrpc"`, `"grpc"`, `"http_json"` | MITRE ATLAS AML.T0040 |
+| `a2a.agent.url` | string | **Required** | Agent service endpoint URL | MITRE ATLAS [AML.T0040](https://atlas.mitre.org/techniques/AML.T0040), NIST AI RMF MAP-1.5 |
+| `a2a.agent.name` | string | **Recommended** | Discovered agent name | OWASP LLM06 (Excessive Agency) |
+| `a2a.agent.version` | string | **Recommended** | Agent version | NIST AI RMF MAP-1.1 |
+| `a2a.agent.provider.organization` | string | **Optional** | Provider organization | EU AI Act Art.13 (Transparency) |
+| `a2a.agent.skills` | string[] | **Recommended** | Skill IDs available | OWASP LLM06, NIST AI RMF MAP-1.1 |
+| `a2a.agent.capabilities.streaming` | boolean | **Recommended** | Whether streaming is supported | — |
+| `a2a.agent.capabilities.push_notifications` | boolean | **Optional** | Whether push notifications are supported | — |
+| `a2a.protocol.version` | string | **Recommended** | A2A protocol version | NIST AI RMF MAP-1.1 |
+| `a2a.transport` | string | **Recommended** | Transport: `"jsonrpc"`, `"grpc"`, `"http_json"` | MITRE ATLAS AML.T0040 |
 
 ---
 
@@ -60,19 +60,19 @@ Represents a synchronous `message/send` JSON-RPC call to a remote agent.
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.a2a.agent.name` | string | **Required** | Target agent name | OWASP LLM06, MITRE ATLAS [AML.T0048](https://atlas.mitre.org/techniques/AML.T0048) |
-| `aitf.a2a.method` | string | **Required** | `"message/send"` | NIST AI RMF GOVERN-1.2 |
-| `aitf.a2a.interaction_mode` | string | **Required** | `"sync"` | — |
-| `aitf.a2a.task.id` | string | **Recommended** | Server-assigned task ID | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
-| `aitf.a2a.task.context_id` | string | **Recommended** | Context ID grouping related tasks | NIST AI RMF GOVERN-1.2 |
-| `aitf.a2a.task.state` | string | **Recommended** | Final task state (see Task States below) | OWASP LLM06, NIST AI RMF MEASURE-2.5 |
-| `aitf.a2a.agent.url` | string | **Optional** | Agent endpoint URL | MITRE ATLAS AML.T0040 |
-| `aitf.a2a.message.id` | string | **Recommended** | Outgoing message ID | NIST AI RMF GOVERN-1.2 |
-| `aitf.a2a.message.role` | string | **Recommended** | `"user"` (for outgoing) | — |
-| `aitf.a2a.message.parts_count` | int | **Optional** | Number of message parts | — |
-| `aitf.a2a.task.artifacts_count` | int | **Optional** | Number of artifacts produced | — |
-| `aitf.a2a.jsonrpc.error_code` | int | **Recommended** | JSON-RPC error code (if error) | NIST AI RMF MEASURE-2.5 |
-| `aitf.a2a.jsonrpc.error_message` | string | **Recommended** | JSON-RPC error message (if error) | NIST AI RMF MEASURE-2.5 |
+| `a2a.agent.name` | string | **Required** | Target agent name | OWASP LLM06, MITRE ATLAS [AML.T0048](https://atlas.mitre.org/techniques/AML.T0048) |
+| `a2a.method` | string | **Required** | `"message/send"` | NIST AI RMF GOVERN-1.2 |
+| `a2a.interaction_mode` | string | **Required** | `"sync"` | — |
+| `a2a.task.id` | string | **Recommended** | Server-assigned task ID | NIST AI RMF GOVERN-1.2, EU AI Act Art.12 |
+| `a2a.task.context_id` | string | **Recommended** | Context ID grouping related tasks | NIST AI RMF GOVERN-1.2 |
+| `a2a.task.state` | string | **Recommended** | Final task state (see Task States below) | OWASP LLM06, NIST AI RMF MEASURE-2.5 |
+| `a2a.agent.url` | string | **Optional** | Agent endpoint URL | MITRE ATLAS AML.T0040 |
+| `a2a.message.id` | string | **Recommended** | Outgoing message ID | NIST AI RMF GOVERN-1.2 |
+| `a2a.message.role` | string | **Recommended** | `"user"` (for outgoing) | — |
+| `a2a.message.parts_count` | int | **Optional** | Number of message parts | — |
+| `a2a.task.artifacts_count` | int | **Optional** | Number of artifacts produced | — |
+| `a2a.jsonrpc.error_code` | int | **Recommended** | JSON-RPC error code (if error) | NIST AI RMF MEASURE-2.5 |
+| `a2a.jsonrpc.error_message` | string | **Recommended** | JSON-RPC error message (if error) | NIST AI RMF MEASURE-2.5 |
 
 ---
 
@@ -90,8 +90,8 @@ Same as `a2a.message.send` plus:
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.a2a.interaction_mode` | string | **Required** | `"stream"` | — |
-| `aitf.a2a.stream.events_count` | int | **Recommended** | Total SSE events received | NIST AI RMF MEASURE-2.5 |
+| `a2a.interaction_mode` | string | **Required** | `"stream"` | — |
+| `a2a.stream.events_count` | int | **Recommended** | Total SSE events received | NIST AI RMF MEASURE-2.5 |
 
 ### Events
 
@@ -101,8 +101,8 @@ Emitted for each SSE event received.
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.a2a.stream.event_type` | string | **Required** | `"status-update"` or `"artifact-update"` | — |
-| `aitf.a2a.stream.is_final` | boolean | **Required** | Whether this is the terminal event | — |
+| `a2a.stream.event_type` | string | **Required** | `"status-update"` or `"artifact-update"` | — |
+| `a2a.stream.is_final` | boolean | **Required** | Whether this is the terminal event | — |
 
 ---
 
@@ -118,9 +118,9 @@ Represents polling a task's status via `tasks/get`.
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.a2a.task.id` | string | **Required** | Task ID | NIST AI RMF GOVERN-1.2 |
-| `aitf.a2a.method` | string | **Required** | `"tasks/get"` | — |
-| `aitf.a2a.task.state` | string | **Recommended** | Current task state | NIST AI RMF MEASURE-2.5 |
+| `a2a.task.id` | string | **Required** | Task ID | NIST AI RMF GOVERN-1.2 |
+| `a2a.method` | string | **Required** | `"tasks/get"` | — |
+| `a2a.task.state` | string | **Recommended** | Current task state | NIST AI RMF MEASURE-2.5 |
 
 ---
 
@@ -136,9 +136,9 @@ Represents canceling a running task via `tasks/cancel`.
 
 | Field Name | Type | Requirement | Description | Compliance |
 |---|---|---|---|---|
-| `aitf.a2a.task.id` | string | **Required** | Task ID | NIST AI RMF GOVERN-1.2 |
-| `aitf.a2a.method` | string | **Required** | `"tasks/cancel"` | — |
-| `aitf.a2a.task.state` | string | **Recommended** | Task state after cancel | OWASP LLM06 |
+| `a2a.task.id` | string | **Required** | Task ID | NIST AI RMF GOVERN-1.2 |
+| `a2a.method` | string | **Required** | `"tasks/cancel"` | — |
+| `a2a.task.state` | string | **Recommended** | Task state after cancel | OWASP LLM06 |
 
 ---
 
@@ -161,21 +161,21 @@ Represents canceling a running task via `tasks/cancel`.
 
 ```
 Span: a2a.agent.discover
-  aitf.a2a.agent.url: "https://research-agent.example.com"
-  aitf.a2a.agent.name: "research-assistant"
-  aitf.a2a.agent.version: "1.2.0"
-  aitf.a2a.agent.skills: ["web_search", "summarize", "translate"]
-  aitf.a2a.agent.capabilities.streaming: true
-  aitf.a2a.protocol.version: "0.2.5"
-  aitf.a2a.transport: "jsonrpc"
+  a2a.agent.url: "https://research-agent.example.com"
+  a2a.agent.name: "research-assistant"
+  a2a.agent.version: "1.2.0"
+  a2a.agent.skills: ["web_search", "summarize", "translate"]
+  a2a.agent.capabilities.streaming: true
+  a2a.protocol.version: "0.2.5"
+  a2a.transport: "jsonrpc"
 
 Span: a2a.message.send research-assistant
-  aitf.a2a.method: "message/send"
-  aitf.a2a.interaction_mode: "sync"
-  aitf.a2a.task.id: "task-abc123"
-  aitf.a2a.task.context_id: "ctx-xyz789"
-  aitf.a2a.task.state: "completed"
-  aitf.a2a.task.artifacts_count: 1
+  a2a.method: "message/send"
+  a2a.interaction_mode: "sync"
+  a2a.task.id: "task-abc123"
+  a2a.task.context_id: "ctx-xyz789"
+  a2a.task.state: "completed"
+  a2a.task.artifacts_count: 1
   Events:
     a2a.task.state_change: {a2a.task.state: "submitted"}
     a2a.message: {message_id: "msg-001", role: "user", parts_count: 1}

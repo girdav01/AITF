@@ -77,18 +77,18 @@ from aitf.semantic_conventions.attributes import (
 
 logger = logging.getLogger(__name__)
 
-_TRACER_NAME = "aitf.integrations.google_ai.gemini"
+_TRACER_NAME = "integrations.google_ai.gemini"
 
 # ---------------------------------------------------------------------------
 # Attribute keys specific to the Gemini integration (under aitf.* namespace)
 # ---------------------------------------------------------------------------
-_GEMINI_SAFETY_SETTINGS = "aitf.google.gemini.safety_settings"
-_GEMINI_GROUNDING_ENABLED = "aitf.google.gemini.grounding.enabled"
-_GEMINI_GROUNDING_SOURCES = "aitf.google.gemini.grounding.sources"
-_GEMINI_GROUNDING_PASSAGES = "aitf.google.gemini.grounding.passages_count"
-_GEMINI_CANDIDATE_COUNT = "aitf.google.gemini.candidate_count"
-_GEMINI_INPUT_MODALITIES = "aitf.google.gemini.input_modalities"
-_GEMINI_FUNCTION_CALLS = "aitf.google.gemini.function_calls"
+_GEMINI_SAFETY_SETTINGS = "google.gemini.safety_settings"
+_GEMINI_GROUNDING_ENABLED = "google.gemini.grounding.enabled"
+_GEMINI_GROUNDING_SOURCES = "google.gemini.grounding.sources"
+_GEMINI_GROUNDING_PASSAGES = "google.gemini.grounding.passages_count"
+_GEMINI_CANDIDATE_COUNT = "google.gemini.candidate_count"
+_GEMINI_INPUT_MODALITIES = "google.gemini.input_modalities"
+_GEMINI_FUNCTION_CALLS = "google.gemini.function_calls"
 
 
 class GeminiInstrumentor:
@@ -1055,7 +1055,7 @@ def _record_grounding_metadata(
         search_queries = getattr(grounding, "web_search_queries", None)
         if search_queries:
             span.add_event(
-                "aitf.google.gemini.grounding.search",
+                "google.gemini.grounding.search",
                 attributes={
                     "queries": json.dumps(list(search_queries)),
                 },

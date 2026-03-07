@@ -14,7 +14,7 @@ import (
 	"github.com/girdav01/AITF/sdk/go/semconv"
 )
 
-const modelOpsTracerName = "aitf.instrumentation.model_ops"
+const modelOpsTracerName = "instrumentation.model_ops"
 
 // ModelOpsInstrumentor traces AI model lifecycle operations including training,
 // evaluation, registry, deployment, serving, monitoring, and prompt versioning.

@@ -14,7 +14,7 @@ import (
 	"github.com/girdav01/AITF/sdk/go/semconv"
 )
 
-const llmTracerName = "aitf.instrumentation.llm"
+const llmTracerName = "instrumentation.llm"
 
 // LLMInstrumentor traces LLM inference operations.
 type LLMInstrumentor struct {

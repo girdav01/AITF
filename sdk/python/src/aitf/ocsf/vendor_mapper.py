@@ -131,12 +131,12 @@ class VendorMapping:
             translated.setdefault(key, value)
 
         # 3. Provider detection (infer gen_ai.system from model name)
-        if "gen_ai.system" not in translated:
+        if "gen_ai.provider.name" not in translated:
             model = translated.get("gen_ai.request.model")
             if model:
                 detected = self._detect_provider(str(model), vendor_attrs)
                 if detected:
-                    translated["gen_ai.system"] = detected
+                    translated["gen_ai.provider.name"] = detected
 
         return translated
 

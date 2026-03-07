@@ -16,8 +16,8 @@ OpenTelemetry's GenAI SIG provides foundational semantic conventions for AI obse
 |---|---|---|
 | LLM Inference Tracing | Experimental | Stable + Enhanced |
 | Agent Spans | Basic (experimental) | Full lifecycle, delegation, memory |
-| MCP Protocol | Not covered | Native `aitf.mcp.*` namespace |
-| Skills / Tool Registry | Not covered | Full `aitf.skill.*` namespace |
+| MCP Protocol | Not covered | Native `mcp.*` namespace |
+| Skills / Tool Registry | Not covered | Full `skill.*` namespace |
 | Multi-Agent Orchestration | Not covered | Teams, delegation chains, consensus |
 | Security Events | Not covered | OWASP LLM Top 10, threat detection |
 | OCSF Integration | Not covered | Native OCSF Category 7 export |
@@ -327,7 +327,7 @@ VendorMapper ──▶ Reads vendor JSON mapping
      │              ├─ Translate vendor attributes → AITF/OTel conventions
      │              └─ Detect underlying LLM provider from model names
      ▼
-AITF Normalized Spans (gen_ai.*, aitf.*)
+AITF Normalized Spans (gen_ai.*, mcp.*, security.*, etc.)
      │
      ▼
 OCSFMapper ──▶ OCSF Category 7 events → SIEM/XDR
@@ -335,7 +335,7 @@ OCSFMapper ──▶ OCSF Category 7 events → SIEM/XDR
 
 Each vendor mapping JSON defines:
 - **Span name patterns** — regex rules to classify spans (inference, agent, tool, retrieval)
-- **Attribute mappings** — vendor-native → AITF/OTel semantic conventions
+- **Attribute mappings** — vendor-native → AITF/OTel/gen_ai semantic conventions
 - **Provider detection** — infer the underlying LLM provider from model names (e.g., `anthropic/claude-*` → `anthropic`)
 - **OCSF class/activity** — map to the correct OCSF event class and activity ID
 - **Severity mapping** — translate vendor status codes to OCSF severity levels
@@ -405,46 +405,46 @@ AITF's telemetry, detection rules, and semantic conventions map to the **OWASP T
 
 | # | Risk | AITF Coverage | Key Mechanisms |
 |---|------|:---:|----------------|
-| LLM01 | Prompt Injection | **AITF-DET-003**, **AITF-DET-013** | Pattern-based detection (direct & indirect injection, jailbreak escalation); `aitf.security.threat_type` = `prompt_injection`; Sigma rule `aitf_prompt_injection.yml`; Guardrail processor (input/output) |
-| LLM02 | Sensitive Information Disclosure | **AITF-DET-011**, **AITF-DET-012** | PII Processor (email, phone, SSN, credit card, API key detection & redaction); `aitf.security.pii.*` attributes; data-exfiltration read-then-send pattern detection; Sigma rule `aitf_data_exfiltration.yml` |
-| LLM03 | Supply Chain | **AITF-DET-014**, **AITF-DET-009** | Model provenance verification (hash, source, signer); AI-BOM tracking (`aitf.supply_chain.ai_bom.*`); MCP server allow-list validation; OCSF event class 7006 (AI Supply Chain) |
-| LLM04 | Data and Model Poisoning | Memory security events | `aitf.memory.security.poisoning_score`; content-hash integrity verification; provenance tracking (`aitf.memory.provenance`); RAG document provenance (`aitf.rag.doc.provenance`); OCSF event class 7004 |
-| LLM05 | Improper Output Handling | Guardrail integration | `aitf.security.guardrail.type` = `output`; guardrail result pass/fail/warn; `aitf.security.blocked`; OCSF event 700503 (Guardrail Trigger) |
-| LLM06 | Excessive Agency | **AITF-DET-005**, **006**, **008**, **010** | Agent loop detection (identical-call & cyclic patterns); unauthorized delegation validation; excessive tool-call thresholds; tool permission bypass detection; `aitf.agent.session.turn_count` |
-| LLM07 | System Prompt Leakage | Security processor | `gen_ai.system_prompt.hash` (leak detection without storing content); jailbreak/extraction pattern matching; `aitf.security.threat_type` = `prompt_leakage` |
-| LLM08 | Vector and Embedding Weaknesses | RAG telemetry | `aitf.rag.retrieve.*` attributes (database, filter, top_k); `aitf.rag.doc.provenance`; quality metrics (`faithfulness`, `groundedness`); OCSF event class 7004 (AI Data Retrieval) |
-| LLM09 | Misinformation | Quality metrics | `aitf.quality.hallucination_score`; `aitf.quality.confidence`; `aitf.quality.factuality`; RAG source provenance verification |
-| LLM10 | Unbounded Consumption | **AITF-DET-001**, **AITF-DET-004** | Token usage anomaly detection (z-score on EMA); cost-spike detection (5x rolling avg or $1.00 absolute); budget tracking (`aitf.cost.budget.*`); Sigma rule `aitf_cost_anomaly.yml` |
+| LLM01 | Prompt Injection | **AITF-DET-003**, **AITF-DET-013** | Pattern-based detection (direct & indirect injection, jailbreak escalation); `security.threat_type` = `prompt_injection`; Sigma rule `aitf_prompt_injection.yml`; Guardrail processor (input/output) |
+| LLM02 | Sensitive Information Disclosure | **AITF-DET-011**, **AITF-DET-012** | PII Processor (email, phone, SSN, credit card, API key detection & redaction); `security.pii.*` attributes; data-exfiltration read-then-send pattern detection; Sigma rule `aitf_data_exfiltration.yml` |
+| LLM03 | Supply Chain | **AITF-DET-014**, **AITF-DET-009** | Model provenance verification (hash, source, signer); AI-BOM tracking (`supply_chain.ai_bom.*`); MCP server allow-list validation; OCSF event class 7006 (AI Supply Chain) |
+| LLM04 | Data and Model Poisoning | Memory security events | `memory.security.poisoning_score`; content-hash integrity verification; provenance tracking (`memory.provenance`); RAG document provenance (`rag.doc.provenance`); OCSF event class 7004 |
+| LLM05 | Improper Output Handling | Guardrail integration | `security.guardrail.type` = `output`; guardrail result pass/fail/warn; `security.blocked`; OCSF event 700503 (Guardrail Trigger) |
+| LLM06 | Excessive Agency | **AITF-DET-005**, **006**, **008**, **010** | Agent loop detection (identical-call & cyclic patterns); unauthorized delegation validation; excessive tool-call thresholds; tool permission bypass detection; `gen_ai.agent.session.turn_count` |
+| LLM07 | System Prompt Leakage | Security processor | `gen_ai.system_prompt.hash` (leak detection without storing content); jailbreak/extraction pattern matching; `security.threat_type` = `prompt_leakage` |
+| LLM08 | Vector and Embedding Weaknesses | RAG telemetry | `rag.retrieve.*` attributes (database, filter, top_k); `rag.doc.provenance`; quality metrics (`faithfulness`, `groundedness`); OCSF event class 7004 (AI Data Retrieval) |
+| LLM09 | Misinformation | Quality metrics | `quality.hallucination_score`; `quality.confidence`; `quality.factuality`; RAG source provenance verification |
+| LLM10 | Unbounded Consumption | **AITF-DET-001**, **AITF-DET-004** | Token usage anomaly detection (z-score on EMA); cost-spike detection (5x rolling avg or $1.00 absolute); budget tracking (`cost.budget.*`); Sigma rule `aitf_cost_anomaly.yml` |
 
 ### OWASP Top 10 for Agentic Applications (2026)
 
 | # | Risk | AITF Coverage | Key Mechanisms |
 |---|------|:---:|----------------|
-| ASI01 | Agent Goal Hijack | Agent telemetry | `aitf.agent.step.thought`, `aitf.agent.next_action`, `aitf.agent.state`; behavioral deviation detection via ReAct scratchpad and action-sequence analysis |
-| ASI02 | Tool Misuse & Exploitation | **AITF-DET-010**, **AITF-DET-011** | Tool permission bypass detection (`aitf.mcp.tool.approval_required` / `approved`); data exfiltration via tools; tool I/O logging |
-| ASI03 | Identity & Privilege Abuse | Identity spans | `aitf.identity.auth.*` (method, result, scope_granted); credential lifecycle tracking (create/rotate/revoke); scope-creep detection; OCSF event class 7008 (AI Identity) |
+| ASI01 | Agent Goal Hijack | Agent telemetry | `gen_ai.agent.step.thought`, `gen_ai.agent.next_action`, `gen_ai.agent.state`; behavioral deviation detection via ReAct scratchpad and action-sequence analysis |
+| ASI02 | Tool Misuse & Exploitation | **AITF-DET-010**, **AITF-DET-011** | Tool permission bypass detection (`gen_ai.tool.approval_required` / `approved`); data exfiltration via tools; tool I/O logging |
+| ASI03 | Identity & Privilege Abuse | Identity spans | `identity.auth.*` (method, result, scope_granted); credential lifecycle tracking (create/rotate/revoke); scope-creep detection; OCSF event class 7008 (AI Identity) |
 | ASI04 | Agentic Supply Chain Vulnerabilities | **AITF-DET-009**, **AITF-DET-014** | MCP server impersonation detection (allow-list, transport mismatch, protocol downgrade); model provenance & AI-BOM; Sigma rule `aitf_mcp_server_anomaly.yml` |
-| ASI05 | Unexpected Code Execution | MCP tool telemetry | Tool execution logging via `aitf.mcp.tool.*`; suspicious tool-name detection (exec, shell, eval); sandbox monitoring |
-| ASI06 | Memory & Context Poisoning | Memory security | `aitf.memory.security.poisoning_score`; content-hash mutation detection; cross-session access flags; provenance verification; OCSF memory-poisoning events |
-| ASI07 | Insecure Inter-Agent Communication | Identity & delegation spans | `aitf.identity.trust.method` (mTLS, SPIFFE, DID-VC); agent delegation logging; `aitf.identity.auth.method` for agent-to-agent auth |
-| ASI08 | Cascading Failures | Agent lifecycle telemetry | `aitf.agent.step.status` (success/error/retry/skipped); `aitf.agent.session.turn_count`; loop detection (AITF-DET-005); OCSF event class 7002 (AI Agent Activity) |
-| ASI09 | Human-Agent Trust Exploitation | Human-in-loop attributes | `aitf.agent.step.type` = `human_in_loop`; tool approval tracking; EU AI Act Art. 14 compliance telemetry |
-| ASI10 | Rogue Agents | Behavioral analysis | Agent behavioral baselines via action-sequence Markov modeling; `aitf.agent.state` lifecycle monitoring; **AITF-DET-007** (Agent Session Hijack); self-replication detection |
+| ASI05 | Unexpected Code Execution | MCP tool telemetry | Tool execution logging via `gen_ai.tool.*`; suspicious tool-name detection (exec, shell, eval); sandbox monitoring |
+| ASI06 | Memory & Context Poisoning | Memory security | `memory.security.poisoning_score`; content-hash mutation detection; cross-session access flags; provenance verification; OCSF memory-poisoning events |
+| ASI07 | Insecure Inter-Agent Communication | Identity & delegation spans | `identity.trust.method` (mTLS, SPIFFE, DID-VC); agent delegation logging; `identity.auth.method` for agent-to-agent auth |
+| ASI08 | Cascading Failures | Agent lifecycle telemetry | `gen_ai.agent.step.status` (success/error/retry/skipped); `gen_ai.agent.session.turn_count`; loop detection (AITF-DET-005); OCSF event class 7002 (AI Agent Activity) |
+| ASI09 | Human-Agent Trust Exploitation | Human-in-loop attributes | `gen_ai.agent.step.type` = `human_in_loop`; tool approval tracking; EU AI Act Art. 14 compliance telemetry |
+| ASI10 | Rogue Agents | Behavioral analysis | Agent behavioral baselines via action-sequence Markov modeling; `gen_ai.agent.state` lifecycle monitoring; **AITF-DET-007** (Agent Session Hijack); self-replication detection |
 
 ### OWASP Top 10 for MCP Security (2025)
 
 | # | Risk | AITF Coverage | Key Mechanisms |
 |---|------|:---:|----------------|
-| MCP01 | Token Mismanagement & Secret Exposure | PII Processor, Identity spans | API-key / credential detection in tool I/O (`aitf.security.pii.types`); credential lifecycle tracking (`aitf.identity.lifecycle.operation`); `aitf.identity.ttl_seconds` for expiry monitoring |
-| MCP02 | Privilege Escalation via Scope Creep | Identity spans | `aitf.identity.auth.scope_requested` vs `scope_granted` comparison; permission drift detection; credential rotation tracking |
-| MCP03 | Tool Poisoning | **AITF-DET-009** | MCP server allow-list validation; tool output integrity monitoring (`aitf.mcp.tool.output`); suspicious tool-name detection; Sigma rule `aitf_mcp_server_anomaly.yml` |
-| MCP04 | Software Supply Chain Attacks | **AITF-DET-014** | Model/component provenance verification; AI-BOM component tracking; cryptographic signature validation (`aitf.supply_chain.model.signed`) |
-| MCP05 | Command Injection & Execution | MCP tool telemetry | Tool input logging (`aitf.mcp.tool.input`); suspicious tool-name blocklist (exec, shell, eval, reverse_shell); `aitf.mcp.tool.is_error` tracking |
-| MCP06 | Prompt Injection via Contextual Payloads | **AITF-DET-003** | Indirect injection detection via `aitf.mcp.tool.output`; prompt-injection pattern matching in tool results and retrieved documents |
-| MCP07 | Insufficient Authentication & Authorization | Identity spans, **AITF-DET-010** | `aitf.identity.auth.method` and `auth.result`; tool approval enforcement (`aitf.mcp.tool.approval_required`); OCSF event class 7008 |
+| MCP01 | Token Mismanagement & Secret Exposure | PII Processor, Identity spans | API-key / credential detection in tool I/O (`security.pii.types`); credential lifecycle tracking (`identity.lifecycle.operation`); `identity.ttl_seconds` for expiry monitoring |
+| MCP02 | Privilege Escalation via Scope Creep | Identity spans | `identity.auth.scope_requested` vs `scope_granted` comparison; permission drift detection; credential rotation tracking |
+| MCP03 | Tool Poisoning | **AITF-DET-009** | MCP server allow-list validation; tool output integrity monitoring (`gen_ai.tool.call.result`); suspicious tool-name detection; Sigma rule `aitf_mcp_server_anomaly.yml` |
+| MCP04 | Software Supply Chain Attacks | **AITF-DET-014** | Model/component provenance verification; AI-BOM component tracking; cryptographic signature validation (`supply_chain.model.signed`) |
+| MCP05 | Command Injection & Execution | MCP tool telemetry | Tool input logging (`gen_ai.tool.call.arguments`); suspicious tool-name blocklist (exec, shell, eval, reverse_shell); `mcp.tool.is_error` tracking |
+| MCP06 | Prompt Injection via Contextual Payloads | **AITF-DET-003** | Indirect injection detection via `gen_ai.tool.call.result`; prompt-injection pattern matching in tool results and retrieved documents |
+| MCP07 | Insufficient Authentication & Authorization | Identity spans, **AITF-DET-010** | `identity.auth.method` and `auth.result`; tool approval enforcement (`gen_ai.tool.approval_required`); OCSF event class 7008 |
 | MCP08 | Lack of Audit and Telemetry | Full AITF pipeline | AITF's core purpose — comprehensive OTel spans + OCSF events for all MCP operations; spans for server connections, tool invocations, resource reads, prompt fetches |
-| MCP09 | Shadow MCP Servers | **AITF-DET-009** | Server name allow-list; external URL flagging (`aitf.mcp.server.url`); transport validation; protocol version tracking; OCSF event class 7003 |
-| MCP10 | Context Injection & Over-Sharing | Memory security, PII Processor | `aitf.memory.security.cross_session` flag; session isolation verification; PII detection and redaction in context; `aitf.memory.security.isolation_verified` |
+| MCP09 | Shadow MCP Servers | **AITF-DET-009** | Server name allow-list; external URL flagging (`mcp.server.url`); transport validation; protocol version tracking; OCSF event class 7003 |
+| MCP10 | Context Injection & Over-Sharing | Memory security, PII Processor | `memory.security.cross_session` flag; session isolation verification; PII detection and redaction in context; `memory.security.isolation_verified` |
 
 ## Project Structure
 
@@ -522,21 +522,26 @@ AITF extends OTel GenAI with additional namespaces:
 
 | Namespace | Scope | Standard |
 |-----------|-------|----------|
-| `gen_ai.*` | LLM inference (OTel-compatible) | OTel GenAI |
-| `aitf.agent.*` | Agent lifecycle, reasoning, memory | AITF |
-| `aitf.mcp.*` | MCP servers, tools, resources, prompts | AITF |
-| `aitf.skill.*` | Skill discovery, invocation, registry | AITF |
-| `aitf.rag.*` | RAG pipeline, retrieval, generation | AITF |
-| `aitf.security.*` | Threat detection, guardrails, policy | AITF |
-| `aitf.compliance.*` | Regulatory framework mapping | AITF |
-| `aitf.cost.*` | Token costs, budget, attribution | AITF |
-| `aitf.quality.*` | Hallucination, confidence, factuality | AITF |
-| `aitf.supply_chain.*` | Model provenance, AI-BOM, integrity | AITF |
-| `aitf.identity.*` | Agent identity, auth, delegation, trust | AITF |
-| `aitf.model_ops.*` | LLMOps/MLOps lifecycle | AITF |
-| `aitf.asset.*` | AI asset inventory, audit, risk classification | AITF + CoSAI |
-| `aitf.drift.*` | Structured drift detection, investigation, remediation | AITF + CoSAI |
-| `aitf.memory.security.*` | Memory poisoning, integrity, isolation | AITF + CoSAI |
+| `gen_ai.*` | LLM inference, agents, tools (OTel standard) | OTel GenAI |
+| `gen_ai.agent.*` | Agent lifecycle, reasoning, memory | OTel GenAI |
+| `gen_ai.tool.*` | Tool name, arguments, results | OTel GenAI |
+| `gen_ai.conversation.id` | Conversation/session identifier | OTel GenAI |
+| `gen_ai.provider.name` | AI provider identifier | OTel GenAI |
+| `gen_ai.data_source.id` | RAG data source identifier | OTel GenAI |
+| `gen_ai.retrieval.query.text` | RAG query text | OTel GenAI |
+| `mcp.*` | MCP servers, resources, prompts, sampling | AITF |
+| `skill.*` | Skill discovery, invocation, registry | AITF |
+| `rag.*` | RAG pipeline, retrieval, generation | AITF |
+| `security.*` | Threat detection, guardrails, policy | AITF |
+| `compliance.*` | Regulatory framework mapping | AITF |
+| `cost.*` | Token costs, budget, attribution | AITF |
+| `quality.*` | Hallucination, confidence, factuality | AITF |
+| `supply_chain.*` | Model provenance, AI-BOM, integrity | AITF |
+| `identity.*` | Agent identity, auth, delegation, trust | AITF |
+| `model_ops.*` | LLMOps/MLOps lifecycle | AITF |
+| `asset.*` | AI asset inventory, audit, risk classification | AITF + CoSAI |
+| `drift.*` | Structured drift detection, investigation, remediation | AITF + CoSAI |
+| `memory.security.*` | Memory poisoning, integrity, isolation | AITF + CoSAI |
 
 ## Compliance Frameworks
 

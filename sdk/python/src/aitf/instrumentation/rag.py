@@ -14,9 +14,9 @@ from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.trace import SpanKind, StatusCode
 
-from aitf.semantic_conventions.attributes import RAGAttributes
+from aitf.semantic_conventions.attributes import GenAIAttributes, RAGAttributes
 
-_TRACER_NAME = "aitf.instrumentation.rag"
+_TRACER_NAME = "instrumentation.rag"
 
 
 class RAGInstrumentor:
@@ -54,7 +54,7 @@ class RAGInstrumentor:
             RAGAttributes.PIPELINE_NAME: pipeline_name,
         }
         if query:
-            attributes[RAGAttributes.QUERY] = query
+            attributes[GenAIAttributes.RETRIEVAL_QUERY_TEXT] = query
 
         with tracer.start_as_current_span(
             name=f"rag.pipeline {pipeline_name}",
@@ -84,15 +84,15 @@ class RAGInstrumentor:
         tracer = self.get_tracer()
         attributes: dict[str, Any] = {
             RAGAttributes.PIPELINE_STAGE: RAGAttributes.Stage.RETRIEVE,
-            RAGAttributes.RETRIEVE_DATABASE: database,
-            RAGAttributes.RETRIEVE_TOP_K: top_k,
+            GenAIAttributes.DATA_SOURCE_ID: database,
+            GenAIAttributes.REQUEST_TOP_K: top_k,
         }
         if index:
             attributes[RAGAttributes.RETRIEVE_INDEX] = index
         if query:
-            attributes[RAGAttributes.QUERY] = query
+            attributes[GenAIAttributes.RETRIEVAL_QUERY_TEXT] = query
         if embedding_model:
-            attributes[RAGAttributes.QUERY_EMBEDDING_MODEL] = embedding_model
+            attributes[GenAIAttributes.RETRIEVAL_QUERY_TEXT_EMBEDDING_MODEL] = embedding_model
         if filter_expr:
             attributes[RAGAttributes.RETRIEVE_FILTER] = filter_expr
 
@@ -159,8 +159,8 @@ class RAGPipeline:
         attributes: dict[str, Any] = {
             RAGAttributes.PIPELINE_STAGE: RAGAttributes.Stage.RETRIEVE,
             RAGAttributes.PIPELINE_NAME: self._pipeline_name,
-            RAGAttributes.RETRIEVE_DATABASE: database,
-            RAGAttributes.RETRIEVE_TOP_K: top_k,
+            GenAIAttributes.DATA_SOURCE_ID: database,
+            GenAIAttributes.REQUEST_TOP_K: top_k,
         }
         attributes.update(kwargs)
         with self._tracer.start_as_current_span(
