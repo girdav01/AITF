@@ -77,6 +77,59 @@
         }
       }
     },
+    "OCSFAIAgent": {
+      "type": "object",
+      "description": "OCSF ai_agent object (OCSF PR #1641). An autonomous AI agent operating under delegated authority. Distinct from the OCSF agent object (security sensors) and from human principals. Carried on the ai_operation profile so events are attributable to the agent that produced them.",
+      "required": ["uid"],
+      "properties": {
+        "uid": { "type": "string", "description": "Stable logical identifier for the agent" },
+        "instance_uid": { "type": "string", "description": "Restart-sensitive identifier for a specific running instance" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "description": "Caption of type_id (Native, LangChain, AutoGen, CrewAI, Other)" },
+        "type_id": {
+          "type": "integer",
+          "description": "Normalized agent framework (OCSF PR #1641)",
+          "enum": [0, 1, 2, 3, 4, 99]
+        },
+        "ai_model": { "type": "string", "description": "Model backing the agent at event time" },
+        "version": { "type": "string", "description": "Agent code/configuration revision" },
+        "charter": { "type": "string", "description": "Reference to the agent's durable role and operating boundaries" }
+      }
+    },
+    "OCSFDelegation": {
+      "type": "object",
+      "description": "OCSF delegation object (OCSF issue #1640). A durable authorization context that persists independently of any trace or session.",
+      "required": ["uid"],
+      "properties": {
+        "uid": { "type": "string", "description": "Stable delegation identifier" },
+        "parent_uid": { "type": "string", "description": "Parent delegation for lineage tracking" },
+        "issuer_uid": { "type": "string", "description": "Trusted issuer that minted the delegation" },
+        "delegator": { "type": "string" },
+        "delegatee": { "type": "string" },
+        "type": { "type": "string", "description": "on_behalf_of, token_exchange, capability_grant, impersonation" },
+        "scope": { "type": "array", "items": { "type": "string" } },
+        "proof_type": { "type": "string", "description": "dpop, mtls_binding, signed_assertion" },
+        "ttl_seconds": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "OCSFDelegationNode": {
+      "type": "object",
+      "description": "A node in an OCSF delegation_lineage graph (OCSF issue #1640).",
+      "required": ["uid"],
+      "properties": {
+        "uid": { "type": "string" },
+        "parent_uid": { "type": "string" },
+        "agent_uid": { "type": "string" },
+        "depth": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "OCSFDelegationLineage": {
+      "type": "object",
+      "description": "OCSF delegation_lineage directed graph for ancestry queries (OCSF issue #1640).",
+      "properties": {
+        "nodes": { "type": "array", "items": { "$ref": "#/definitions/OCSFDelegationNode" } }
+      }
+    },
     "AIModelInfo": {
       "type": "object",
       "required": ["model_id", "provider"],
@@ -217,6 +270,22 @@
         "actor": { "$ref": "#/definitions/OCSFActor" },
         "device": { "$ref": "#/definitions/OCSFDevice" },
         "compliance": { "$ref": "#/definitions/ComplianceMetadata" },
+        "ai_agent": {
+          "$ref": "#/definitions/OCSFAIAgent",
+          "description": "OCSF ai_operation profile (OCSF PR #1641): the AI agent that performed this operation."
+        },
+        "ai_model": {
+          "type": "string",
+          "description": "OCSF ai_operation profile (OCSF PR #1641): the AI model involved in this operation."
+        },
+        "delegation": {
+          "$ref": "#/definitions/OCSFDelegation",
+          "description": "Delegation authorization context (OCSF issue #1640)."
+        },
+        "delegation_lineage": {
+          "$ref": "#/definitions/OCSFDelegationLineage",
+          "description": "Delegation ancestry graph (OCSF issue #1640)."
+        },
         "observables": {
           "type": "array",
           "items": {

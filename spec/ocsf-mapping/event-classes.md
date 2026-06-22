@@ -6,6 +6,17 @@ AITF defines OCSF event classes for AI-specific security telemetry, enabling SIE
 
 These event classes extend the OCSF v1.1.0 specification with a new Category 7 for AI systems. They enable AI telemetry to be consumed by security tools using the same schema as traditional security events.
 
+> **OCSF agentic-AI alignment.** AITF tracks the upstream OCSF agentic direction
+> in [PR #1641](https://github.com/ocsf/ocsf-schema/pull/1641) (the `ai_agent`
+> object + `ai_operation` profile) and
+> [issue #1640](https://github.com/ocsf/ocsf-schema/issues/1640) (the proposed
+> `ai` category `uid 9`, the `delegation` object, and the `agent_activity` /
+> `delegation_activity` control-plane classes). AITF keeps the Category 7 class
+> set below for backward compatibility, **and** every event now carries the
+> OCSF-conformant `ai_agent` and `delegation` objects via the `ai_operation`
+> profile. See **[ocsf-agentic-crosswalk.md](./ocsf-agentic-crosswalk.md)** for
+> the full field-level and class-level mapping.
+
 ### Category: AI System Activity (7)
 
 | Class UID | Event Class | Description |

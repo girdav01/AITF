@@ -219,17 +219,23 @@ class TestOCSFMapper:
 
     def test_map_agent_span(self):
         span = _make_mock_span("agent.session orchestrator", {
-            AgentAttributes.NAME: "orchestrator",
-            AgentAttributes.ID: "agent-001",
-            AgentAttributes.SESSION_ID: "sess-001",
+            GenAIAttributes.AGENT_NAME: "orchestrator",
+            GenAIAttributes.AGENT_ID: "agent-001",
+            GenAIAttributes.CONVERSATION_ID: "sess-001",
+            AgentAttributes.FRAMEWORK: "crewai",
         })
         event = self.mapper.map_span(span)
         assert event is not None
         assert event.class_uid == 7002
+        # OCSF ai_operation profile (PR #1641) is attached by the crosswalk.
+        assert event.ai_agent is not None
+        assert event.ai_agent.uid == "agent-001"
+        assert event.ai_agent.type_id == 4  # CrewAI
+        assert event.ai_agent.type == "CrewAI"
 
     def test_map_tool_span(self):
         span = _make_mock_span("mcp.tool.invoke read_file", {
-            MCPAttributes.TOOL_NAME: "read_file",
+            GenAIAttributes.TOOL_NAME: "read_file",
             MCPAttributes.TOOL_SERVER: "filesystem",
         })
         event = self.mapper.map_span(span)
@@ -238,7 +244,7 @@ class TestOCSFMapper:
 
     def test_map_rag_span(self):
         span = _make_mock_span("rag.retrieve pinecone", {
-            RAGAttributes.RETRIEVE_DATABASE: "pinecone",
+            GenAIAttributes.DATA_SOURCE_ID: "pinecone",
             RAGAttributes.PIPELINE_STAGE: "retrieve",
             RAGAttributes.RETRIEVE_RESULTS_COUNT: 5,
         })
@@ -373,9 +379,9 @@ class TestOCSFMapper:
         """Verify that the mapper can produce all 10 OCSF class UIDs."""
         test_spans = [
             ("chat gpt-4o", {GenAIAttributes.SYSTEM: "openai", GenAIAttributes.REQUEST_MODEL: "gpt-4o", GenAIAttributes.RESPONSE_FINISH_REASONS: ["stop"]}),
-            ("agent.step research", {AgentAttributes.NAME: "r", AgentAttributes.ID: "1", AgentAttributes.SESSION_ID: "s1"}),
-            ("mcp.tool.invoke read", {MCPAttributes.TOOL_NAME: "read"}),
-            ("rag.retrieve db", {RAGAttributes.RETRIEVE_DATABASE: "db", RAGAttributes.RETRIEVE_RESULTS_COUNT: 1}),
+            ("agent.step research", {GenAIAttributes.AGENT_NAME: "r", GenAIAttributes.AGENT_ID: "1", GenAIAttributes.CONVERSATION_ID: "s1"}),
+            ("mcp.tool.invoke read", {GenAIAttributes.TOOL_NAME: "read"}),
+            ("rag.retrieve db", {GenAIAttributes.DATA_SOURCE_ID: "db", RAGAttributes.RETRIEVE_RESULTS_COUNT: 1}),
             ("security.threat", {SecurityAttributes.THREAT_DETECTED: True, SecurityAttributes.RISK_LEVEL: "high", SecurityAttributes.RISK_SCORE: 90, SecurityAttributes.CONFIDENCE: 0.9}),
             ("supply_chain.verify m", {SupplyChainAttributes.MODEL_SOURCE: "hf"}),
             ("governance.audit x", {ComplianceAttributes.FRAMEWORKS: ["eu_ai_act"]}),
@@ -392,6 +398,111 @@ class TestOCSFMapper:
 
         expected = {7001, 7002, 7003, 7004, 7005, 7006, 7007, 7008, 7009, 7010}
         assert class_uids == expected, f"Missing class UIDs: {expected - class_uids}"
+
+
+class TestOCSFCrosswalk:
+    """Tests for the AITF <-> OCSF agentic crosswalk (PR #1641 / issue #1640)."""
+
+    def setup_method(self):
+        self.mapper = OCSFMapper()
+
+    def test_normalize_agent_type_id(self):
+        from aitf.ocsf import normalize_agent_type_id
+
+        assert normalize_agent_type_id("native") == 1
+        assert normalize_agent_type_id("langchain") == 2
+        assert normalize_agent_type_id("langgraph") == 2
+        assert normalize_agent_type_id("autogen") == 3
+        assert normalize_agent_type_id("crewai") == 4
+        assert normalize_agent_type_id("semantic_kernel") == 99  # OTHER
+        assert normalize_agent_type_id(None) == 0  # UNKNOWN
+
+    def test_build_ai_agent_object(self):
+        from aitf.ocsf import build_ai_agent
+
+        agent = build_ai_agent({
+            GenAIAttributes.AGENT_ID: "agt-1",
+            GenAIAttributes.AGENT_NAME: "planner",
+            GenAIAttributes.AGENT_VERSION: "1.2.0",
+            GenAIAttributes.REQUEST_MODEL: "gpt-4o",
+            AgentAttributes.FRAMEWORK: "langchain",
+        })
+        assert agent is not None
+        assert agent.uid == "agt-1"
+        assert agent.name == "planner"
+        assert agent.type_id == 2
+        assert agent.type == "LangChain"
+        assert agent.ai_model == "gpt-4o"
+        assert agent.version == "1.2.0"
+
+    def test_build_ai_agent_none_when_no_identity(self):
+        from aitf.ocsf import build_ai_agent
+
+        assert build_ai_agent({"http.method": "GET"}) is None
+
+    def test_build_delegation_object(self):
+        from aitf.ocsf import build_delegation
+
+        deleg = build_delegation({
+            IdentityAttributes.DELEGATION_DELEGATEE_ID: "agt-2",
+            IdentityAttributes.DELEGATION_DELEGATOR_ID: "agt-1",
+            IdentityAttributes.DELEGATION_TYPE: "on_behalf_of",
+            IdentityAttributes.DELEGATION_SCOPE_DELEGATED: ["read", "write"],
+            IdentityAttributes.DELEGATION_TTL_SECONDS: 3600,
+        })
+        assert deleg is not None
+        assert deleg.uid == "agt-2"          # OCSF delegation.uid
+        assert deleg.parent_uid == "agt-1"   # OCSF delegation.parent_uid
+        assert deleg.type == "on_behalf_of"
+        assert deleg.scope == ["read", "write"]
+        assert deleg.ttl_seconds == 3600
+
+    def test_build_delegation_lineage_graph(self):
+        from aitf.ocsf import build_delegation_lineage
+
+        lineage = build_delegation_lineage({
+            IdentityAttributes.DELEGATION_CHAIN: ["root", "agt-1", "agt-2"],
+        })
+        assert lineage is not None
+        assert len(lineage.nodes) == 3
+        assert lineage.nodes[0].parent_uid is None
+        assert lineage.nodes[0].depth == 0
+        assert lineage.nodes[2].parent_uid == "agt-1"
+        assert lineage.nodes[2].depth == 2
+
+    def test_identity_span_carries_delegation(self):
+        span = _make_mock_span("identity.delegate orchestrator", {
+            IdentityAttributes.AGENT_ID: "agt-1",
+            IdentityAttributes.AGENT_NAME: "orchestrator",
+            IdentityAttributes.AUTH_METHOD: "mtls",
+            IdentityAttributes.AUTH_RESULT: "success",
+            IdentityAttributes.DELEGATION_DELEGATEE_ID: "agt-2",
+            IdentityAttributes.DELEGATION_DELEGATOR_ID: "agt-1",
+            IdentityAttributes.DELEGATION_TYPE: "token_exchange",
+        })
+        event = self.mapper.map_span(span)
+        assert event is not None
+        assert event.class_uid == 7008
+        assert event.delegation is not None
+        assert event.delegation.uid == "agt-2"
+        assert event.delegation.type == "token_exchange"
+
+    def test_control_plane_crosswalk_tables(self):
+        from aitf.ocsf import (
+            OCSF_AGENT_ACTIVITY_CROSSWALK,
+            OCSF_CLASS_CROSSWALK,
+            OCSF_DELEGATION_ACTIVITY_CROSSWALK,
+        )
+
+        # AITF 7002 Session Start -> OCSF agent_activity Spawn (issue #1640)
+        assert OCSF_AGENT_ACTIVITY_CROSSWALK[1] == "Spawn"
+        assert OCSF_AGENT_ACTIVITY_CROSSWALK[2] == "Terminate"
+        # AITF delegation -> OCSF delegation_activity
+        assert OCSF_DELEGATION_ACTIVITY_CROSSWALK["revoke"] == "Revoke"
+        # AITF 7002 maps onto the proposed OCSF `ai` category (uid 9)
+        assert OCSF_CLASS_CROSSWALK[7002]["ocsf_category_uid"] == 9
+        assert OCSF_CLASS_CROSSWALK[7002]["ocsf_class"] == "agent_activity"
+        assert OCSF_CLASS_CROSSWALK[7008]["ocsf_class"] == "delegation_activity"
 
 
 class TestComplianceMapper:

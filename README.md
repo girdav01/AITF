@@ -116,6 +116,17 @@ AITF defines ten OCSF event classes for AI systems:
 | 7009 | AI Model Operations | Model lifecycle: training, evaluation, deployment, monitoring, serving |
 | 7010 | AI Asset Inventory | Asset registration, discovery, audit, risk classification, drift, memory security, shadow AI |
 
+**OCSF agentic-AI alignment.** AITF tracks the upstream OCSF agentic direction in
+[PR #1641](https://github.com/ocsf/ocsf-schema/pull/1641) (the `ai_agent` object
+and `ai_operation` profile) and
+[issue #1640](https://github.com/ocsf/ocsf-schema/issues/1640) (the proposed `ai`
+category `uid 9`, the `delegation` object, and the `agent_activity` /
+`delegation_activity` control-plane classes). The Category 7 classes above are
+retained for backward compatibility, and **every event additionally carries the
+OCSF-conformant `ai_agent` and `delegation` objects via the `ai_operation`
+profile** — so AITF telemetry maps cleanly onto OCSF's native agentic schema as
+it is ratified. Full mapping: [`spec/ocsf-mapping/ocsf-agentic-crosswalk.md`](spec/ocsf-mapping/ocsf-agentic-crosswalk.md).
+
 ## SDK Language Support
 
 | Language | Status | Package |
