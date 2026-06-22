@@ -50,6 +50,62 @@ export enum AIClassUID {
   ASSET_INVENTORY = 7010,
 }
 
+/**
+ * OCSF `ai_agent.type_id` — normalized agent framework.
+ *
+ * Mirrors the enum introduced by OCSF PR #1641 (`objects/ai_agent.json`)
+ * so AITF telemetry maps cleanly onto the upstream OCSF `ai_agent` object.
+ */
+export enum AgentTypeID {
+  UNKNOWN = 0,
+  NATIVE = 1,
+  LANGCHAIN = 2,
+  AUTOGEN = 3,
+  CREWAI = 4,
+  OTHER = 99,
+}
+
+/** Caption labels for AgentTypeID, per OCSF PR #1641. */
+export const AGENT_TYPE_LABELS: Record<number, string> = {
+  0: "Unknown",
+  1: "Native",
+  2: "LangChain",
+  3: "AutoGen",
+  4: "CrewAI",
+  99: "Other",
+};
+
+/**
+ * AITF framework value -> OCSF ai_agent.type_id. Frameworks without a
+ * dedicated OCSF enum member (langgraph, semantic_kernel, custom, ...)
+ * normalize to OTHER (99), matching OCSF's open-enum guidance.
+ */
+const FRAMEWORK_TO_TYPE_ID: Record<string, AgentTypeID> = {
+  native: AgentTypeID.NATIVE,
+  langchain: AgentTypeID.LANGCHAIN,
+  langgraph: AgentTypeID.LANGCHAIN,
+  autogen: AgentTypeID.AUTOGEN,
+  crewai: AgentTypeID.CREWAI,
+};
+
+/** Map an AITF framework string to an OCSF `ai_agent.type_id` value. */
+export function normalizeAgentTypeId(framework?: string | null): number {
+  if (!framework) {
+    return AgentTypeID.UNKNOWN;
+  }
+  const key = framework.trim().toLowerCase();
+  return key in FRAMEWORK_TO_TYPE_ID
+    ? FRAMEWORK_TO_TYPE_ID[key]
+    : AgentTypeID.OTHER;
+}
+
+/**
+ * OCSF AI category and control-plane classes proposed in OCSF issue #1640.
+ * AITF keeps its established Category 7 classes but records the upstream
+ * target so consumers can crosswalk to the future native `ai` category.
+ */
+export const OCSF_AI_CATEGORY_UID = 9; // proposed "AI Activity" category (OCSF issue #1640)
+
 // --- OCSF Base Object Interfaces ---
 
 /** OCSF event metadata. */
@@ -161,6 +217,57 @@ export interface AISecurityFinding {
   remediation?: string;
 }
 
+/**
+ * OCSF `ai_agent` object (OCSF PR #1641).
+ *
+ * An autonomous AI agent operating under delegated authority. Distinct from
+ * the OCSF `agent` object (which models security sensors such as EDR/DLP)
+ * and from human principals. Attached to events via the `ai_operation`
+ * profile so any activity can be attributed to the agent that performed it.
+ */
+export interface OCSFAIAgent {
+  uid: string; // required: stable logical identifier
+  instance_uid?: string; // restart-sensitive running instance id
+  name?: string;
+  type?: string; // caption of type_id (Native, LangChain, ...)
+  type_id: number;
+  ai_model?: string; // model backing the agent at event time
+  version?: string; // agent code/configuration revision
+  charter?: string; // role / operating-boundary reference
+}
+
+/**
+ * OCSF `delegation` object (OCSF issue #1640).
+ *
+ * A durable authorization context that persists independently of any single
+ * trace or session. `uid`/`parent_uid`/`issuer_uid` provide the OCSF core;
+ * the remaining fields preserve AITF's richer delegation telemetry.
+ */
+export interface OCSFDelegation {
+  uid: string; // required: stable delegation identifier
+  parent_uid?: string; // parent delegation (lineage)
+  issuer_uid?: string; // trusted issuer that minted the delegation
+  delegator?: string;
+  delegatee?: string;
+  type?: string; // on_behalf_of, token_exchange, capability_grant, ...
+  scope: string[];
+  proof_type?: string; // dpop, mtls_binding, signed_assertion
+  ttl_seconds?: number;
+}
+
+/** A single node in an OCSF `delegation_lineage` graph (OCSF issue #1640). */
+export interface OCSFDelegationNode {
+  uid: string;
+  parent_uid?: string;
+  agent_uid?: string;
+  depth?: number;
+}
+
+/** OCSF `delegation_lineage` — directed graph for ancestry queries. */
+export interface OCSFDelegationLineage {
+  nodes: OCSFDelegationNode[];
+}
+
 /** Compliance framework mappings. */
 export interface ComplianceMetadata {
   nist_ai_rmf?: Record<string, unknown>;
@@ -191,6 +298,14 @@ export interface AIBaseEvent {
   compliance?: ComplianceMetadata;
   observables: OCSFObservable[];
   enrichments: OCSFEnrichment[];
+
+  // OCSF `ai_operation` profile (OCSF PR #1641) + delegation context
+  // (OCSF issue #1640). Populated by the crosswalk so every AITF event can
+  // be attributed to the AI agent and delegation that produced it.
+  ai_agent?: OCSFAIAgent;
+  ai_model?: string;
+  delegation?: OCSFDelegation;
+  delegation_lineage?: OCSFDelegationLineage;
 }
 
 // --- Factory Functions ---

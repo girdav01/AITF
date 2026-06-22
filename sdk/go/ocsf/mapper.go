@@ -26,22 +26,54 @@ func (m *OCSFMapper) MapSpan(span sdktrace.ReadOnlySpan) interface{} {
 	attrs := spanAttrs(span)
 
 	if m.isInferenceSpan(name, attrs) {
-		return m.mapInference(span, attrs)
+		event := m.mapInference(span, attrs)
+		m.enrichAIOperation(&event.AIBaseEvent, attrs)
+		return event
 	}
 	if m.isAgentSpan(name, attrs) {
-		return m.mapAgentActivity(span, attrs)
+		event := m.mapAgentActivity(span, attrs)
+		m.enrichAIOperation(&event.AIBaseEvent, attrs)
+		return event
 	}
 	if m.isToolSpan(name, attrs) {
-		return m.mapToolExecution(span, attrs)
+		event := m.mapToolExecution(span, attrs)
+		m.enrichAIOperation(&event.AIBaseEvent, attrs)
+		return event
 	}
 	if m.isRAGSpan(name, attrs) {
-		return m.mapDataRetrieval(span, attrs)
+		event := m.mapDataRetrieval(span, attrs)
+		m.enrichAIOperation(&event.AIBaseEvent, attrs)
+		return event
 	}
 	if m.isSecuritySpan(name, attrs) {
-		return m.mapSecurityFinding(span, attrs)
+		event := m.mapSecurityFinding(span, attrs)
+		m.enrichAIOperation(&event.AIBaseEvent, attrs)
+		return event
 	}
 
 	return nil
+}
+
+// enrichAIOperation attaches the OCSF ai_operation profile to a mapped event.
+//
+// Populates the OCSF ai_agent object (PR #1641) and delegation context (issue
+// #1640) so AITF Category 7 events carry OCSF-conformant agentic attribution
+// without changing their class set.
+func (m *OCSFMapper) enrichAIOperation(event *AIBaseEvent, attrs map[string]interface{}) {
+	if aiAgent := BuildAIAgent(attrs); aiAgent != nil {
+		event.AIAgent = aiAgent
+		if event.AIModel == "" {
+			event.AIModel = aiAgent.AIModel
+		}
+	}
+
+	if delegation := BuildDelegation(attrs); delegation != nil {
+		event.Delegation = delegation
+	}
+
+	if lineage := BuildDelegationLineage(attrs); lineage != nil {
+		event.DelegationLineage = lineage
+	}
 }
 
 // ClassifySpan returns the OCSF event type string for a span, or "" if unrecognized.

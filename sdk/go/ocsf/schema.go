@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -47,6 +48,57 @@ const (
 	ActivityDelete  = 4
 	ActivityOther   = 99
 )
+
+// AgentTypeID represents OCSF ai_agent.type_id (normalized agent framework).
+//
+// Mirrors the enum introduced by OCSF PR #1641 (objects/ai_agent.json) so AITF
+// telemetry maps cleanly onto the upstream OCSF ai_agent object.
+const (
+	AgentTypeIDUnknown   = 0
+	AgentTypeIDNative    = 1
+	AgentTypeIDLangChain = 2
+	AgentTypeIDAutoGen   = 3
+	AgentTypeIDCrewAI    = 4
+	AgentTypeIDOther     = 99
+)
+
+// AgentTypeLabels maps AgentTypeID values to their OCSF captions (PR #1641).
+var AgentTypeLabels = map[int]string{
+	AgentTypeIDUnknown:   "Unknown",
+	AgentTypeIDNative:    "Native",
+	AgentTypeIDLangChain: "LangChain",
+	AgentTypeIDAutoGen:   "AutoGen",
+	AgentTypeIDCrewAI:    "CrewAI",
+	AgentTypeIDOther:     "Other",
+}
+
+// frameworkToTypeID maps AITF framework values to OCSF ai_agent.type_id.
+// Frameworks without a dedicated OCSF enum member (langgraph aside,
+// semantic_kernel, custom, ...) normalize to Other (99) per OCSF open-enum
+// guidance.
+var frameworkToTypeID = map[string]int{
+	"native":    AgentTypeIDNative,
+	"langchain": AgentTypeIDLangChain,
+	"langgraph": AgentTypeIDLangChain,
+	"autogen":   AgentTypeIDAutoGen,
+	"crewai":    AgentTypeIDCrewAI,
+}
+
+// NormalizeAgentTypeID maps an AITF framework string to an OCSF
+// ai_agent.type_id value. Empty -> Unknown (0); known frameworks -> their enum
+// member; any other non-empty value -> Other (99).
+func NormalizeAgentTypeID(framework string) int {
+	if framework == "" {
+		return AgentTypeIDUnknown
+	}
+	if id, ok := frameworkToTypeID[strings.ToLower(strings.TrimSpace(framework))]; ok {
+		return id
+	}
+	return AgentTypeIDOther
+}
+
+// OCSFAICategoryUID is the proposed "AI Activity" category (OCSF issue #1640).
+const OCSFAICategoryUID = 9
 
 // AIClassUID represents AITF OCSF Category 7 class UIDs.
 const (
@@ -190,6 +242,55 @@ type AISecurityFinding struct {
 	Remediation     string   `json:"remediation,omitempty"`
 }
 
+// OCSFAIAgent is the OCSF ai_agent object (OCSF PR #1641).
+//
+// An autonomous AI agent operating under delegated authority. Distinct from the
+// OCSF agent object (which models security sensors such as EDR/DLP) and from
+// human principals. Attached to events via the ai_operation profile so any
+// activity can be attributed to the agent that performed it.
+type OCSFAIAgent struct {
+	UID         string `json:"uid"`                    // required: stable logical identifier
+	InstanceUID string `json:"instance_uid,omitempty"` // restart-sensitive running instance id
+	Name        string `json:"name,omitempty"`
+	Type        string `json:"type,omitempty"` // caption of type_id (Native, LangChain, ...)
+	TypeID      int    `json:"type_id,omitempty"`
+	AIModel     string `json:"ai_model,omitempty"` // model backing the agent at event time
+	Version     string `json:"version,omitempty"`  // agent code/configuration revision
+	Charter     string `json:"charter,omitempty"`  // role / operating-boundary reference
+}
+
+// OCSFDelegation is the OCSF delegation object (OCSF issue #1640).
+//
+// A durable authorization context that persists independently of any single
+// trace or session. uid/parent_uid/issuer_uid provide the OCSF core; the
+// remaining fields preserve AITF's richer delegation telemetry.
+type OCSFDelegation struct {
+	UID        string   `json:"uid"`                  // required: stable delegation identifier
+	ParentUID  string   `json:"parent_uid,omitempty"` // parent delegation (lineage)
+	IssuerUID  string   `json:"issuer_uid,omitempty"` // trusted issuer that minted the delegation
+	Delegator  string   `json:"delegator,omitempty"`
+	Delegatee  string   `json:"delegatee,omitempty"`
+	Type       string   `json:"type,omitempty"` // on_behalf_of, token_exchange, capability_grant, ...
+	Scope      []string `json:"scope,omitempty"`
+	ProofType  string   `json:"proof_type,omitempty"` // dpop, mtls_binding, signed_assertion
+	TTLSeconds *int     `json:"ttl_seconds,omitempty"`
+}
+
+// OCSFDelegationNode is a single node in an OCSF delegation_lineage graph
+// (OCSF issue #1640).
+type OCSFDelegationNode struct {
+	UID       string `json:"uid"`
+	ParentUID string `json:"parent_uid,omitempty"`
+	AgentUID  string `json:"agent_uid,omitempty"`
+	Depth     int    `json:"depth"`
+}
+
+// OCSFDelegationLineage is the OCSF delegation_lineage directed graph for
+// ancestry queries (OCSF issue #1640).
+type OCSFDelegationLineage struct {
+	Nodes []OCSFDelegationNode `json:"nodes,omitempty"`
+}
+
 // ComplianceMetadata holds compliance framework mappings.
 type ComplianceMetadata struct {
 	NISTAIMRMF map[string]interface{} `json:"nist_ai_rmf,omitempty"`
@@ -220,6 +321,14 @@ type AIBaseEvent struct {
 	Compliance  *ComplianceMetadata `json:"compliance,omitempty"`
 	Observables []OCSFObservable   `json:"observables,omitempty"`
 	Enrichments []OCSFEnrichment   `json:"enrichments,omitempty"`
+
+	// OCSF ai_operation profile (OCSF PR #1641) + delegation context
+	// (OCSF issue #1640). Populated by the crosswalk so every AITF event can be
+	// attributed to the AI agent and delegation that produced it.
+	AIAgent           *OCSFAIAgent           `json:"ai_agent,omitempty"`
+	AIModel           string                 `json:"ai_model,omitempty"`
+	Delegation        *OCSFDelegation        `json:"delegation,omitempty"`
+	DelegationLineage *OCSFDelegationLineage `json:"delegation_lineage,omitempty"`
 }
 
 // ComputeTypeUID computes the type_uid as class_uid * 100 + activity_id.
