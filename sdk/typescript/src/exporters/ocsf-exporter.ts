@@ -1,8 +1,8 @@
 /**
  * AITF OCSF Exporter.
  *
- * OTel SpanExporter that converts AI spans to OCSF Category 7 events
- * and exports them to SIEM/XDR endpoints, S3, or local files.
+ * OTel SpanExporter that converts AI spans to OCSF events (reusing existing
+ * OCSF classes) and exports them to SIEM/XDR endpoints, S3, or local files.
  *
  * Based on forwarder architecture from the AITelemetry project.
  */
@@ -66,7 +66,7 @@ function validateOutputPath(outputFile: string): string {
 }
 
 /**
- * Exports OTel spans as OCSF Category 7 AI events.
+ * Exports OTel spans as OCSF AI events (reusing existing OCSF classes).
  *
  * Converts AI-related spans to OCSF events using OCSFMapper,
  * enriches with compliance metadata, and exports to configured
@@ -265,19 +265,22 @@ export class OCSFExporter implements SpanExporter {
     return message;
   }
 
+  /**
+   * Classify an OCSF event for compliance mapping.
+   *
+   * AITF reuses existing OCSF classes (OCSF PR #1641 / issue #1640), so
+   * `class_uid` is no longer unique per AI event type (e.g. inference and
+   * tool execution both reuse API Activity 6003). Classify by the
+   * discriminating fields the mapper sets on each event.
+   */
   private _classifyEvent(event: AIBaseEvent): string | null {
-    const classUid = event.class_uid;
-    const mapping: Record<number, string> = {
-      7001: "model_inference",
-      7002: "agent_activity",
-      7003: "tool_execution",
-      7004: "data_retrieval",
-      7005: "security_finding",
-      7006: "supply_chain",
-      7007: "governance",
-      7008: "identity",
-    };
-    return mapping[classUid] ?? null;
+    const e = event as unknown as Record<string, unknown>;
+    if ("model" in e) return "model_inference";
+    if ("tool_name" in e) return "tool_execution";
+    if ("database_name" in e) return "data_retrieval";
+    if ("finding" in e) return "security_finding";
+    if ("session_id" in e && "agent_id" in e) return "agent_activity";
+    return null;
   }
 
   /** Number of OCSF events exported. */

@@ -1,8 +1,10 @@
-// Package ocsf provides AITF OCSF Category 7 AI event schema for Go.
+// Package ocsf provides AITF OCSF AI event schema for Go.
 //
-// OCSF v1.1.0 base objects and AI-specific extension models.
-// Based on the OCSF schema from the AITelemetry project, enhanced
-// for AITF Category 7 AI events.
+// OCSF v1.1.0 base objects and AI-specific extension models. Following OCSF's
+// "reuse existing objects and profiles" approach (OCSF PR #1641 / issue #1640),
+// AITF emits AI telemetry under existing OCSF classes enriched with the
+// ai_operation profile, using the proposed "ai" category (uid 9) only for the
+// genuinely new agent / delegation control-plane classes.
 package ocsf
 
 import (
@@ -11,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -48,18 +51,105 @@ const (
 	ActivityOther   = 99
 )
 
-// AIClassUID represents AITF OCSF Category 7 class UIDs.
+// AgentTypeID represents OCSF ai_agent.type_id (normalized agent framework).
+//
+// Mirrors the enum introduced by OCSF PR #1641 (objects/ai_agent.json) so AITF
+// telemetry maps cleanly onto the upstream OCSF ai_agent object.
 const (
-	ClassUIDModelInference  = 7001
-	ClassUIDAgentActivity   = 7002
-	ClassUIDToolExecution   = 7003
-	ClassUIDDataRetrieval   = 7004
-	ClassUIDSecurityFinding = 7005
-	ClassUIDSupplyChain     = 7006
-	ClassUIDGovernance      = 7007
-	ClassUIDIdentity        = 7008
-	ClassUIDModelOps        = 7009
-	ClassUIDAssetInventory  = 7010
+	AgentTypeIDUnknown   = 0
+	AgentTypeIDNative    = 1
+	AgentTypeIDLangChain = 2
+	AgentTypeIDAutoGen   = 3
+	AgentTypeIDCrewAI    = 4
+	AgentTypeIDOther     = 99
+)
+
+// AgentTypeLabels maps AgentTypeID values to their OCSF captions (PR #1641).
+var AgentTypeLabels = map[int]string{
+	AgentTypeIDUnknown:   "Unknown",
+	AgentTypeIDNative:    "Native",
+	AgentTypeIDLangChain: "LangChain",
+	AgentTypeIDAutoGen:   "AutoGen",
+	AgentTypeIDCrewAI:    "CrewAI",
+	AgentTypeIDOther:     "Other",
+}
+
+// frameworkToTypeID maps AITF framework values to OCSF ai_agent.type_id.
+// Frameworks without a dedicated OCSF enum member (langgraph aside,
+// semantic_kernel, custom, ...) normalize to Other (99) per OCSF open-enum
+// guidance.
+var frameworkToTypeID = map[string]int{
+	"native":    AgentTypeIDNative,
+	"langchain": AgentTypeIDLangChain,
+	"langgraph": AgentTypeIDLangChain,
+	"autogen":   AgentTypeIDAutoGen,
+	"crewai":    AgentTypeIDCrewAI,
+}
+
+// NormalizeAgentTypeID maps an AITF framework string to an OCSF
+// ai_agent.type_id value. Empty -> Unknown (0); known frameworks -> their enum
+// member; any other non-empty value -> Other (99).
+func NormalizeAgentTypeID(framework string) int {
+	if framework == "" {
+		return AgentTypeIDUnknown
+	}
+	if id, ok := frameworkToTypeID[strings.ToLower(strings.TrimSpace(framework))]; ok {
+		return id
+	}
+	return AgentTypeIDOther
+}
+
+// OCSFAICategoryUID is the proposed "AI Activity" category (OCSF issue #1640).
+const OCSFAICategoryUID = 9
+
+// OCSFCategoryUID values are the OCSF category UIDs that AITF AI events map
+// onto. Following OCSF's "reuse existing objects and profiles" approach (OCSF
+// PR #1641 / issue #1640), data-plane AI activity is emitted under existing
+// OCSF categories enriched with the ai_operation profile; only agent /
+// delegation control-plane lifecycle uses the proposed "ai" category (uid 9).
+const (
+	OCSFCategoryUIDFindings    = 2
+	OCSFCategoryUIDIAM         = 3
+	OCSFCategoryUIDDiscovery   = 5
+	OCSFCategoryUIDApplication = 6
+	OCSFCategoryUIDAI          = 9 // proposed "AI Activity" category (OCSF issue #1640)
+)
+
+// OCSFClassUID values are the OCSF event class UIDs that AITF AI events map
+// onto. Data-plane AI activity reuses existing OCSF classes; only the agent and
+// delegation control-plane lifecycle use the proposed "ai" category (uid 9).
+//
+// Inference and tool execution intentionally share API Activity (6003); they
+// are distinguished by activity_id and the ai_operation profile.
+const (
+	// Reused existing OCSF classes (verified against the OCSF schema).
+	ClassUIDVulnerabilityFinding = 2002
+	ClassUIDComplianceFinding    = 2003
+	ClassUIDDetectionFinding     = 2004
+	ClassUIDAuthentication       = 3002
+	ClassUIDInventoryInfo        = 5001
+	ClassUIDApplicationLifecycle = 6002
+	ClassUIDAPIActivity          = 6003
+	ClassUIDDatastoreActivity    = 6005
+	// New control-plane classes in the proposed "ai" category (uid 9). UIDs are
+	// provisional pending OCSF issue #1640 ratification.
+	ClassUIDAgentActivity      = 9001
+	ClassUIDDelegationActivity = 9002
+)
+
+// Backward-compatible aliases. AITF previously defined a bespoke Category 7
+// with classes 7001-7010; events now reuse the OCSF classes above per OCSF's
+// object/profile-reuse model. Kept so existing references keep working.
+const (
+	ClassUIDModelInference = ClassUIDAPIActivity          // was 7001 -> API Activity (6003)
+	ClassUIDToolExecution  = ClassUIDAPIActivity          // was 7003 -> API Activity (6003)
+	ClassUIDDataRetrieval  = ClassUIDDatastoreActivity    // was 7004 -> Datastore Activity (6005)
+	ClassUIDSecurityFinding = ClassUIDDetectionFinding    // was 7005 -> Detection Finding (2004)
+	ClassUIDSupplyChain    = ClassUIDVulnerabilityFinding // was 7006 -> Vulnerability Finding (2002)
+	ClassUIDGovernance     = ClassUIDComplianceFinding    // was 7007 -> Compliance Finding (2003)
+	ClassUIDIdentity       = ClassUIDAuthentication       // was 7008 -> Authentication (3002)
+	ClassUIDModelOps       = ClassUIDApplicationLifecycle // was 7009 -> Application Lifecycle (6002)
+	ClassUIDAssetInventory = ClassUIDInventoryInfo        // was 7010 -> Inventory Info (5001)
 )
 
 // --- OCSF Base Objects ---
@@ -190,6 +280,55 @@ type AISecurityFinding struct {
 	Remediation     string   `json:"remediation,omitempty"`
 }
 
+// OCSFAIAgent is the OCSF ai_agent object (OCSF PR #1641).
+//
+// An autonomous AI agent operating under delegated authority. Distinct from the
+// OCSF agent object (which models security sensors such as EDR/DLP) and from
+// human principals. Attached to events via the ai_operation profile so any
+// activity can be attributed to the agent that performed it.
+type OCSFAIAgent struct {
+	UID         string `json:"uid"`                    // required: stable logical identifier
+	InstanceUID string `json:"instance_uid,omitempty"` // restart-sensitive running instance id
+	Name        string `json:"name,omitempty"`
+	Type        string `json:"type,omitempty"` // caption of type_id (Native, LangChain, ...)
+	TypeID      int    `json:"type_id,omitempty"`
+	AIModel     string `json:"ai_model,omitempty"` // model backing the agent at event time
+	Version     string `json:"version,omitempty"`  // agent code/configuration revision
+	Charter     string `json:"charter,omitempty"`  // role / operating-boundary reference
+}
+
+// OCSFDelegation is the OCSF delegation object (OCSF issue #1640).
+//
+// A durable authorization context that persists independently of any single
+// trace or session. uid/parent_uid/issuer_uid provide the OCSF core; the
+// remaining fields preserve AITF's richer delegation telemetry.
+type OCSFDelegation struct {
+	UID        string   `json:"uid"`                  // required: stable delegation identifier
+	ParentUID  string   `json:"parent_uid,omitempty"` // parent delegation (lineage)
+	IssuerUID  string   `json:"issuer_uid,omitempty"` // trusted issuer that minted the delegation
+	Delegator  string   `json:"delegator,omitempty"`
+	Delegatee  string   `json:"delegatee,omitempty"`
+	Type       string   `json:"type,omitempty"` // on_behalf_of, token_exchange, capability_grant, ...
+	Scope      []string `json:"scope,omitempty"`
+	ProofType  string   `json:"proof_type,omitempty"` // dpop, mtls_binding, signed_assertion
+	TTLSeconds *int     `json:"ttl_seconds,omitempty"`
+}
+
+// OCSFDelegationNode is a single node in an OCSF delegation_lineage graph
+// (OCSF issue #1640).
+type OCSFDelegationNode struct {
+	UID       string `json:"uid"`
+	ParentUID string `json:"parent_uid,omitempty"`
+	AgentUID  string `json:"agent_uid,omitempty"`
+	Depth     int    `json:"depth"`
+}
+
+// OCSFDelegationLineage is the OCSF delegation_lineage directed graph for
+// ancestry queries (OCSF issue #1640).
+type OCSFDelegationLineage struct {
+	Nodes []OCSFDelegationNode `json:"nodes,omitempty"`
+}
+
 // ComplianceMetadata holds compliance framework mappings.
 type ComplianceMetadata struct {
 	NISTAIMRMF map[string]interface{} `json:"nist_ai_rmf,omitempty"`
@@ -204,7 +343,11 @@ type ComplianceMetadata struct {
 
 // --- OCSF Base Event ---
 
-// AIBaseEvent is the base OCSF event for all AITF Category 7 events.
+// AIBaseEvent is the base OCSF event for AITF AI events.
+//
+// Constructors set category_uid and class_uid to the OCSF class they reuse
+// (OCSF PR #1641 / issue #1640). AI-specific context is carried on the
+// ai_operation profile (ai_agent, ai_model, delegation).
 type AIBaseEvent struct {
 	ActivityID  int                `json:"activity_id"`
 	CategoryUID int               `json:"category_uid"`
@@ -220,6 +363,14 @@ type AIBaseEvent struct {
 	Compliance  *ComplianceMetadata `json:"compliance,omitempty"`
 	Observables []OCSFObservable   `json:"observables,omitempty"`
 	Enrichments []OCSFEnrichment   `json:"enrichments,omitempty"`
+
+	// OCSF ai_operation profile (OCSF PR #1641) + delegation context
+	// (OCSF issue #1640). Populated by the crosswalk so every AITF event can be
+	// attributed to the AI agent and delegation that produced it.
+	AIAgent           *OCSFAIAgent           `json:"ai_agent,omitempty"`
+	AIModel           string                 `json:"ai_model,omitempty"`
+	Delegation        *OCSFDelegation        `json:"delegation,omitempty"`
+	DelegationLineage *OCSFDelegationLineage `json:"delegation_lineage,omitempty"`
 }
 
 // ComputeTypeUID computes the type_uid as class_uid * 100 + activity_id.
@@ -227,11 +378,12 @@ func (e *AIBaseEvent) ComputeTypeUID() int {
 	return e.ClassUID*100 + e.ActivityID
 }
 
-// NewAIBaseEvent creates a base event with default values.
-func NewAIBaseEvent(classUID, activityID int) AIBaseEvent {
+// NewAIBaseEvent creates a base event with default values. The event reuses the
+// given OCSF category_uid and class_uid (OCSF PR #1641 / issue #1640).
+func NewAIBaseEvent(categoryUID, classUID, activityID int) AIBaseEvent {
 	e := AIBaseEvent{
 		ActivityID:  activityID,
-		CategoryUID: 7, // AI System Activity
+		CategoryUID: categoryUID,
 		ClassUID:    classUID,
 		Time:        time.Now().UTC().Format(time.RFC3339),
 		SeverityID:  SeverityInformational,

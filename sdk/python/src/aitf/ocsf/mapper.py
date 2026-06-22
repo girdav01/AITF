@@ -13,6 +13,11 @@ from typing import Any
 
 from opentelemetry.sdk.trace import ReadableSpan
 
+from aitf.ocsf.crosswalk import (
+    build_ai_agent,
+    build_delegation,
+    build_delegation_lineage,
+)
 from aitf.ocsf.event_classes import (
     AIAgentActivityEvent,
     AIAssetInventoryEvent,
@@ -76,28 +81,54 @@ class OCSFMapper:
         attrs = dict(span.attributes or {})
 
         # Determine event type and map accordingly
+        event: AIBaseEvent | None
         if self._is_inference_span(name, attrs):
-            return self._map_inference(span, attrs)
+            event = self._map_inference(span, attrs)
         elif self._is_agent_span(name, attrs):
-            return self._map_agent_activity(span, attrs)
+            event = self._map_agent_activity(span, attrs)
         elif self._is_tool_span(name, attrs):
-            return self._map_tool_execution(span, attrs)
+            event = self._map_tool_execution(span, attrs)
         elif self._is_rag_span(name, attrs):
-            return self._map_data_retrieval(span, attrs)
+            event = self._map_data_retrieval(span, attrs)
         elif self._is_security_span(name, attrs):
-            return self._map_security_finding(span, attrs)
+            event = self._map_security_finding(span, attrs)
         elif self._is_supply_chain_span(name, attrs):
-            return self._map_supply_chain(span, attrs)
+            event = self._map_supply_chain(span, attrs)
         elif self._is_governance_span(name, attrs):
-            return self._map_governance(span, attrs)
+            event = self._map_governance(span, attrs)
         elif self._is_identity_span(name, attrs):
-            return self._map_identity(span, attrs)
+            event = self._map_identity(span, attrs)
         elif self._is_model_ops_span(name, attrs):
-            return self._map_model_ops(span, attrs)
+            event = self._map_model_ops(span, attrs)
         elif self._is_asset_inventory_span(name, attrs):
-            return self._map_asset_inventory(span, attrs)
+            event = self._map_asset_inventory(span, attrs)
+        else:
+            return None
 
-        return None
+        return self._enrich_ai_operation(event, attrs)
+
+    def _enrich_ai_operation(self, event: AIBaseEvent, attrs: dict) -> AIBaseEvent:
+        """Attach the OCSF ``ai_operation`` profile to a mapped event.
+
+        Populates the OCSF ``ai_agent`` object (PR #1641) and ``delegation``
+        context (issue #1640) so AITF Category 7 events carry OCSF-conformant
+        agentic attribution without changing their class set.
+        """
+        ai_agent = build_ai_agent(attrs)
+        if ai_agent is not None:
+            event.ai_agent = ai_agent
+            if event.ai_model is None:
+                event.ai_model = ai_agent.ai_model
+
+        delegation = build_delegation(attrs)
+        if delegation is not None:
+            event.delegation = delegation
+
+        lineage = build_delegation_lineage(attrs)
+        if lineage is not None:
+            event.delegation_lineage = lineage
+
+        return event
 
     def _is_inference_span(self, name: str, attrs: dict) -> bool:
         return (
@@ -122,7 +153,8 @@ class OCSFMapper:
     def _is_rag_span(self, name: str, attrs: dict) -> bool:
         return (
             name.startswith("rag.")
-            or RAGAttributes.RETRIEVE_DATABASE in attrs
+            or GenAIAttributes.DATA_SOURCE_ID in attrs
+            or RAGAttributes.RETRIEVE_INDEX in attrs
         )
 
     def _is_security_span(self, name: str, attrs: dict) -> bool:
@@ -258,7 +290,7 @@ class OCSFMapper:
 
     def _map_data_retrieval(self, span: ReadableSpan, attrs: dict) -> AIDataRetrievalEvent:
         """Map RAG/retrieval span to OCSF 7004."""
-        database = str(attrs.get(RAGAttributes.RETRIEVE_DATABASE, "unknown"))
+        database = str(attrs.get(GenAIAttributes.DATA_SOURCE_ID, "unknown"))
         stage = str(attrs.get(RAGAttributes.PIPELINE_STAGE, "retrieve"))
 
         # Activity: 1=vector_search, 2=document_retrieval, 5=reranking
@@ -269,8 +301,8 @@ class OCSFMapper:
             activity_id=activity_id,
             database_name=database,
             database_type=database,
-            query=_opt_str(attrs.get(RAGAttributes.QUERY)),
-            top_k=_opt_int(attrs.get(RAGAttributes.RETRIEVE_TOP_K)),
+            query=_opt_str(attrs.get(GenAIAttributes.RETRIEVAL_QUERY_TEXT)),
+            top_k=_opt_int(attrs.get(GenAIAttributes.REQUEST_TOP_K)),
             results_count=int(attrs.get(RAGAttributes.RETRIEVE_RESULTS_COUNT, 0)),
             min_score=_opt_float(attrs.get(RAGAttributes.RETRIEVE_MIN_SCORE)),
             max_score=_opt_float(attrs.get(RAGAttributes.RETRIEVE_MAX_SCORE)),

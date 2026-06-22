@@ -185,7 +185,13 @@ export {
   OCSFSeverity,
   OCSFStatus,
   OCSFActivity,
+  OCSFCategoryUID,
+  OCSFClassUID,
   AIClassUID,
+  AgentTypeID,
+  AGENT_TYPE_LABELS,
+  OCSF_AI_CATEGORY_UID,
+  normalizeAgentTypeId,
   createMetadata,
   createTokenUsage,
   createBaseEvent,
@@ -201,9 +207,24 @@ export {
   type AICostInfo,
   type AITeamInfo,
   type AISecurityFinding,
+  type OCSFAIAgent,
+  type OCSFDelegation,
+  type OCSFDelegationNode,
+  type OCSFDelegationLineage,
   type ComplianceMetadata,
   type AIBaseEvent,
 } from "./ocsf/schema";
+
+// OCSF Agentic Crosswalk (OCSF PR #1641 / issue #1640)
+export {
+  buildAiAgent,
+  buildDelegation,
+  buildDelegationLineage,
+  OCSF_AGENT_ACTIVITY_CROSSWALK,
+  OCSF_DELEGATION_ACTIVITY_CROSSWALK,
+  OCSF_CLASS_CROSSWALK,
+  type OCSFClassTarget,
+} from "./ocsf/crosswalk";
 
 // OCSF Event Classes
 export {

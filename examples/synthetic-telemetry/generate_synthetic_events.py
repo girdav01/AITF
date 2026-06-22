@@ -1,18 +1,19 @@
 """AITF Synthetic Telemetry Generator.
 
-Generates 1000 realistic OCSF Category 7 AI events distributed across all
-eight event classes (7001-7008). Events simulate a realistic enterprise AI
-deployment with multiple models, agents, tools, and security scenarios.
+Generates 1000 realistic OCSF AI events. Per OCSF's class-reuse model
+(PR #1641 / issue #1640), events map onto existing OCSF classes enriched with
+the ai_operation profile. Simulates an enterprise AI deployment with multiple
+models, agents, tools, and security scenarios.
 
-Distribution:
-    7001 Model Inference  : 300 events (30%)
-    7002 Agent Activity   : 200 events (20%)
-    7003 Tool Execution   : 150 events (15%)
-    7004 Data Retrieval   : 100 events (10%)
-    7005 Security Finding :  80 events  (8%)
-    7006 Supply Chain     :  30 events  (3%)
-    7007 Governance       :  70 events  (7%)
-    7008 Identity         :  70 events  (7%)
+Distribution (AITF event type -> reused OCSF class):
+    Model Inference  -> API Activity (6003)        : 300 events (30%)
+    Agent Activity   -> agent_activity (9001)       : 200 events (20%)
+    Tool Execution   -> API Activity (6003)         : 150 events (15%)
+    Data Retrieval   -> Datastore Activity (6005)   : 100 events (10%)
+    Security Finding -> Detection Finding (2004)     :  80 events  (8%)
+    Supply Chain     -> Vulnerability Finding (2002) :  30 events  (3%)
+    Governance       -> Compliance Finding (2003)    :  70 events  (7%)
+    Identity         -> Authentication (3002)        :  70 events  (7%)
     ─────────────────────────────────────
     Total                : 1000 events
 
@@ -324,9 +325,9 @@ def gen_model_inference(base_time: datetime, idx: int, rng: random.Random) -> di
 
     event = {
         "activity_id": activity_id,
-        "category_uid": 7,
-        "class_uid": 7001,
-        "type_uid": 7001 * 100 + activity_id,
+        "category_uid": 6,
+        "class_uid": 6003,
+        "type_uid": 6003 * 100 + activity_id,
         "time": _ts(base_time, idx * rng.uniform(0.5, 3.0)),
         "severity_id": severity_id,
         "status_id": status_id,
@@ -413,9 +414,9 @@ def gen_agent_activity(base_time: datetime, idx: int, rng: random.Random) -> dic
 
     return {
         "activity_id": activity_id,
-        "category_uid": 7,
-        "class_uid": 7002,
-        "type_uid": 7002 * 100 + activity_id,
+        "category_uid": 9,
+        "class_uid": 9001,
+        "type_uid": 9001 * 100 + activity_id,
         "time": _ts(base_time, idx * rng.uniform(0.5, 3.0)),
         "severity_id": 1,
         "status_id": 1 if rng.random() < 0.92 else 2,
@@ -502,9 +503,9 @@ def gen_tool_execution(base_time: datetime, idx: int, rng: random.Random) -> dic
 
     return {
         "activity_id": activity_id,
-        "category_uid": 7,
-        "class_uid": 7003,
-        "type_uid": 7003 * 100 + activity_id,
+        "category_uid": 6,
+        "class_uid": 6003,
+        "type_uid": 6003 * 100 + activity_id,
         "time": _ts(base_time, idx * rng.uniform(0.5, 3.0)),
         "severity_id": 3 if is_error else 1,
         "status_id": 2 if is_error else 1,
@@ -562,9 +563,9 @@ def gen_data_retrieval(base_time: datetime, idx: int, rng: random.Random) -> dic
 
     return {
         "activity_id": activity_id,
-        "category_uid": 7,
-        "class_uid": 7004,
-        "type_uid": 7004 * 100 + activity_id,
+        "category_uid": 6,
+        "class_uid": 6005,
+        "type_uid": 6005 * 100 + activity_id,
         "time": _ts(base_time, idx * rng.uniform(0.5, 3.0)),
         "severity_id": 1,
         "status_id": 1 if rng.random() < 0.95 else 2,
@@ -627,9 +628,9 @@ def gen_security_finding(base_time: datetime, idx: int, rng: random.Random) -> d
 
     return {
         "activity_id": 1,  # Threat Detection
-        "category_uid": 7,
-        "class_uid": 7005,
-        "type_uid": 700501,
+        "category_uid": 2,
+        "class_uid": 2004,
+        "type_uid": 200401,
         "time": _ts(base_time, idx * rng.uniform(0.5, 3.0)),
         "severity_id": f["severity"],
         "status_id": 1,
@@ -680,9 +681,9 @@ def gen_supply_chain(base_time: datetime, idx: int, rng: random.Random) -> dict:
 
     return {
         "activity_id": activity_id,
-        "category_uid": 7,
-        "class_uid": 7006,
-        "type_uid": 7006 * 100 + activity_id,
+        "category_uid": 2,
+        "class_uid": 2002,
+        "type_uid": 2002 * 100 + activity_id,
         "time": _ts(base_time, idx * rng.uniform(5.0, 30.0)),
         "severity_id": severity,
         "status_id": 1 if verification != "fail" else 2,
@@ -736,9 +737,9 @@ def gen_governance(base_time: datetime, idx: int, rng: random.Random) -> dict:
 
     return {
         "activity_id": activity_id,
-        "category_uid": 7,
-        "class_uid": 7007,
-        "type_uid": 7007 * 100 + activity_id,
+        "category_uid": 2,
+        "class_uid": 2003,
+        "type_uid": 2003 * 100 + activity_id,
         "time": _ts(base_time, idx * rng.uniform(5.0, 60.0)),
         "severity_id": 4 if violation else 1,
         "status_id": 2 if violation else 1,
@@ -788,9 +789,9 @@ def gen_identity(base_time: datetime, idx: int, rng: random.Random) -> dict:
 
     return {
         "activity_id": activity_id,
-        "category_uid": 7,
-        "class_uid": 7008,
-        "type_uid": 7008 * 100 + activity_id,
+        "category_uid": 3,
+        "class_uid": 3002,
+        "type_uid": 3002 * 100 + activity_id,
         "time": _ts(base_time, idx * rng.uniform(0.5, 5.0)),
         "severity_id": severity,
         "status_id": 1 if result == "success" else 2,
@@ -813,31 +814,37 @@ def gen_identity(base_time: datetime, idx: int, rng: random.Random) -> dict:
 # Main generator
 # ---------------------------------------------------------------------------
 
+# Keyed by AITF event type (not class_uid) — under OCSF class reuse, inference
+# and tool execution both map to API Activity (6003), so class_uid is no longer
+# unique per AITF event type.
 EVENT_DISTRIBUTION = {
-    7001: (300, gen_model_inference),
-    7002: (200, gen_agent_activity),
-    7003: (150, gen_tool_execution),
-    7004: (100, gen_data_retrieval),
-    7005: (80, gen_security_finding),
-    7006: (30, gen_supply_chain),
-    7007: (70, gen_governance),
-    7008: (70, gen_identity),
+    "model_inference": (300, gen_model_inference),
+    "agent_activity": (200, gen_agent_activity),
+    "tool_execution": (150, gen_tool_execution),
+    "data_retrieval": (100, gen_data_retrieval),
+    "security_finding": (80, gen_security_finding),
+    "supply_chain": (30, gen_supply_chain),
+    "governance": (70, gen_governance),
+    "identity": (70, gen_identity),
 }
 
+# OCSF class names keyed by the reused class_uid.
 CLASS_NAMES = {
-    7001: "AI Model Inference",
-    7002: "AI Agent Activity",
-    7003: "AI Tool Execution",
-    7004: "AI Data Retrieval",
-    7005: "AI Security Finding",
-    7006: "AI Supply Chain",
-    7007: "AI Governance",
-    7008: "AI Identity",
+    2002: "Vulnerability Finding",
+    2003: "Compliance Finding",
+    2004: "Detection Finding",
+    3002: "Authentication",
+    5001: "Inventory Info",
+    6002: "Application Lifecycle",
+    6003: "API Activity",
+    6005: "Datastore Activity",
+    9001: "Agent Activity",
+    9002: "Delegation Activity",
 }
 
 
 def generate_events(seed: int | None = None) -> list[dict]:
-    """Generate 1000 synthetic OCSF Category 7 events.
+    """Generate 1000 synthetic OCSF events (class reuse).
 
     Returns a list of event dicts sorted by timestamp.
     """
@@ -845,7 +852,7 @@ def generate_events(seed: int | None = None) -> list[dict]:
     base_time = datetime(2026, 2, 15, 8, 0, 0, tzinfo=timezone.utc)
     events: list[dict] = []
 
-    for class_uid, (count, generator) in EVENT_DISTRIBUTION.items():
+    for _event_type, (count, generator) in EVENT_DISTRIBUTION.items():
         for i in range(count):
             event = generator(base_time, i, rng)
             events.append(event)
@@ -913,7 +920,7 @@ def print_summary(events: list[dict]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate 1000 synthetic AITF OCSF Category 7 events",
+        description="Generate 1000 synthetic AITF OCSF events (class reuse)",
     )
     parser.add_argument(
         "--output", "-o",

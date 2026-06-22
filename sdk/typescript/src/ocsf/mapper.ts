@@ -1,7 +1,8 @@
 /**
  * AITF OCSF Mapper.
  *
- * Maps OpenTelemetry spans to OCSF Category 7 AI events.
+ * Maps OpenTelemetry spans to OCSF AI events that reuse existing OCSF classes
+ * (OCSF PR #1641 / issue #1640).
  * Based on the OCSF mapper from the AITelemetry project, enhanced
  * for AITF with MCP, Skills, and extended agent support.
  */
@@ -39,11 +40,16 @@ import {
   SecurityAttributes,
   SkillAttributes,
 } from "../semantic-conventions/attributes";
+import {
+  buildAiAgent,
+  buildDelegation,
+  buildDelegationLineage,
+} from "./crosswalk";
 
 type SpanAttributes = Record<string, unknown>;
 
 /**
- * Maps OTel spans to OCSF Category 7 AI events.
+ * Maps OTel spans to OCSF AI events (reusing existing OCSF classes).
  *
  * Usage:
  *   const mapper = new OCSFMapper();
@@ -62,19 +68,54 @@ export class OCSFMapper {
     const name = span.name ?? "";
     const attrs = { ...(span.attributes ?? {}) } as SpanAttributes;
 
+    let event: AIBaseEvent | null;
     if (this._isInferenceSpan(name, attrs)) {
-      return this._mapInference(span, attrs);
+      event = this._mapInference(span, attrs);
     } else if (this._isAgentSpan(name, attrs)) {
-      return this._mapAgentActivity(span, attrs);
+      event = this._mapAgentActivity(span, attrs);
     } else if (this._isToolSpan(name, attrs)) {
-      return this._mapToolExecution(span, attrs);
+      event = this._mapToolExecution(span, attrs);
     } else if (this._isRagSpan(name, attrs)) {
-      return this._mapDataRetrieval(span, attrs);
+      event = this._mapDataRetrieval(span, attrs);
     } else if (this._isSecuritySpan(name, attrs)) {
-      return this._mapSecurityFinding(span, attrs);
+      event = this._mapSecurityFinding(span, attrs);
+    } else {
+      return null;
     }
 
-    return null;
+    return this._enrichAiOperation(event, attrs);
+  }
+
+  /**
+   * Attach the OCSF `ai_operation` profile to a mapped event.
+   *
+   * Populates the OCSF `ai_agent` object (PR #1641) and `delegation`
+   * context (issue #1640) so AITF events carry OCSF-conformant agentic
+   * attribution on the reused OCSF classes.
+   */
+  private _enrichAiOperation(
+    event: AIBaseEvent,
+    attrs: SpanAttributes
+  ): AIBaseEvent {
+    const aiAgent = buildAiAgent(attrs);
+    if (aiAgent !== undefined) {
+      event.ai_agent = aiAgent;
+      if (event.ai_model === undefined) {
+        event.ai_model = aiAgent.ai_model;
+      }
+    }
+
+    const delegation = buildDelegation(attrs);
+    if (delegation !== undefined) {
+      event.delegation = delegation;
+    }
+
+    const lineage = buildDelegationLineage(attrs);
+    if (lineage !== undefined) {
+      event.delegation_lineage = lineage;
+    }
+
+    return event;
   }
 
   private _isInferenceSpan(name: string, attrs: SpanAttributes): boolean {

@@ -43,18 +43,96 @@ class OCSFActivity(IntEnum):
     OTHER = 99
 
 
-class AIClassUID(IntEnum):
-    """AITF OCSF Category 7 class UIDs."""
-    MODEL_INFERENCE = 7001
-    AGENT_ACTIVITY = 7002
-    TOOL_EXECUTION = 7003
-    DATA_RETRIEVAL = 7004
-    SECURITY_FINDING = 7005
-    SUPPLY_CHAIN = 7006
-    GOVERNANCE = 7007
-    IDENTITY = 7008
-    MODEL_OPS = 7009
-    ASSET_INVENTORY = 7010
+class OCSFCategoryUID(IntEnum):
+    """OCSF category UIDs that AITF AI events map onto.
+
+    Following OCSF's "reuse existing objects and profiles" approach
+    (OCSF PR #1641 / issue #1640), AITF emits AI telemetry under existing
+    OCSF categories enriched with the ``ai_operation`` profile, and uses the
+    proposed ``ai`` category (uid 9) only for genuinely new control-plane
+    classes (agent / delegation lifecycle).
+    """
+    FINDINGS = 2
+    IAM = 3
+    DISCOVERY = 5
+    APPLICATION = 6
+    AI = 9  # proposed "AI Activity" category (OCSF issue #1640)
+
+
+class OCSFClassUID(IntEnum):
+    """OCSF event class UIDs that AITF AI events map onto.
+
+    Data-plane AI activity reuses existing OCSF classes; only the agent and
+    delegation control-plane lifecycle use the proposed ``ai`` category.
+    """
+    # Reused existing OCSF classes (verified against the OCSF schema).
+    VULNERABILITY_FINDING = 2002
+    COMPLIANCE_FINDING = 2003
+    DETECTION_FINDING = 2004
+    AUTHENTICATION = 3002
+    INVENTORY_INFO = 5001
+    APPLICATION_LIFECYCLE = 6002
+    API_ACTIVITY = 6003
+    DATASTORE_ACTIVITY = 6005
+    # New control-plane classes in the proposed ``ai`` category (uid 9).
+    # UIDs are provisional pending OCSF issue #1640 ratification.
+    AGENT_ACTIVITY = 9001
+    DELEGATION_ACTIVITY = 9002
+
+
+# Backward-compatible alias. AITF previously defined a bespoke Category 7 with
+# classes 7001-7010; events now reuse the OCSF classes above per OCSF's
+# object/profile-reuse model. Kept so existing imports keep working.
+AIClassUID = OCSFClassUID
+
+
+class AgentTypeID(IntEnum):
+    """OCSF ``ai_agent.type_id`` — normalized agent framework.
+
+    Mirrors the enum introduced by OCSF PR #1641 (``objects/ai_agent.json``)
+    so AITF telemetry maps cleanly onto the upstream OCSF ``ai_agent`` object.
+    """
+    UNKNOWN = 0
+    NATIVE = 1
+    LANGCHAIN = 2
+    AUTOGEN = 3
+    CREWAI = 4
+    OTHER = 99
+
+
+# Caption labels for AgentTypeID, per OCSF PR #1641.
+AGENT_TYPE_LABELS: dict[int, str] = {
+    0: "Unknown",
+    1: "Native",
+    2: "LangChain",
+    3: "AutoGen",
+    4: "CrewAI",
+    99: "Other",
+}
+
+# AITF framework value -> OCSF ai_agent.type_id. Frameworks without a
+# dedicated OCSF enum member (langgraph, semantic_kernel, custom, ...)
+# normalize to OTHER (99), matching OCSF's open-enum guidance.
+_FRAMEWORK_TO_TYPE_ID: dict[str, int] = {
+    "native": AgentTypeID.NATIVE,
+    "langchain": AgentTypeID.LANGCHAIN,
+    "langgraph": AgentTypeID.LANGCHAIN,
+    "autogen": AgentTypeID.AUTOGEN,
+    "crewai": AgentTypeID.CREWAI,
+}
+
+
+def normalize_agent_type_id(framework: str | None) -> int:
+    """Map an AITF framework string to an OCSF ``ai_agent.type_id`` value."""
+    if not framework:
+        return AgentTypeID.UNKNOWN
+    return int(_FRAMEWORK_TO_TYPE_ID.get(framework.strip().lower(), AgentTypeID.OTHER))
+
+
+# OCSF AI category and control-plane classes proposed in OCSF issue #1640.
+# AITF keeps its established Category 7 classes but records the upstream
+# target so consumers can crosswalk to the future native ``ai`` category.
+OCSF_AI_CATEGORY_UID = 9  # proposed "AI Activity" category (OCSF issue #1640)
 
 
 # --- OCSF Base Objects ---
@@ -178,6 +256,55 @@ class AISecurityFinding(BaseModel):
     remediation: str | None = None
 
 
+class OCSFAIAgent(BaseModel):
+    """OCSF ``ai_agent`` object (OCSF PR #1641).
+
+    An autonomous AI agent operating under delegated authority. Distinct from
+    the OCSF ``agent`` object (which models security sensors such as EDR/DLP)
+    and from human principals. Attached to events via the ``ai_operation``
+    profile so any activity can be attributed to the agent that performed it.
+    """
+    uid: str  # required: stable logical identifier
+    instance_uid: str | None = None  # restart-sensitive running instance id
+    name: str | None = None
+    type: str | None = None  # caption of type_id (Native, LangChain, ...)
+    type_id: int = AgentTypeID.UNKNOWN
+    ai_model: str | None = None  # model backing the agent at event time
+    version: str | None = None  # agent code/configuration revision
+    charter: str | None = None  # role / operating-boundary reference
+
+
+class OCSFDelegation(BaseModel):
+    """OCSF ``delegation`` object (OCSF issue #1640).
+
+    A durable authorization context that persists independently of any single
+    trace or session. ``uid``/``parent_uid``/``issuer_uid`` provide the OCSF
+    core; the remaining fields preserve AITF's richer delegation telemetry.
+    """
+    uid: str  # required: stable delegation identifier
+    parent_uid: str | None = None  # parent delegation (lineage)
+    issuer_uid: str | None = None  # trusted issuer that minted the delegation
+    delegator: str | None = None
+    delegatee: str | None = None
+    type: str | None = None  # on_behalf_of, token_exchange, capability_grant, ...
+    scope: list[str] = Field(default_factory=list)
+    proof_type: str | None = None  # dpop, mtls_binding, signed_assertion
+    ttl_seconds: int | None = None
+
+
+class OCSFDelegationNode(BaseModel):
+    """A single node in an OCSF ``delegation_lineage`` graph (OCSF issue #1640)."""
+    uid: str
+    parent_uid: str | None = None
+    agent_uid: str | None = None
+    depth: int | None = None
+
+
+class OCSFDelegationLineage(BaseModel):
+    """OCSF ``delegation_lineage`` — directed graph for ancestry queries."""
+    nodes: list[OCSFDelegationNode] = Field(default_factory=list)
+
+
 class ComplianceMetadata(BaseModel):
     """Compliance framework mappings."""
     nist_ai_rmf: dict[str, Any] | None = None
@@ -193,9 +320,14 @@ class ComplianceMetadata(BaseModel):
 # --- OCSF Base Event ---
 
 class AIBaseEvent(BaseModel):
-    """Base OCSF event for all AITF Category 7 events."""
+    """Base OCSF event for AITF AI events.
+
+    Subclasses set ``category_uid`` and ``class_uid`` to the OCSF class they
+    reuse (OCSF PR #1641 / issue #1640). AI-specific context is carried on the
+    ``ai_operation`` profile (``ai_agent``, ``ai_model``, ``delegation``).
+    """
     activity_id: int = OCSFActivity.OTHER
-    category_uid: int = 7  # AI System Activity
+    category_uid: int = OCSFCategoryUID.APPLICATION
     class_uid: int
     type_uid: int = 0
     time: str = Field(
@@ -210,6 +342,14 @@ class AIBaseEvent(BaseModel):
     compliance: ComplianceMetadata | None = None
     observables: list[OCSFObservable] = Field(default_factory=list)
     enrichments: list[OCSFEnrichment] = Field(default_factory=list)
+
+    # OCSF ``ai_operation`` profile (OCSF PR #1641) + delegation context
+    # (OCSF issue #1640). Populated by the crosswalk so every AITF event can
+    # be attributed to the AI agent and delegation that produced it.
+    ai_agent: OCSFAIAgent | None = None
+    ai_model: str | None = None
+    delegation: OCSFDelegation | None = None
+    delegation_lineage: OCSFDelegationLineage | None = None
 
     @model_validator(mode="after")
     def compute_type_uid(self) -> "AIBaseEvent":

@@ -2,8 +2,9 @@ package ocsf
 
 import "encoding/json"
 
-// AIModelInferenceEvent represents OCSF Class 7001: AI Model Inference.
-// An AI model inference operation (request + response).
+// AIModelInferenceEvent reuses OCSF API Activity (6003) for an AI model
+// inference operation (request + response). AI specifics ride on the
+// ai_operation profile (ai_agent, ai_model).
 type AIModelInferenceEvent struct {
 	AIBaseEvent
 	Model          AIModelInfo       `json:"model"`
@@ -21,7 +22,7 @@ type AIModelInferenceEvent struct {
 // NewAIModelInferenceEvent creates a new model inference event.
 func NewAIModelInferenceEvent(model AIModelInfo, activityID int) *AIModelInferenceEvent {
 	e := &AIModelInferenceEvent{
-		AIBaseEvent:  NewAIBaseEvent(ClassUIDModelInference, activityID),
+		AIBaseEvent:  NewAIBaseEvent(OCSFCategoryUIDApplication, ClassUIDAPIActivity, activityID),
 		Model:        model,
 		FinishReason: "stop",
 	}
@@ -34,8 +35,9 @@ func (e *AIModelInferenceEvent) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
 
-// AIAgentActivityEvent represents OCSF Class 7002: AI Agent Activity.
-// An AI agent lifecycle event (session, step, delegation).
+// AIAgentActivityEvent is the new OCSF agent_activity class (9001) in the
+// proposed "ai" category (9) for AI agent lifecycle (session, step,
+// delegation). UID is provisional pending OCSF issue #1640 ratification.
 type AIAgentActivityEvent struct {
 	AIBaseEvent
 	AgentName        string     `json:"agent_name"`
@@ -55,7 +57,7 @@ type AIAgentActivityEvent struct {
 // NewAIAgentActivityEvent creates a new agent activity event.
 func NewAIAgentActivityEvent(agentName, agentID, sessionID string, activityID int) *AIAgentActivityEvent {
 	return &AIAgentActivityEvent{
-		AIBaseEvent: NewAIBaseEvent(ClassUIDAgentActivity, activityID),
+		AIBaseEvent: NewAIBaseEvent(OCSFCategoryUIDAI, ClassUIDAgentActivity, activityID),
 		AgentName:   agentName,
 		AgentID:     agentID,
 		AgentType:   "autonomous",
@@ -68,8 +70,8 @@ func (e *AIAgentActivityEvent) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
 
-// AIToolExecutionEvent represents OCSF Class 7003: AI Tool Execution.
-// A tool/function execution, including MCP tools and skills.
+// AIToolExecutionEvent reuses OCSF API Activity (6003) for a tool/function
+// execution, including MCP tools and skills.
 type AIToolExecutionEvent struct {
 	AIBaseEvent
 	ToolName         string   `json:"tool_name"`
@@ -89,7 +91,7 @@ type AIToolExecutionEvent struct {
 // NewAIToolExecutionEvent creates a new tool execution event.
 func NewAIToolExecutionEvent(toolName, toolType string, activityID int) *AIToolExecutionEvent {
 	return &AIToolExecutionEvent{
-		AIBaseEvent: NewAIBaseEvent(ClassUIDToolExecution, activityID),
+		AIBaseEvent: NewAIBaseEvent(OCSFCategoryUIDApplication, ClassUIDAPIActivity, activityID),
 		ToolName:    toolName,
 		ToolType:    toolType,
 	}
@@ -100,8 +102,8 @@ func (e *AIToolExecutionEvent) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
 
-// AIDataRetrievalEvent represents OCSF Class 7004: AI Data Retrieval.
-// RAG and vector search operations.
+// AIDataRetrievalEvent reuses OCSF Datastore Activity (6005) for RAG and
+// vector search operations.
 type AIDataRetrievalEvent struct {
 	AIBaseEvent
 	DatabaseName        string             `json:"database_name"`
@@ -122,7 +124,7 @@ type AIDataRetrievalEvent struct {
 // NewAIDataRetrievalEvent creates a new data retrieval event.
 func NewAIDataRetrievalEvent(databaseName, databaseType string, activityID int) *AIDataRetrievalEvent {
 	return &AIDataRetrievalEvent{
-		AIBaseEvent:  NewAIBaseEvent(ClassUIDDataRetrieval, activityID),
+		AIBaseEvent:  NewAIBaseEvent(OCSFCategoryUIDApplication, ClassUIDDatastoreActivity, activityID),
 		DatabaseName: databaseName,
 		DatabaseType: databaseType,
 	}
@@ -133,8 +135,8 @@ func (e *AIDataRetrievalEvent) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
 
-// AISecurityFindingEvent represents OCSF Class 7005: AI Security Finding.
-// A security finding in AI operations.
+// AISecurityFindingEvent reuses OCSF Detection Finding (2004) for a security
+// finding in AI operations.
 type AISecurityFindingEvent struct {
 	AIBaseEvent
 	Finding AISecurityFinding `json:"finding"`
@@ -143,7 +145,7 @@ type AISecurityFindingEvent struct {
 // NewAISecurityFindingEvent creates a new security finding event.
 func NewAISecurityFindingEvent(finding AISecurityFinding, activityID int) *AISecurityFindingEvent {
 	return &AISecurityFindingEvent{
-		AIBaseEvent: NewAIBaseEvent(ClassUIDSecurityFinding, activityID),
+		AIBaseEvent: NewAIBaseEvent(OCSFCategoryUIDFindings, ClassUIDDetectionFinding, activityID),
 		Finding:     finding,
 	}
 }
@@ -153,8 +155,8 @@ func (e *AISecurityFindingEvent) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
 
-// AISupplyChainEvent represents OCSF Class 7006: AI Supply Chain.
-// AI supply chain events (model provenance, integrity).
+// AISupplyChainEvent reuses OCSF Vulnerability Finding (2002) for AI supply
+// chain events (model provenance, integrity).
 type AISupplyChainEvent struct {
 	AIBaseEvent
 	ModelSource        string `json:"model_source"`
@@ -170,7 +172,7 @@ type AISupplyChainEvent struct {
 // NewAISupplyChainEvent creates a new supply chain event.
 func NewAISupplyChainEvent(modelSource string, activityID int) *AISupplyChainEvent {
 	return &AISupplyChainEvent{
-		AIBaseEvent: NewAIBaseEvent(ClassUIDSupplyChain, activityID),
+		AIBaseEvent: NewAIBaseEvent(OCSFCategoryUIDFindings, ClassUIDVulnerabilityFinding, activityID),
 		ModelSource: modelSource,
 	}
 }
@@ -180,8 +182,8 @@ func (e *AISupplyChainEvent) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
 
-// AIGovernanceEvent represents OCSF Class 7007: AI Governance.
-// Compliance and governance events.
+// AIGovernanceEvent reuses OCSF Compliance Finding (2003) for compliance and
+// governance events.
 type AIGovernanceEvent struct {
 	AIBaseEvent
 	Frameworks        []string `json:"frameworks,omitempty"`
@@ -196,7 +198,7 @@ type AIGovernanceEvent struct {
 // NewAIGovernanceEvent creates a new governance event.
 func NewAIGovernanceEvent(eventType string, activityID int) *AIGovernanceEvent {
 	return &AIGovernanceEvent{
-		AIBaseEvent: NewAIBaseEvent(ClassUIDGovernance, activityID),
+		AIBaseEvent: NewAIBaseEvent(OCSFCategoryUIDFindings, ClassUIDComplianceFinding, activityID),
 		EventType:   eventType,
 	}
 }
@@ -206,8 +208,10 @@ func (e *AIGovernanceEvent) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
 
-// AIIdentityEvent represents OCSF Class 7008: AI Identity.
-// Agent identity and authentication events.
+// AIIdentityEvent reuses OCSF Authentication (3002, IAM) for agent identity and
+// authentication events. Delegation lifecycle maps to the new
+// delegation_activity in the "ai" category; the delegation context itself rides
+// on the ai_operation profile (delegation object) regardless of class.
 type AIIdentityEvent struct {
 	AIBaseEvent
 	AgentName       string   `json:"agent_name"`
@@ -223,7 +227,7 @@ type AIIdentityEvent struct {
 // NewAIIdentityEvent creates a new identity event.
 func NewAIIdentityEvent(agentName, agentID, authMethod, authResult string, activityID int) *AIIdentityEvent {
 	return &AIIdentityEvent{
-		AIBaseEvent: NewAIBaseEvent(ClassUIDIdentity, activityID),
+		AIBaseEvent: NewAIBaseEvent(OCSFCategoryUIDIAM, ClassUIDAuthentication, activityID),
 		AgentName:   agentName,
 		AgentID:     agentID,
 		AuthMethod:  authMethod,
@@ -236,8 +240,8 @@ func (e *AIIdentityEvent) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
 
-// AIModelOpsEvent represents OCSF Class 7009: AI Model Operations.
-// Model lifecycle operations: training, evaluation, deployment, serving, monitoring.
+// AIModelOpsEvent reuses OCSF Application Lifecycle (6002) for model lifecycle
+// operations: training, evaluation, deployment, serving, monitoring.
 type AIModelOpsEvent struct {
 	AIBaseEvent
 	OperationType string   `json:"operation_type"`
@@ -270,7 +274,7 @@ type AIModelOpsEvent struct {
 // NewAIModelOpsEvent creates a new model operations event.
 func NewAIModelOpsEvent(operationType string, activityID int) *AIModelOpsEvent {
 	return &AIModelOpsEvent{
-		AIBaseEvent:   NewAIBaseEvent(ClassUIDModelOps, activityID),
+		AIBaseEvent:   NewAIBaseEvent(OCSFCategoryUIDApplication, ClassUIDApplicationLifecycle, activityID),
 		OperationType: operationType,
 	}
 }
@@ -280,8 +284,8 @@ func (e *AIModelOpsEvent) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
 
-// AIAssetInventoryEvent represents OCSF Class 7010: AI Asset Inventory.
-// AI asset lifecycle events: registration, discovery, audit, classification.
+// AIAssetInventoryEvent reuses OCSF Inventory Info (5001, Discovery) for AI
+// asset lifecycle events: registration, discovery, audit, classification.
 type AIAssetInventoryEvent struct {
 	AIBaseEvent
 	OperationType         string `json:"operation_type"`
@@ -309,7 +313,7 @@ type AIAssetInventoryEvent struct {
 // NewAIAssetInventoryEvent creates a new asset inventory event.
 func NewAIAssetInventoryEvent(operationType string, activityID int) *AIAssetInventoryEvent {
 	return &AIAssetInventoryEvent{
-		AIBaseEvent:   NewAIBaseEvent(ClassUIDAssetInventory, activityID),
+		AIBaseEvent:   NewAIBaseEvent(OCSFCategoryUIDDiscovery, ClassUIDInventoryInfo, activityID),
 		OperationType: operationType,
 	}
 }
