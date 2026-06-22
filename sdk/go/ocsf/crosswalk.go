@@ -2,19 +2,19 @@ package ocsf
 
 // AITF <-> OCSF agentic crosswalk.
 //
-// Reconciles AITF's established OCSF Category 7 AI event classes with the
-// upstream OCSF agentic-AI direction defined in:
+// Implements OCSF's "reuse existing objects and profiles" direction, defined in:
 //
 //   - OCSF PR #1641   -- objects/ai_agent.json + the ai_operation profile
 //   - OCSF issue #1640 -- the proposed "ai" category (uid 9), the delegation
 //     object, delegation_lineage/delegation_node graph, and the agent_activity
 //     / delegation_activity control-plane classes.
 //
-// AITF keeps emitting Category 7 events (no breaking change for existing
-// SIEM/XDR consumers), but every event is now enriched with the OCSF ai_agent
-// and delegation objects via the ai_operation profile, and this file publishes
-// the activity/class crosswalk tables that let consumers translate Category 7
-// telemetry onto OCSF's native "ai" category once it lands.
+// AITF emits AI telemetry under existing OCSF classes (API Activity, Datastore
+// Activity, Findings, IAM, Discovery, ...) enriched with the ai_operation
+// profile (ai_agent + ai_model) and the delegation object; only agent /
+// delegation lifecycle use the proposed "ai" category. This file provides the
+// object builders and publishes OCSFClassCrosswalk (the authoritative AITF
+// event -> OCSF class table) plus the control-plane activity crosswalks.
 
 import (
 	"strconv"
@@ -152,14 +152,13 @@ func BuildDelegationLineage(attrs map[string]interface{}) *OCSFDelegationLineage
 
 // --- Control-plane crosswalk tables (OCSF issue #1640) ---------------------
 //
-// AITF retains Category 7 today; OCSF issue #1640 proposes a native "ai"
-// category (uid 9) with dedicated control-plane classes. These tables let a
-// consumer translate AITF activities onto the proposed OCSF activities. UIDs
-// for the proposed classes are not yet finalized upstream, so only the
-// activity-name mapping (which is stable) is published here.
+// OCSF issue #1640 proposes a native "ai" category (uid 9) with dedicated
+// control-plane classes. These tables map AITF activities onto the proposed
+// OCSF activities. UIDs for the proposed classes are not yet finalized
+// upstream, so only the activity-name mapping (which is stable) is published.
 
-// OCSFAgentActivityCrosswalk maps AITF AIAgentActivityEvent (7002) activity_id
-// to the OCSF agent_activity activity name.
+// OCSFAgentActivityCrosswalk maps AITF agent activity_id to the OCSF
+// agent_activity activity name.
 var OCSFAgentActivityCrosswalk = map[int]string{
 	1:  "Spawn",     // AITF Session Start  -> agent spawned
 	2:  "Terminate", // AITF Session End    -> agent terminated
@@ -171,8 +170,8 @@ var OCSFAgentActivityCrosswalk = map[int]string{
 	99: "Unknown",
 }
 
-// OCSFDelegationActivityCrosswalk maps AITF AIIdentityEvent (7008) delegation
-// activity to the OCSF delegation_activity name.
+// OCSFDelegationActivityCrosswalk maps AITF identity delegation activity to the
+// OCSF delegation_activity name.
 var OCSFDelegationActivityCrosswalk = map[string]string{
 	"create":   "Create",
 	"grant":    "Create",
@@ -181,27 +180,31 @@ var OCSFDelegationActivityCrosswalk = map[string]string{
 	"complete": "Complete",
 }
 
-// OCSFClassCrosswalkEntry describes the proposed OCSF target for an AITF class.
+// OCSFClassCrosswalkEntry describes the OCSF class an AITF event reuses.
 type OCSFClassCrosswalkEntry struct {
 	OCSFCategoryUID int    `json:"ocsf_category_uid"`
+	OCSFClassUID    int    `json:"ocsf_class_uid"`
 	OCSFClass       string `json:"ocsf_class"`
 }
 
-// OCSFClassCrosswalk maps each AITF Category 7 class_uid onto its proposed OCSF
-// target. Findings-shaped classes route to the existing Findings (2) category;
-// inventory routes to Discovery (5); the rest route to the proposed "ai"
-// category (uid 9).
-var OCSFClassCrosswalk = map[int]OCSFClassCrosswalkEntry{
-	7001: {OCSFCategoryUID: OCSFAICategoryUID, OCSFClass: "ai_inference_activity"},
-	7002: {OCSFCategoryUID: OCSFAICategoryUID, OCSFClass: "agent_activity"},
-	7003: {OCSFCategoryUID: OCSFAICategoryUID, OCSFClass: "ai_tool_activity"},
-	7004: {OCSFCategoryUID: OCSFAICategoryUID, OCSFClass: "ai_retrieval_activity"},
-	7005: {OCSFCategoryUID: 2, OCSFClass: "detection_finding"},
-	7006: {OCSFCategoryUID: 2, OCSFClass: "vulnerability_finding"},
-	7007: {OCSFCategoryUID: 2, OCSFClass: "compliance_finding"},
-	7008: {OCSFCategoryUID: OCSFAICategoryUID, OCSFClass: "delegation_activity"},
-	7009: {OCSFCategoryUID: OCSFAICategoryUID, OCSFClass: "ai_model_activity"},
-	7010: {OCSFCategoryUID: 5, OCSFClass: "inventory_info"},
+// OCSFClassCrosswalk is the authoritative AITF event -> OCSF class mapping (the
+// classes AITF actually emits), keyed by AITF event name. Per OCSF's "reuse
+// existing objects and profiles" model: data-plane AI activity reuses existing
+// OCSF classes carrying the ai_operation profile; only agent / delegation
+// lifecycle use the proposed "ai" category (uid 9).
+var OCSFClassCrosswalk = map[string]OCSFClassCrosswalkEntry{
+	"model_inference":  {OCSFCategoryUID: OCSFCategoryUIDApplication, OCSFClassUID: ClassUIDAPIActivity, OCSFClass: "api_activity"},
+	"tool_execution":   {OCSFCategoryUID: OCSFCategoryUIDApplication, OCSFClassUID: ClassUIDAPIActivity, OCSFClass: "api_activity"},
+	"data_retrieval":   {OCSFCategoryUID: OCSFCategoryUIDApplication, OCSFClassUID: ClassUIDDatastoreActivity, OCSFClass: "datastore_activity"},
+	"model_ops":        {OCSFCategoryUID: OCSFCategoryUIDApplication, OCSFClassUID: ClassUIDApplicationLifecycle, OCSFClass: "application_lifecycle"},
+	"security_finding": {OCSFCategoryUID: OCSFCategoryUIDFindings, OCSFClassUID: ClassUIDDetectionFinding, OCSFClass: "detection_finding"},
+	"supply_chain":     {OCSFCategoryUID: OCSFCategoryUIDFindings, OCSFClassUID: ClassUIDVulnerabilityFinding, OCSFClass: "vulnerability_finding"},
+	"governance":       {OCSFCategoryUID: OCSFCategoryUIDFindings, OCSFClassUID: ClassUIDComplianceFinding, OCSFClass: "compliance_finding"},
+	"identity":         {OCSFCategoryUID: OCSFCategoryUIDIAM, OCSFClassUID: ClassUIDAuthentication, OCSFClass: "authentication"},
+	"asset_inventory":  {OCSFCategoryUID: OCSFCategoryUIDDiscovery, OCSFClassUID: ClassUIDInventoryInfo, OCSFClass: "inventory_info"},
+	// New control-plane classes in the proposed "ai" category (provisional UIDs).
+	"agent_activity":      {OCSFCategoryUID: OCSFCategoryUIDAI, OCSFClassUID: ClassUIDAgentActivity, OCSFClass: "agent_activity"},
+	"delegation_activity": {OCSFCategoryUID: OCSFCategoryUIDAI, OCSFClassUID: ClassUIDDelegationActivity, OCSFClass: "delegation_activity"},
 }
 
 // --- crosswalk attribute helpers ------------------------------------------

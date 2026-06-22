@@ -130,14 +130,27 @@ func TestCrosswalkTables(t *testing.T) {
 		t.Errorf("OCSFDelegationActivityCrosswalk[grant] = %q, want Create", got)
 	}
 
-	entry, ok := OCSFClassCrosswalk[7002]
+	entry, ok := OCSFClassCrosswalk["agent_activity"]
 	if !ok {
-		t.Fatal("OCSFClassCrosswalk missing 7002")
+		t.Fatal("OCSFClassCrosswalk missing agent_activity")
 	}
 	if entry.OCSFClass != "agent_activity" {
-		t.Errorf("7002 OCSFClass = %q, want agent_activity", entry.OCSFClass)
+		t.Errorf("agent_activity OCSFClass = %q, want agent_activity", entry.OCSFClass)
 	}
-	if entry.OCSFCategoryUID != OCSFAICategoryUID || OCSFAICategoryUID != 9 {
-		t.Errorf("7002 category = %d (OCSFAICategoryUID=%d), want 9", entry.OCSFCategoryUID, OCSFAICategoryUID)
+	if entry.OCSFClassUID != ClassUIDAgentActivity || ClassUIDAgentActivity != 9001 {
+		t.Errorf("agent_activity class_uid = %d (ClassUIDAgentActivity=%d), want 9001", entry.OCSFClassUID, ClassUIDAgentActivity)
+	}
+	if entry.OCSFCategoryUID != OCSFCategoryUIDAI || OCSFCategoryUIDAI != 9 {
+		t.Errorf("agent_activity category = %d (OCSFCategoryUIDAI=%d), want 9", entry.OCSFCategoryUID, OCSFCategoryUIDAI)
+	}
+
+	// Inference and tool execution intentionally share API Activity (6003).
+	inf := OCSFClassCrosswalk["model_inference"]
+	tool := OCSFClassCrosswalk["tool_execution"]
+	if inf.OCSFClassUID != 6003 || tool.OCSFClassUID != 6003 {
+		t.Errorf("model_inference=%d, tool_execution=%d, both want 6003", inf.OCSFClassUID, tool.OCSFClassUID)
+	}
+	if inf.OCSFCategoryUID != 6 || tool.OCSFCategoryUID != 6 {
+		t.Errorf("model_inference cat=%d, tool_execution cat=%d, both want 6", inf.OCSFCategoryUID, tool.OCSFCategoryUID)
 	}
 }

@@ -1,7 +1,7 @@
 // Package exporters provides AITF span exporters for Go.
 //
-// The OCSFExporter converts OTel spans to OCSF Category 7 AI events
-// and exports them to SIEM/XDR endpoints or local JSONL files.
+// The OCSFExporter converts OTel spans to reused OCSF AI events (OCSF PR #1641
+// / issue #1640) and exports them to SIEM/XDR endpoints or local JSONL files.
 package exporters
 
 import (
@@ -32,7 +32,7 @@ var devHosts = map[string]bool{
 	"::1":       true,
 }
 
-// OCSFExporter exports OTel spans as OCSF Category 7 AI events.
+// OCSFExporter exports OTel spans as reused OCSF AI events.
 // Implements the sdktrace.SpanExporter interface.
 type OCSFExporter struct {
 	endpoint       string

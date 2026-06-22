@@ -1,8 +1,10 @@
-// Package ocsf provides AITF OCSF Category 7 AI event schema for Go.
+// Package ocsf provides AITF OCSF AI event schema for Go.
 //
-// OCSF v1.1.0 base objects and AI-specific extension models.
-// Based on the OCSF schema from the AITelemetry project, enhanced
-// for AITF Category 7 AI events.
+// OCSF v1.1.0 base objects and AI-specific extension models. Following OCSF's
+// "reuse existing objects and profiles" approach (OCSF PR #1641 / issue #1640),
+// AITF emits AI telemetry under existing OCSF classes enriched with the
+// ai_operation profile, using the proposed "ai" category (uid 9) only for the
+// genuinely new agent / delegation control-plane classes.
 package ocsf
 
 import (
@@ -100,18 +102,54 @@ func NormalizeAgentTypeID(framework string) int {
 // OCSFAICategoryUID is the proposed "AI Activity" category (OCSF issue #1640).
 const OCSFAICategoryUID = 9
 
-// AIClassUID represents AITF OCSF Category 7 class UIDs.
+// OCSFCategoryUID values are the OCSF category UIDs that AITF AI events map
+// onto. Following OCSF's "reuse existing objects and profiles" approach (OCSF
+// PR #1641 / issue #1640), data-plane AI activity is emitted under existing
+// OCSF categories enriched with the ai_operation profile; only agent /
+// delegation control-plane lifecycle uses the proposed "ai" category (uid 9).
 const (
-	ClassUIDModelInference  = 7001
-	ClassUIDAgentActivity   = 7002
-	ClassUIDToolExecution   = 7003
-	ClassUIDDataRetrieval   = 7004
-	ClassUIDSecurityFinding = 7005
-	ClassUIDSupplyChain     = 7006
-	ClassUIDGovernance      = 7007
-	ClassUIDIdentity        = 7008
-	ClassUIDModelOps        = 7009
-	ClassUIDAssetInventory  = 7010
+	OCSFCategoryUIDFindings    = 2
+	OCSFCategoryUIDIAM         = 3
+	OCSFCategoryUIDDiscovery   = 5
+	OCSFCategoryUIDApplication = 6
+	OCSFCategoryUIDAI          = 9 // proposed "AI Activity" category (OCSF issue #1640)
+)
+
+// OCSFClassUID values are the OCSF event class UIDs that AITF AI events map
+// onto. Data-plane AI activity reuses existing OCSF classes; only the agent and
+// delegation control-plane lifecycle use the proposed "ai" category (uid 9).
+//
+// Inference and tool execution intentionally share API Activity (6003); they
+// are distinguished by activity_id and the ai_operation profile.
+const (
+	// Reused existing OCSF classes (verified against the OCSF schema).
+	ClassUIDVulnerabilityFinding = 2002
+	ClassUIDComplianceFinding    = 2003
+	ClassUIDDetectionFinding     = 2004
+	ClassUIDAuthentication       = 3002
+	ClassUIDInventoryInfo        = 5001
+	ClassUIDApplicationLifecycle = 6002
+	ClassUIDAPIActivity          = 6003
+	ClassUIDDatastoreActivity    = 6005
+	// New control-plane classes in the proposed "ai" category (uid 9). UIDs are
+	// provisional pending OCSF issue #1640 ratification.
+	ClassUIDAgentActivity      = 9001
+	ClassUIDDelegationActivity = 9002
+)
+
+// Backward-compatible aliases. AITF previously defined a bespoke Category 7
+// with classes 7001-7010; events now reuse the OCSF classes above per OCSF's
+// object/profile-reuse model. Kept so existing references keep working.
+const (
+	ClassUIDModelInference = ClassUIDAPIActivity          // was 7001 -> API Activity (6003)
+	ClassUIDToolExecution  = ClassUIDAPIActivity          // was 7003 -> API Activity (6003)
+	ClassUIDDataRetrieval  = ClassUIDDatastoreActivity    // was 7004 -> Datastore Activity (6005)
+	ClassUIDSecurityFinding = ClassUIDDetectionFinding    // was 7005 -> Detection Finding (2004)
+	ClassUIDSupplyChain    = ClassUIDVulnerabilityFinding // was 7006 -> Vulnerability Finding (2002)
+	ClassUIDGovernance     = ClassUIDComplianceFinding    // was 7007 -> Compliance Finding (2003)
+	ClassUIDIdentity       = ClassUIDAuthentication       // was 7008 -> Authentication (3002)
+	ClassUIDModelOps       = ClassUIDApplicationLifecycle // was 7009 -> Application Lifecycle (6002)
+	ClassUIDAssetInventory = ClassUIDInventoryInfo        // was 7010 -> Inventory Info (5001)
 )
 
 // --- OCSF Base Objects ---
@@ -305,7 +343,11 @@ type ComplianceMetadata struct {
 
 // --- OCSF Base Event ---
 
-// AIBaseEvent is the base OCSF event for all AITF Category 7 events.
+// AIBaseEvent is the base OCSF event for AITF AI events.
+//
+// Constructors set category_uid and class_uid to the OCSF class they reuse
+// (OCSF PR #1641 / issue #1640). AI-specific context is carried on the
+// ai_operation profile (ai_agent, ai_model, delegation).
 type AIBaseEvent struct {
 	ActivityID  int                `json:"activity_id"`
 	CategoryUID int               `json:"category_uid"`
@@ -336,11 +378,12 @@ func (e *AIBaseEvent) ComputeTypeUID() int {
 	return e.ClassUID*100 + e.ActivityID
 }
 
-// NewAIBaseEvent creates a base event with default values.
-func NewAIBaseEvent(classUID, activityID int) AIBaseEvent {
+// NewAIBaseEvent creates a base event with default values. The event reuses the
+// given OCSF category_uid and class_uid (OCSF PR #1641 / issue #1640).
+func NewAIBaseEvent(categoryUID, classUID, activityID int) AIBaseEvent {
 	e := AIBaseEvent{
 		ActivityID:  activityID,
-		CategoryUID: 7, // AI System Activity
+		CategoryUID: categoryUID,
 		ClassUID:    classUID,
 		Time:        time.Now().UTC().Format(time.RFC3339),
 		SeverityID:  SeverityInformational,

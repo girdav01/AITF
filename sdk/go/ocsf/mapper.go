@@ -11,7 +11,7 @@ import (
 	"github.com/girdav01/AITF/sdk/go/semconv"
 )
 
-// OCSFMapper maps OTel spans to OCSF Category 7 AI events.
+// OCSFMapper maps OTel spans to reused OCSF AI events (OCSF PR #1641 / issue #1640).
 type OCSFMapper struct{}
 
 // NewOCSFMapper creates a new OCSF mapper.
@@ -57,8 +57,7 @@ func (m *OCSFMapper) MapSpan(span sdktrace.ReadOnlySpan) interface{} {
 // enrichAIOperation attaches the OCSF ai_operation profile to a mapped event.
 //
 // Populates the OCSF ai_agent object (PR #1641) and delegation context (issue
-// #1640) so AITF Category 7 events carry OCSF-conformant agentic attribution
-// without changing their class set.
+// #1640) so every AITF event carries OCSF-conformant agentic attribution.
 func (m *OCSFMapper) enrichAIOperation(event *AIBaseEvent, attrs map[string]interface{}) {
 	if aiAgent := BuildAIAgent(attrs); aiAgent != nil {
 		event.AIAgent = aiAgent
