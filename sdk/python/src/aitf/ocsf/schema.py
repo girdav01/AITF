@@ -43,18 +43,47 @@ class OCSFActivity(IntEnum):
     OTHER = 99
 
 
-class AIClassUID(IntEnum):
-    """AITF OCSF Category 7 class UIDs."""
-    MODEL_INFERENCE = 7001
-    AGENT_ACTIVITY = 7002
-    TOOL_EXECUTION = 7003
-    DATA_RETRIEVAL = 7004
-    SECURITY_FINDING = 7005
-    SUPPLY_CHAIN = 7006
-    GOVERNANCE = 7007
-    IDENTITY = 7008
-    MODEL_OPS = 7009
-    ASSET_INVENTORY = 7010
+class OCSFCategoryUID(IntEnum):
+    """OCSF category UIDs that AITF AI events map onto.
+
+    Following OCSF's "reuse existing objects and profiles" approach
+    (OCSF PR #1641 / issue #1640), AITF emits AI telemetry under existing
+    OCSF categories enriched with the ``ai_operation`` profile, and uses the
+    proposed ``ai`` category (uid 9) only for genuinely new control-plane
+    classes (agent / delegation lifecycle).
+    """
+    FINDINGS = 2
+    IAM = 3
+    DISCOVERY = 5
+    APPLICATION = 6
+    AI = 9  # proposed "AI Activity" category (OCSF issue #1640)
+
+
+class OCSFClassUID(IntEnum):
+    """OCSF event class UIDs that AITF AI events map onto.
+
+    Data-plane AI activity reuses existing OCSF classes; only the agent and
+    delegation control-plane lifecycle use the proposed ``ai`` category.
+    """
+    # Reused existing OCSF classes (verified against the OCSF schema).
+    VULNERABILITY_FINDING = 2002
+    COMPLIANCE_FINDING = 2003
+    DETECTION_FINDING = 2004
+    AUTHENTICATION = 3002
+    INVENTORY_INFO = 5001
+    APPLICATION_LIFECYCLE = 6002
+    API_ACTIVITY = 6003
+    DATASTORE_ACTIVITY = 6005
+    # New control-plane classes in the proposed ``ai`` category (uid 9).
+    # UIDs are provisional pending OCSF issue #1640 ratification.
+    AGENT_ACTIVITY = 9001
+    DELEGATION_ACTIVITY = 9002
+
+
+# Backward-compatible alias. AITF previously defined a bespoke Category 7 with
+# classes 7001-7010; events now reuse the OCSF classes above per OCSF's
+# object/profile-reuse model. Kept so existing imports keep working.
+AIClassUID = OCSFClassUID
 
 
 class AgentTypeID(IntEnum):
@@ -291,9 +320,14 @@ class ComplianceMetadata(BaseModel):
 # --- OCSF Base Event ---
 
 class AIBaseEvent(BaseModel):
-    """Base OCSF event for all AITF Category 7 events."""
+    """Base OCSF event for AITF AI events.
+
+    Subclasses set ``category_uid`` and ``class_uid`` to the OCSF class they
+    reuse (OCSF PR #1641 / issue #1640). AI-specific context is carried on the
+    ``ai_operation`` profile (``ai_agent``, ``ai_model``, ``delegation``).
+    """
     activity_id: int = OCSFActivity.OTHER
-    category_uid: int = 7  # AI System Activity
+    category_uid: int = OCSFCategoryUID.APPLICATION
     class_uid: int
     type_uid: int = 0
     time: str = Field(

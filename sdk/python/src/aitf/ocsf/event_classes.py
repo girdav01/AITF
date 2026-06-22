@@ -13,22 +13,25 @@ from pydantic import Field
 
 from aitf.ocsf.schema import (
     AIBaseEvent,
-    AIClassUID,
     AICostInfo,
     AILatencyMetrics,
     AIModelInfo,
     AISecurityFinding,
     AITeamInfo,
     AITokenUsage,
+    OCSFCategoryUID,
+    OCSFClassUID,
 )
 
 
 class AIModelInferenceEvent(AIBaseEvent):
-    """OCSF Class 7001: AI Model Inference.
+    """AI model inference — reuses OCSF API Activity (6003).
 
-    Represents an AI model inference operation (request + response).
+    The model call is an API operation; AI specifics ride on the
+    ``ai_operation`` profile (``ai_agent``, ``ai_model``).
     """
-    class_uid: int = AIClassUID.MODEL_INFERENCE
+    category_uid: int = OCSFCategoryUID.APPLICATION
+    class_uid: int = OCSFClassUID.API_ACTIVITY
     model: AIModelInfo
     token_usage: AITokenUsage = Field(default_factory=AITokenUsage)
     latency: AILatencyMetrics | None = None
@@ -42,11 +45,13 @@ class AIModelInferenceEvent(AIBaseEvent):
 
 
 class AIAgentActivityEvent(AIBaseEvent):
-    """OCSF Class 7002: AI Agent Activity.
+    """Agent lifecycle — new OCSF ``agent_activity`` in the ai category (9).
 
-    Represents an AI agent lifecycle event (session, step, delegation).
+    Genuinely new control-plane class proposed in OCSF issue #1640.
+    UID is provisional pending ratification.
     """
-    class_uid: int = AIClassUID.AGENT_ACTIVITY
+    category_uid: int = OCSFCategoryUID.AI
+    class_uid: int = OCSFClassUID.AGENT_ACTIVITY
     agent_name: str
     agent_id: str
     agent_type: str = "autonomous"
@@ -62,11 +67,9 @@ class AIAgentActivityEvent(AIBaseEvent):
 
 
 class AIToolExecutionEvent(AIBaseEvent):
-    """OCSF Class 7003: AI Tool Execution.
-
-    Represents a tool/function execution, including MCP tools and skills.
-    """
-    class_uid: int = AIClassUID.TOOL_EXECUTION
+    """Tool/MCP/function execution — reuses OCSF API Activity (6003)."""
+    category_uid: int = OCSFCategoryUID.APPLICATION
+    class_uid: int = OCSFClassUID.API_ACTIVITY
     tool_name: str
     tool_type: str  # "function", "mcp_tool", "skill", "api"
     tool_input: str | None = None
@@ -82,11 +85,9 @@ class AIToolExecutionEvent(AIBaseEvent):
 
 
 class AIDataRetrievalEvent(AIBaseEvent):
-    """OCSF Class 7004: AI Data Retrieval.
-
-    Represents RAG and vector search operations.
-    """
-    class_uid: int = AIClassUID.DATA_RETRIEVAL
+    """RAG / vector search — reuses OCSF Datastore Activity (6005)."""
+    category_uid: int = OCSFCategoryUID.APPLICATION
+    class_uid: int = OCSFClassUID.DATASTORE_ACTIVITY
     database_name: str
     database_type: str
     query: str | None = None
@@ -103,20 +104,16 @@ class AIDataRetrievalEvent(AIBaseEvent):
 
 
 class AISecurityFindingEvent(AIBaseEvent):
-    """OCSF Class 7005: AI Security Finding.
-
-    Represents a security finding in AI operations.
-    """
-    class_uid: int = AIClassUID.SECURITY_FINDING
+    """AI security finding — reuses OCSF Detection Finding (2004)."""
+    category_uid: int = OCSFCategoryUID.FINDINGS
+    class_uid: int = OCSFClassUID.DETECTION_FINDING
     finding: AISecurityFinding
 
 
 class AISupplyChainEvent(AIBaseEvent):
-    """OCSF Class 7006: AI Supply Chain.
-
-    Represents AI supply chain events (model provenance, integrity).
-    """
-    class_uid: int = AIClassUID.SUPPLY_CHAIN
+    """AI supply chain — reuses OCSF Vulnerability Finding (2002)."""
+    category_uid: int = OCSFCategoryUID.FINDINGS
+    class_uid: int = OCSFClassUID.VULNERABILITY_FINDING
     model_source: str
     model_hash: str | None = None
     model_license: str | None = None
@@ -131,11 +128,9 @@ class AISupplyChainEvent(AIBaseEvent):
 
 
 class AIGovernanceEvent(AIBaseEvent):
-    """OCSF Class 7007: AI Governance.
-
-    Represents compliance and governance events.
-    """
-    class_uid: int = AIClassUID.GOVERNANCE
+    """AI governance/compliance — reuses OCSF Compliance Finding (2003)."""
+    category_uid: int = OCSFCategoryUID.FINDINGS
+    class_uid: int = OCSFClassUID.COMPLIANCE_FINDING
     frameworks: list[str] = Field(default_factory=list)
     controls: str | None = None  # JSON
     event_type: str = ""
@@ -146,11 +141,14 @@ class AIGovernanceEvent(AIBaseEvent):
 
 
 class AIIdentityEvent(AIBaseEvent):
-    """OCSF Class 7008: AI Identity.
+    """Agent identity/auth — reuses OCSF Authentication (3002, IAM).
 
-    Represents agent identity and authentication events.
+    Delegation *lifecycle* maps to the new ``delegation_activity`` in the ai
+    category; the delegation context itself rides on the ``ai_operation``
+    profile (``delegation`` object) regardless of class.
     """
-    class_uid: int = AIClassUID.IDENTITY
+    category_uid: int = OCSFCategoryUID.IAM
+    class_uid: int = OCSFClassUID.AUTHENTICATION
     agent_name: str
     agent_id: str
     auth_method: str  # "api_key", "oauth", "mtls", "jwt"
@@ -162,12 +160,9 @@ class AIIdentityEvent(AIBaseEvent):
 
 
 class AIModelOpsEvent(AIBaseEvent):
-    """OCSF Class 7009: AI Model Operations.
-
-    Represents model lifecycle operations: training, evaluation,
-    deployment, serving, and monitoring.
-    """
-    class_uid: int = AIClassUID.MODEL_OPS
+    """Model lifecycle ops — reuses OCSF Application Lifecycle (6002)."""
+    category_uid: int = OCSFCategoryUID.APPLICATION
+    class_uid: int = OCSFClassUID.APPLICATION_LIFECYCLE
     operation_type: str  # "training", "evaluation", "deployment", "serving", "monitoring", "prompt"
     model_id: str | None = None
     run_id: str | None = None
@@ -201,12 +196,9 @@ class AIModelOpsEvent(AIBaseEvent):
 
 
 class AIAssetInventoryEvent(AIBaseEvent):
-    """OCSF Class 7010: AI Asset Inventory.
-
-    Represents AI asset lifecycle events: registration, discovery,
-    audit, classification, and decommissioning.
-    """
-    class_uid: int = AIClassUID.ASSET_INVENTORY
+    """AI asset inventory — reuses OCSF Inventory Info (5001, Discovery)."""
+    category_uid: int = OCSFCategoryUID.DISCOVERY
+    class_uid: int = OCSFClassUID.INVENTORY_INFO
     operation_type: str  # "register", "discover", "audit", "classify", "decommission"
     asset_id: str | None = None
     asset_name: str | None = None
