@@ -1,7 +1,8 @@
 /**
  * AITF OCSF Mapper.
  *
- * Maps OpenTelemetry spans to OCSF Category 7 AI events.
+ * Maps OpenTelemetry spans to OCSF AI events that reuse existing OCSF classes
+ * (OCSF PR #1641 / issue #1640).
  * Based on the OCSF mapper from the AITelemetry project, enhanced
  * for AITF with MCP, Skills, and extended agent support.
  */
@@ -48,7 +49,7 @@ import {
 type SpanAttributes = Record<string, unknown>;
 
 /**
- * Maps OTel spans to OCSF Category 7 AI events.
+ * Maps OTel spans to OCSF AI events (reusing existing OCSF classes).
  *
  * Usage:
  *   const mapper = new OCSFMapper();
@@ -89,8 +90,8 @@ export class OCSFMapper {
    * Attach the OCSF `ai_operation` profile to a mapped event.
    *
    * Populates the OCSF `ai_agent` object (PR #1641) and `delegation`
-   * context (issue #1640) so AITF Category 7 events carry OCSF-conformant
-   * agentic attribution without changing their class set.
+   * context (issue #1640) so AITF events carry OCSF-conformant agentic
+   * attribution on the reused OCSF classes.
    */
   private _enrichAiOperation(
     event: AIBaseEvent,

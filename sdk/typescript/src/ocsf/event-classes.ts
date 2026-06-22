@@ -1,26 +1,29 @@
 /**
- * AITF OCSF Category 7 Event Classes.
+ * AITF OCSF AI Event Classes.
  *
- * Defines all ten AI event classes (7001-7010) for OCSF integration.
+ * AITF AI events reuse existing OCSF classes (OCSF PR #1641 / issue #1640)
+ * rather than a bespoke Category 7. Each factory sets both `category_uid` and
+ * `class_uid` to the reused OCSF class; AI specifics ride on the
+ * `ai_operation` profile.
  * Based on event classes from the AITelemetry project, extended
  * for AITF with MCP, Skills, ModelOps, Asset Inventory, and enhanced agent support.
  */
 
 import {
   AIBaseEvent,
-  AIClassUID,
   AICostInfo,
   AILatencyMetrics,
   AIModelInfo,
   AISecurityFinding,
   AITeamInfo,
   AITokenUsage,
+  OCSFCategoryUID,
+  OCSFClassUID,
   createBaseEvent,
-  createMetadata,
   createTokenUsage,
 } from "./schema";
 
-/** OCSF Class 7001: AI Model Inference. */
+/** AI model inference — reuses OCSF API Activity (6003). */
 export interface AIModelInferenceEvent extends AIBaseEvent {
   model: AIModelInfo;
   token_usage: AITokenUsage;
@@ -34,7 +37,7 @@ export interface AIModelInferenceEvent extends AIBaseEvent {
   error?: Record<string, unknown>;
 }
 
-/** OCSF Class 7002: AI Agent Activity. */
+/** Agent lifecycle — new OCSF `agent_activity` in the ai category (9). */
 export interface AIAgentActivityEvent extends AIBaseEvent {
   agent_name: string;
   agent_id: string;
@@ -50,7 +53,7 @@ export interface AIAgentActivityEvent extends AIBaseEvent {
   team_info?: AITeamInfo;
 }
 
-/** OCSF Class 7003: AI Tool Execution. */
+/** Tool/MCP/function execution — reuses OCSF API Activity (6003). */
 export interface AIToolExecutionEvent extends AIBaseEvent {
   tool_name: string;
   tool_type: string; // "function", "mcp_tool", "skill", "api"
@@ -66,7 +69,7 @@ export interface AIToolExecutionEvent extends AIBaseEvent {
   approved?: boolean;
 }
 
-/** OCSF Class 7004: AI Data Retrieval. */
+/** RAG / vector search — reuses OCSF Datastore Activity (6005). */
 export interface AIDataRetrievalEvent extends AIBaseEvent {
   database_name: string;
   database_type: string;
@@ -83,12 +86,12 @@ export interface AIDataRetrievalEvent extends AIBaseEvent {
   quality_scores?: Record<string, number>;
 }
 
-/** OCSF Class 7005: AI Security Finding. */
+/** AI security finding — reuses OCSF Detection Finding (2004). */
 export interface AISecurityFindingEvent extends AIBaseEvent {
   finding: AISecurityFinding;
 }
 
-/** OCSF Class 7006: AI Supply Chain. */
+/** AI supply chain — reuses OCSF Vulnerability Finding (2002). */
 export interface AISupplyChainEvent extends AIBaseEvent {
   model_source: string;
   model_hash?: string;
@@ -100,7 +103,7 @@ export interface AISupplyChainEvent extends AIBaseEvent {
   ai_bom_components?: string; // JSON
 }
 
-/** OCSF Class 7007: AI Governance. */
+/** AI governance/compliance — reuses OCSF Compliance Finding (2003). */
 export interface AIGovernanceEvent extends AIBaseEvent {
   frameworks: string[];
   controls?: string; // JSON
@@ -111,7 +114,7 @@ export interface AIGovernanceEvent extends AIBaseEvent {
   audit_id?: string;
 }
 
-/** OCSF Class 7008: AI Identity. */
+/** Agent identity/auth — reuses OCSF Authentication (3002, IAM). */
 export interface AIIdentityEvent extends AIBaseEvent {
   agent_name: string;
   agent_id: string;
@@ -123,7 +126,7 @@ export interface AIIdentityEvent extends AIBaseEvent {
   scope?: string;
 }
 
-/** OCSF Class 7009: AI Model Operations. */
+/** Model lifecycle ops — reuses OCSF Application Lifecycle (6002). */
 export interface AIModelOpsEvent extends AIBaseEvent {
   operation_type: string; // "training", "evaluation", "deployment", "serving", "monitoring", "prompt"
   model_id?: string;
@@ -152,7 +155,7 @@ export interface AIModelOpsEvent extends AIBaseEvent {
   action_triggered?: string;
 }
 
-/** OCSF Class 7010: AI Asset Inventory. */
+/** AI asset inventory — reuses OCSF Inventory Info (5001, Discovery). */
 export interface AIAssetInventoryEvent extends AIBaseEvent {
   operation_type: string; // "register", "discover", "audit", "classify", "decommission"
   asset_id?: string;
@@ -178,38 +181,42 @@ export interface AIAssetInventoryEvent extends AIBaseEvent {
 
 // --- Validation Helpers ---
 
-/** Valid OCSF Category 7 class UIDs. */
-const VALID_CLASS_UIDS = new Set([
-  AIClassUID.MODEL_INFERENCE,
-  AIClassUID.AGENT_ACTIVITY,
-  AIClassUID.TOOL_EXECUTION,
-  AIClassUID.DATA_RETRIEVAL,
-  AIClassUID.SECURITY_FINDING,
-  AIClassUID.SUPPLY_CHAIN,
-  AIClassUID.GOVERNANCE,
-  AIClassUID.IDENTITY,
-  AIClassUID.MODEL_OPS,
-  AIClassUID.ASSET_INVENTORY,
+/**
+ * Valid OCSF (class_uid -> category_uid) pairs that AITF reuses.
+ *
+ * AITF reuses existing OCSF classes (OCSF PR #1641 / issue #1640); each class
+ * lives under its own OCSF category, so class_uid is no longer unique per AITF
+ * event type (inference and tool execution both reuse API Activity 6003).
+ */
+const VALID_CLASS_CATEGORY: ReadonlyMap<number, number> = new Map([
+  [OCSFClassUID.API_ACTIVITY, OCSFCategoryUID.APPLICATION],
+  [OCSFClassUID.DATASTORE_ACTIVITY, OCSFCategoryUID.APPLICATION],
+  [OCSFClassUID.APPLICATION_LIFECYCLE, OCSFCategoryUID.APPLICATION],
+  [OCSFClassUID.DETECTION_FINDING, OCSFCategoryUID.FINDINGS],
+  [OCSFClassUID.VULNERABILITY_FINDING, OCSFCategoryUID.FINDINGS],
+  [OCSFClassUID.COMPLIANCE_FINDING, OCSFCategoryUID.FINDINGS],
+  [OCSFClassUID.AUTHENTICATION, OCSFCategoryUID.IAM],
+  [OCSFClassUID.INVENTORY_INFO, OCSFCategoryUID.DISCOVERY],
+  [OCSFClassUID.AGENT_ACTIVITY, OCSFCategoryUID.AI],
+  [OCSFClassUID.DELEGATION_ACTIVITY, OCSFCategoryUID.AI],
 ]);
 
-/** The fixed category_uid for all AITF AI events. */
-const AI_CATEGORY_UID = 7;
-
 /**
- * Validate that the class_uid and category_uid are present and valid.
+ * Validate that the class_uid and category_uid form a known reused OCSF pair.
  * Called internally by factory functions after creating the base event.
  */
 function validateBaseFields(event: AIBaseEvent, factoryName: string): void {
-  if (!VALID_CLASS_UIDS.has(event.class_uid)) {
+  const expectedCategory = VALID_CLASS_CATEGORY.get(event.class_uid);
+  if (expectedCategory === undefined) {
     throw new Error(
       `${factoryName}: invalid class_uid ${event.class_uid}. ` +
-        `Expected one of: ${[...VALID_CLASS_UIDS].join(", ")}`
+        `Expected one of: ${[...VALID_CLASS_CATEGORY.keys()].join(", ")}`
     );
   }
-  if (event.category_uid !== AI_CATEGORY_UID) {
+  if (event.category_uid !== expectedCategory) {
     throw new Error(
-      `${factoryName}: invalid category_uid ${event.category_uid}. ` +
-        `Expected ${AI_CATEGORY_UID} (AI System Activity).`
+      `${factoryName}: invalid category_uid ${event.category_uid} for ` +
+        `class_uid ${event.class_uid}. Expected ${expectedCategory}.`
     );
   }
 }
@@ -251,7 +258,8 @@ export function createModelInferenceEvent(
   if (!options.model || typeof options.model.model_id !== "string" || options.model.model_id.length === 0) {
     throw new Error("createModelInferenceEvent: required field 'model.model_id' must be a non-empty string.");
   }
-  const base = createBaseEvent(AIClassUID.MODEL_INFERENCE, {
+  const base = createBaseEvent(OCSFClassUID.API_ACTIVITY, {
+    category_uid: OCSFCategoryUID.APPLICATION,
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
@@ -295,7 +303,8 @@ export function createAgentActivityEvent(
   requireString(options.agentName, "agentName", "createAgentActivityEvent");
   requireString(options.agentId, "agentId", "createAgentActivityEvent");
   requireString(options.sessionId, "sessionId", "createAgentActivityEvent");
-  const base = createBaseEvent(AIClassUID.AGENT_ACTIVITY, {
+  const base = createBaseEvent(OCSFClassUID.AGENT_ACTIVITY, {
+    category_uid: OCSFCategoryUID.AI,
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
@@ -341,7 +350,8 @@ export function createToolExecutionEvent(
 ): AIToolExecutionEvent {
   requireString(options.toolName, "toolName", "createToolExecutionEvent");
   requireString(options.toolType, "toolType", "createToolExecutionEvent");
-  const base = createBaseEvent(AIClassUID.TOOL_EXECUTION, {
+  const base = createBaseEvent(OCSFClassUID.API_ACTIVITY, {
+    category_uid: OCSFCategoryUID.APPLICATION,
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
@@ -388,7 +398,8 @@ export function createDataRetrievalEvent(
 ): AIDataRetrievalEvent {
   requireString(options.databaseName, "databaseName", "createDataRetrievalEvent");
   requireString(options.databaseType, "databaseType", "createDataRetrievalEvent");
-  const base = createBaseEvent(AIClassUID.DATA_RETRIEVAL, {
+  const base = createBaseEvent(OCSFClassUID.DATASTORE_ACTIVITY, {
+    category_uid: OCSFCategoryUID.APPLICATION,
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
@@ -428,7 +439,8 @@ export function createSecurityFindingEvent(
   }
   requireString(options.finding.finding_type, "finding.finding_type", "createSecurityFindingEvent");
   requireString(options.finding.risk_level, "finding.risk_level", "createSecurityFindingEvent");
-  const base = createBaseEvent(AIClassUID.SECURITY_FINDING, {
+  const base = createBaseEvent(OCSFClassUID.DETECTION_FINDING, {
+    category_uid: OCSFCategoryUID.FINDINGS,
     activity_id: options.activityId ?? 1,
     severity_id: options.severityId,
     message: options.message,
@@ -459,7 +471,8 @@ export function createSupplyChainEvent(
   }
 ): AISupplyChainEvent {
   requireString(options.modelSource, "modelSource", "createSupplyChainEvent");
-  const base = createBaseEvent(AIClassUID.SUPPLY_CHAIN, {
+  const base = createBaseEvent(OCSFClassUID.VULNERABILITY_FINDING, {
+    category_uid: OCSFCategoryUID.FINDINGS,
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
@@ -494,7 +507,8 @@ export function createGovernanceEvent(
     time?: string;
   }
 ): AIGovernanceEvent {
-  const base = createBaseEvent(AIClassUID.GOVERNANCE, {
+  const base = createBaseEvent(OCSFClassUID.COMPLIANCE_FINDING, {
+    category_uid: OCSFCategoryUID.FINDINGS,
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
@@ -533,7 +547,8 @@ export function createIdentityEvent(
   requireString(options.agentId, "agentId", "createIdentityEvent");
   requireString(options.authMethod, "authMethod", "createIdentityEvent");
   requireString(options.authResult, "authResult", "createIdentityEvent");
-  const base = createBaseEvent(AIClassUID.IDENTITY, {
+  const base = createBaseEvent(OCSFClassUID.AUTHENTICATION, {
+    category_uid: OCSFCategoryUID.IAM,
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
@@ -587,7 +602,8 @@ export function createModelOpsEvent(
   }
 ): AIModelOpsEvent {
   requireString(options.operationType, "operationType", "createModelOpsEvent");
-  const base = createBaseEvent(AIClassUID.MODEL_OPS, {
+  const base = createBaseEvent(OCSFClassUID.APPLICATION_LIFECYCLE, {
+    category_uid: OCSFCategoryUID.APPLICATION,
     activity_id: options.activityId,
     message: options.message,
     time: options.time,
@@ -653,7 +669,8 @@ export function createAssetInventoryEvent(
   }
 ): AIAssetInventoryEvent {
   requireString(options.operationType, "operationType", "createAssetInventoryEvent");
-  const base = createBaseEvent(AIClassUID.ASSET_INVENTORY, {
+  const base = createBaseEvent(OCSFClassUID.INVENTORY_INFO, {
+    category_uid: OCSFCategoryUID.DISCOVERY,
     activity_id: options.activityId,
     message: options.message,
     time: options.time,

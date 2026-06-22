@@ -149,7 +149,7 @@ def ocsf_event_to_cef(
     extensions.append("cs1Label=ocsf_class_uid")
     extensions.append(f"cs2={activity_id}")
     extensions.append("cs2Label=ocsf_activity_id")
-    extensions.append(f"cs3={event.get('category_uid', 7)}")
+    extensions.append(f"cs3={event.get('category_uid', 6)}")
     extensions.append("cs3Label=ocsf_category_uid")
 
     # Model information

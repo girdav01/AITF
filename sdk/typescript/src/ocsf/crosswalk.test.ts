@@ -128,12 +128,44 @@ describe("OCSFMapper ai_operation enrichment", () => {
 });
 
 describe("crosswalk tables", () => {
-  it("maps AITF 7002 to agent_activity in OCSF AI category 9", () => {
-    expect(OCSF_CLASS_CROSSWALK[7002]).toEqual({
+  it("reuses existing OCSF classes for data-plane events", () => {
+    expect(OCSF_CLASS_CROSSWALK["model_inference"]).toEqual({
+      ocsf_category_uid: 6,
+      ocsf_class_uid: 6003,
+      ocsf_class: "api_activity",
+    });
+    // Inference and tool execution both reuse API Activity (6003).
+    expect(OCSF_CLASS_CROSSWALK["tool_execution"].ocsf_class_uid).toBe(6003);
+    expect(OCSF_CLASS_CROSSWALK["data_retrieval"].ocsf_class_uid).toBe(6005);
+    expect(OCSF_CLASS_CROSSWALK["security_finding"].ocsf_class_uid).toBe(2004);
+    expect(OCSF_CLASS_CROSSWALK["supply_chain"].ocsf_class_uid).toBe(2002);
+    expect(OCSF_CLASS_CROSSWALK["governance"].ocsf_class_uid).toBe(2003);
+    expect(OCSF_CLASS_CROSSWALK["identity"].ocsf_class_uid).toBe(3002);
+    expect(OCSF_CLASS_CROSSWALK["model_ops"].ocsf_class_uid).toBe(6002);
+    expect(OCSF_CLASS_CROSSWALK["asset_inventory"].ocsf_class_uid).toBe(5001);
+  });
+
+  it("uses the proposed ai category (9) only for control-plane classes", () => {
+    expect(OCSF_AI_CATEGORY_UID).toBe(9);
+    expect(OCSF_CLASS_CROSSWALK["agent_activity"]).toEqual({
       ocsf_category_uid: OCSF_AI_CATEGORY_UID,
+      ocsf_class_uid: 9001,
       ocsf_class: "agent_activity",
     });
-    expect(OCSF_AI_CATEGORY_UID).toBe(9);
+    expect(OCSF_CLASS_CROSSWALK["delegation_activity"]).toEqual({
+      ocsf_category_uid: OCSF_AI_CATEGORY_UID,
+      ocsf_class_uid: 9002,
+      ocsf_class: "delegation_activity",
+    });
+  });
+
+  it("collapses to 9 distinct reused class_uids", () => {
+    const classUids = new Set(
+      Object.values(OCSF_CLASS_CROSSWALK).map((t) => t.ocsf_class_uid)
+    );
+    expect(classUids).toEqual(
+      new Set([6003, 6005, 6002, 2004, 2002, 2003, 3002, 5001, 9001, 9002])
+    );
   });
 
   it("maps agent activity_id 1 (Session Start) to Spawn", () => {

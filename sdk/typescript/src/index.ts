@@ -185,6 +185,8 @@ export {
   OCSFSeverity,
   OCSFStatus,
   OCSFActivity,
+  OCSFCategoryUID,
+  OCSFClassUID,
   AIClassUID,
   AgentTypeID,
   AGENT_TYPE_LABELS,
