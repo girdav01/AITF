@@ -34,6 +34,12 @@ What's included:
   dependency).
 - **`semconv::metrics`** — AITF metric-name constants (ported from Go
   `semconv/metrics.go`).
+- **`instrumentation`** *(feature `otel`)* — OpenTelemetry-backed
+  auto-instrumentation helpers mirroring the Go `instrumentation` package:
+  `LlmInstrumentor`, `AgentInstrumentor`, `McpInstrumentor`, `RagInstrumentor`,
+  and `IdentityInstrumentor`. Each wraps an OTel tracer and yields a span
+  wrapper with typed setters that emit AITF-semconv attributes plus
+  `end(result)`. Requires the `opentelemetry` crate.
 - **`ocsf::claude_compliance_client`** *(feature `client`)* — the Activity Feed
   HTTP poller (`for_each_activity`, `collect_activities_as_events`) with cursor
   pagination, array-bracket repeatable filters, and limit validation.
@@ -43,6 +49,9 @@ What's included:
 - `default` — dependency-light: `serde`, `serde_json`, `sha2` only.
 - `client` — enables HTTP (`ureq`): the OCSF exporter's `post_to_endpoint` and
   the Claude Compliance Activity Feed poller.
+- `otel` — enables the OpenTelemetry-backed auto-instrumentation helpers
+  (`aitf::instrumentation`); adds the `opentelemetry` crate. No OTel is pulled
+  unless this feature is on.
 
 ## Install
 
@@ -108,13 +117,35 @@ assert_eq!(event.class_uid, 6001); // Web Resources Activity
 
 The schema, mappers, exporters (OCSF / CEF / immutable log), compliance-framework
 mapper, metric-name constants, the Claude Compliance Activity Feed poller
-(feature `client`), and the **dual-pipeline helper** (`pipeline::DualPipeline` —
-map → compliance-enrich → fan out to the configured sinks) are all supported.
-The following remain present in the Go/Python SDKs but **not** ported here yet:
+(feature `client`), the **dual-pipeline helper** (`pipeline::DualPipeline` —
+map → compliance-enrich → fan out to the configured sinks), and the
+OpenTelemetry-backed **auto-instrumentation helpers** (feature `otel`) are all
+supported. The following remain present in the Go/Python SDKs but **not** ported
+here yet:
 
 - The vendor mapper (Python-only across the SDKs; not a parity gap).
-- Auto-instrumentation of vendor SDKs (only the metric-name constants are
-  ported, in `semconv::metrics`).
+
+### Auto-instrumentation (feature `otel`)
+
+Rust can't monkey-patch, so these are manual-but-ergonomic helpers (exactly like
+Go's): a per-domain instrumentor wraps an OTel tracer and produces a span
+wrapper with typed setters that emit AITF-semconv attributes, plus `end(result)`.
+
+```rust
+use aitf::instrumentation::{LlmInstrumentor, InferenceConfig};
+
+let llm = LlmInstrumentor::new(); // uses the global tracer; or with_tracer(t)
+let mut span = llm.trace_inference(InferenceConfig::new("gpt-4o"));
+span.set_usage(100, 50);
+span.end(Ok::<_, std::io::Error>(()));
+```
+
+Enable it with the `opentelemetry` crate:
+
+```toml
+[dependencies]
+aitf = { path = "../AITF/sdk/rust", features = ["otel"] }
+```
 
 > The dual pipeline covers AITF's OCSF/SIEM side; because this crate has no
 > OpenTelemetry dependency, the **OTLP** side stays your own OTel setup — the

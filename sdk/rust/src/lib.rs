@@ -30,6 +30,8 @@
 //! ```
 
 pub mod exporters;
+#[cfg(feature = "otel")]
+pub mod instrumentation;
 pub mod ocsf;
 pub mod pipeline;
 pub mod semconv;
@@ -40,3 +42,10 @@ pub use ocsf::{
     OcsfMapper, SpanData,
 };
 pub use pipeline::{DualPipeline, DualPipelineBuilder};
+
+#[cfg(feature = "otel")]
+pub use instrumentation::{
+    AgentInstrumentor, AuthenticationConfig, DelegationConfig, IdentityInstrumentor,
+    InferenceConfig, LifecycleConfig, LlmInstrumentor, McpInstrumentor, RagInstrumentor,
+    SessionConfig,
+};
