@@ -2,7 +2,7 @@
  * Tests for the Anthropic Claude Compliance API integration mapper.
  */
 
-import { ClaudeComplianceMapper, classify } from "./claude-compliance";
+import { ClaudeComplianceMapper, classify, iterActivities } from "./claude-compliance";
 
 describe("classify", () => {
   it("classifies authentication activity", () => {
@@ -154,5 +154,89 @@ describe("ClaudeComplianceMapper", () => {
       { id: "x2", actor: { type: "api_actor" }, type: "compliance_export_created" },
     ]);
     expect(events.map((e) => e.class_uid)).toEqual([6001, 6003]);
+  });
+});
+
+describe("iterActivities", () => {
+  /** Build a fake fetch returning the given pages in order. */
+  function fakeFetch(pages: unknown[]): {
+    fetchImpl: typeof fetch;
+    urls: string[];
+  } {
+    const urls: string[] = [];
+    let call = 0;
+    const fetchImpl = (async (url: string) => {
+      urls.push(url);
+      const body = pages[Math.min(call, pages.length - 1)];
+      call += 1;
+      return {
+        ok: true,
+        status: 200,
+        json: async () => body,
+      } as Response;
+    }) as unknown as typeof fetch;
+    return { fetchImpl, urls };
+  }
+
+  it("yields all items across pages in order and follows the cursor", async () => {
+    const { fetchImpl, urls } = fakeFetch([
+      { data: [{ id: "a1" }, { id: "a2" }], has_more: true, last_id: "a2" },
+      { data: [{ id: "a3" }], has_more: false, last_id: "a3" },
+    ]);
+
+    const ids: unknown[] = [];
+    for await (const activity of iterActivities("sk-test", { fetchImpl })) {
+      ids.push(activity.id);
+    }
+
+    expect(ids).toEqual(["a1", "a2", "a3"]);
+    expect(urls).toHaveLength(2);
+    expect(urls[0]).not.toContain("after_id");
+    expect(urls[1]).toContain("after_id=a2");
+  });
+
+  it("appends activity_types[] once per value", async () => {
+    const { fetchImpl, urls } = fakeFetch([
+      { data: [{ id: "a1" }], has_more: false, last_id: "a1" },
+    ]);
+
+    for await (const _ of iterActivities("sk-test", {
+      fetchImpl,
+      activityTypes: ["claude_chat_created", "sso_login_initiated"],
+    })) {
+      // drain
+    }
+
+    const matches = urls[0].match(/activity_types(?:\[\]|%5B%5D)=/g) ?? [];
+    expect(matches).toHaveLength(2);
+  });
+
+  it("throws on invalid limit", async () => {
+    const { fetchImpl } = fakeFetch([{ data: [], has_more: false }]);
+    await expect(async () => {
+      for await (const _ of iterActivities("sk-test", { fetchImpl, limit: 0 })) {
+        // unreachable
+      }
+    }).rejects.toThrow(/limit must be between 1 and 5000/);
+    await expect(async () => {
+      for await (const _ of iterActivities("sk-test", { fetchImpl, limit: 5001 })) {
+        // unreachable
+      }
+    }).rejects.toThrow(/limit must be between 1 and 5000/);
+  });
+
+  it("throws on non-2xx response including the status", async () => {
+    const fetchImpl = (async () =>
+      ({
+        ok: false,
+        status: 403,
+        json: async () => ({}),
+      }) as Response) as unknown as typeof fetch;
+
+    await expect(async () => {
+      for await (const _ of iterActivities("sk-test", { fetchImpl })) {
+        // unreachable
+      }
+    }).rejects.toThrow(/403/);
   });
 });

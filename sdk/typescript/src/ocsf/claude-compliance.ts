@@ -179,6 +179,102 @@ function buildActor(actorRaw: Record<string, unknown>): OCSFActor {
   return { user };
 }
 
+// --- activity feed poller --------------------------------------------------
+
+const ACTIVITIES_BASE_URL = "https://api.anthropic.com/v1/compliance/activities";
+const MAX_LIMIT = 5000;
+
+/** Options for {@link iterActivities}. */
+export interface ActivityFeedOptions {
+  activityTypes?: string[];
+  organizationIds?: string[];
+  actorIds?: string[];
+  createdAtGte?: string;
+  createdAtLt?: string;
+  afterId?: string;
+  /** Page size, 1..5000. Defaults to 100. */
+  limit?: number;
+  /** Override the feed endpoint. Defaults to the public Anthropic endpoint. */
+  baseUrl?: string;
+  /** Injectable fetch implementation for testing. Defaults to global fetch. */
+  fetchImpl?: typeof fetch;
+}
+
+/**
+ * Page through `GET /v1/compliance/activities`, yielding raw Activity records.
+ *
+ * Mirrors the Python `iter_activities` poller: cursor pagination via
+ * `after_id` / `last_id` / `has_more`, array-bracket repeatable filters, and
+ * `x-api-key` authentication.
+ *
+ * Docs: https://platform.claude.com/docs/en/manage-claude/compliance-activity-feed
+ */
+export async function* iterActivities(
+  apiKey: string,
+  opts: ActivityFeedOptions = {},
+): AsyncGenerator<Record<string, unknown>> {
+  const limit = opts.limit ?? 100;
+  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT) {
+    throw new Error(`limit must be between 1 and ${MAX_LIMIT}`);
+  }
+
+  const baseUrl = opts.baseUrl ?? ACTIVITIES_BASE_URL;
+  const doFetch = opts.fetchImpl ?? fetch;
+
+  const buildParams = (): URLSearchParams => {
+    const params = new URLSearchParams();
+    params.append("limit", String(limit));
+    for (const value of opts.activityTypes ?? []) {
+      params.append("activity_types[]", value);
+    }
+    for (const value of opts.organizationIds ?? []) {
+      params.append("organization_ids[]", value);
+    }
+    for (const value of opts.actorIds ?? []) {
+      params.append("actor_ids[]", value);
+    }
+    if (opts.createdAtGte) {
+      params.append("created_at.gte", opts.createdAtGte);
+    }
+    if (opts.createdAtLt) {
+      params.append("created_at.lt", opts.createdAtLt);
+    }
+    return params;
+  };
+
+  let cursor = opts.afterId;
+  for (;;) {
+    const params = buildParams();
+    if (cursor) {
+      params.append("after_id", cursor);
+    }
+    const url = `${baseUrl}?${params.toString()}`;
+    const resp = await doFetch(url, { headers: { "x-api-key": apiKey } });
+    if (!resp.ok) {
+      throw new Error(
+        `Claude Compliance Activity Feed request failed with status ${resp.status}`,
+      );
+    }
+    const payload = (await resp.json()) as {
+      data?: Record<string, unknown>[];
+      has_more?: boolean;
+      last_id?: string;
+    };
+
+    for (const activity of payload.data ?? []) {
+      yield activity;
+    }
+
+    if (!payload.has_more) {
+      break;
+    }
+    cursor = payload.last_id;
+    if (!cursor) {
+      break;
+    }
+  }
+}
+
 // --- mapper ----------------------------------------------------------------
 
 /** A single Compliance Activity Feed record (forward-compatible). */

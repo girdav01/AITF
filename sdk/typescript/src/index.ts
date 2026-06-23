@@ -262,6 +262,8 @@ export {
 export {
   ClaudeComplianceMapper,
   classify as classifyClaudeComplianceActivity,
+  iterActivities,
+  type ActivityFeedOptions,
   type ClassifyResult,
   type ClaudeComplianceActivity,
 } from "./ocsf/claude-compliance";
