@@ -126,8 +126,12 @@ const (
 	ClassUIDVulnerabilityFinding = 2002
 	ClassUIDComplianceFinding    = 2003
 	ClassUIDDetectionFinding     = 2004
+	ClassUIDAccountChange        = 3001
 	ClassUIDAuthentication       = 3002
+	ClassUIDEntityManagement     = 3004
+	ClassUIDUserAccessManagement = 3005
 	ClassUIDInventoryInfo        = 5001
+	ClassUIDWebResourcesActivity = 6001
 	ClassUIDApplicationLifecycle = 6002
 	ClassUIDAPIActivity          = 6003
 	ClassUIDDatastoreActivity    = 6005

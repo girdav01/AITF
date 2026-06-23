@@ -13,6 +13,24 @@ const (
 	GenAISystemKey        = attribute.Key("gen_ai.provider.name")
 	GenAIOperationNameKey = attribute.Key("gen_ai.operation.name")
 
+	// Prompt management
+	GenAIPromptVersionKey = attribute.Key("gen_ai.prompt.version")
+	GenAIPromptLabelKey   = attribute.Key("gen_ai.prompt.label")
+
+	// End-user / tagging (general; e.g. Langfuse userId / tags)
+	UserIDKey = attribute.Key("user.id")
+	TagsKey   = attribute.Key("tags")
+
+	// Evaluation
+	GenAIEvaluationNameKey          = attribute.Key("gen_ai.evaluation.name")
+	GenAIEvaluationScoreValueKey    = attribute.Key("gen_ai.evaluation.score.value")
+	GenAIEvaluationScoreLabelKey    = attribute.Key("gen_ai.evaluation.score.label")
+	GenAIEvaluationExplanationKey   = attribute.Key("gen_ai.evaluation.explanation")
+	GenAIEvaluationScoreDataTypeKey = attribute.Key("gen_ai.evaluation.score.data_type")
+	GenAIEvaluationSourceKey        = attribute.Key("gen_ai.evaluation.source")
+	GenAIEvaluationCommentKey       = attribute.Key("gen_ai.evaluation.comment")
+	GenAIEvaluationDatasetItemIDKey = attribute.Key("gen_ai.evaluation.dataset.item_id")
+
 	// Request
 	GenAIRequestModelKey            = attribute.Key("gen_ai.request.model")
 	GenAIRequestMaxTokensKey        = attribute.Key("gen_ai.request.max_tokens")
@@ -874,4 +892,37 @@ const (
 	AgenticLogPolicyFail = "FAIL"
 	AgenticLogPolicyWarn = "WARN"
 	AgenticLogPolicySkip = "SKIP"
+)
+
+// --- Anthropic Claude Compliance API (Activity Feed) Attributes ---
+//
+// Normalizes records from GET /v1/compliance/activities so Claude Enterprise
+// audit activity can be carried as AITF telemetry and mapped to OCSF.
+// See https://platform.claude.com/docs/en/manage-claude/compliance-api
+const (
+	// Activity envelope
+	ClaudeComplianceActivityID       = "claude.compliance.activity.id"
+	ClaudeComplianceActivityType     = "claude.compliance.activity.type"
+	ClaudeComplianceActivityCategory = "claude.compliance.activity.category" // derived: auth/account/content/...
+	ClaudeComplianceCreatedAt        = "claude.compliance.activity.created_at"
+	ClaudeComplianceOrganizationID   = "claude.compliance.organization.id"
+	ClaudeComplianceOrganizationUUID = "claude.compliance.organization.uuid"
+
+	// Actor (discriminated union)
+	ClaudeComplianceActorType            = "claude.compliance.actor.type" // user_actor, api_actor, admin_api_key_actor, ...
+	ClaudeComplianceActorEmail           = "claude.compliance.actor.email_address"
+	ClaudeComplianceActorUserID          = "claude.compliance.actor.user_id"
+	ClaudeComplianceActorIP              = "claude.compliance.actor.ip_address"
+	ClaudeComplianceActorUserAgent       = "claude.compliance.actor.user_agent"
+	ClaudeComplianceActorAPIKeyID        = "claude.compliance.actor.api_key_id"
+	ClaudeComplianceActorAdminAPIKeyID   = "claude.compliance.actor.admin_api_key_id"
+	ClaudeComplianceActorDirectoryID     = "claude.compliance.actor.directory_id"
+	ClaudeComplianceActorIdpConnectionType = "claude.compliance.actor.idp_connection_type"
+
+	// Type-specific resource identifiers
+	ClaudeComplianceChatID       = "claude.compliance.chat.id"
+	ClaudeComplianceProjectID    = "claude.compliance.project.id"
+	ClaudeComplianceFileID       = "claude.compliance.file.id"
+	ClaudeComplianceFilename     = "claude.compliance.file.name"
+	ClaudeComplianceTargetUserID = "claude.compliance.target.user_id"
 )
