@@ -31,6 +31,7 @@
 
 pub mod exporters;
 pub mod ocsf;
+pub mod pipeline;
 pub mod semconv;
 
 pub use exporters::{CefSyslogExporter, ImmutableLogExporter, OcsfExporter};
@@ -38,3 +39,4 @@ pub use ocsf::{
     AIBaseEvent, AttrValue, ClaudeComplianceMapper, ComplianceMapper, ComplianceMetadata,
     OcsfMapper, SpanData,
 };
+pub use pipeline::{DualPipeline, DualPipelineBuilder};

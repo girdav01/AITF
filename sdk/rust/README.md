@@ -107,13 +107,18 @@ assert_eq!(event.class_uid, 6001); // Web Resources Activity
 ## Scope / not yet ported
 
 The schema, mappers, exporters (OCSF / CEF / immutable log), compliance-framework
-mapper, metric-name constants, and the Claude Compliance Activity Feed poller
-(feature `client`) are all supported. The following remain present in the
-Go/Python SDKs but **not** ported here yet:
+mapper, metric-name constants, the Claude Compliance Activity Feed poller
+(feature `client`), and the **dual-pipeline helper** (`pipeline::DualPipeline` —
+map → compliance-enrich → fan out to the configured sinks) are all supported.
+The following remain present in the Go/Python SDKs but **not** ported here yet:
 
-- The vendor mapper (OpenAI/Anthropic/etc. response normalization).
-- Metrics instruments and auto-instrumentation (only the metric-name constants
-  are ported, in `semconv::metrics`).
+- The vendor mapper (Python-only across the SDKs; not a parity gap).
+- Auto-instrumentation of vendor SDKs (only the metric-name constants are
+  ported, in `semconv::metrics`).
+
+> The dual pipeline covers AITF's OCSF/SIEM side; because this crate has no
+> OpenTelemetry dependency, the **OTLP** side stays your own OTel setup — the
+> same span attributes feed both.
 
 Timestamps and metadata UIDs use a dependency-free placeholder scheme in v0
 (no `chrono`/`uuid`); mappers overwrite `time` from the span start time.

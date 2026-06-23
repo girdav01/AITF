@@ -20,5 +20,7 @@ pub mod immutable_log;
 pub mod ocsf;
 
 pub use cef_syslog::CefSyslogExporter;
-pub use immutable_log::{ImmutableLogEntry, ImmutableLogExporter, VerificationResult};
+pub use immutable_log::{
+    verify_immutable_log, ImmutableLogEntry, ImmutableLogExporter, VerificationResult,
+};
 pub use ocsf::OcsfExporter;
