@@ -16,6 +16,12 @@ class GenAIAttributes:
     CONVERSATION_ID = "gen_ai.conversation.id"
     OUTPUT_TYPE = "gen_ai.output.type"
     PROMPT_NAME = "gen_ai.prompt.name"
+    PROMPT_VERSION = "gen_ai.prompt.version"
+    PROMPT_LABEL = "gen_ai.prompt.label"
+
+    # End-user / tagging (general; e.g. Langfuse userId / tags)
+    USER_ID = "user.id"
+    TAGS = "tags"
 
     # Input/output content attributes
     INPUT_MESSAGES = "gen_ai.input.messages"
@@ -87,7 +93,11 @@ class GenAIAttributes:
     EVALUATION_NAME = "gen_ai.evaluation.name"
     EVALUATION_SCORE_VALUE = "gen_ai.evaluation.score.value"
     EVALUATION_SCORE_LABEL = "gen_ai.evaluation.score.label"
+    EVALUATION_SCORE_DATA_TYPE = "gen_ai.evaluation.score.data_type"  # numeric | categorical | boolean
+    EVALUATION_SOURCE = "gen_ai.evaluation.source"  # human | llm | eval | annotation | api
+    EVALUATION_COMMENT = "gen_ai.evaluation.comment"
     EVALUATION_EXPLANATION = "gen_ai.evaluation.explanation"
+    EVALUATION_DATASET_ITEM_ID = "gen_ai.evaluation.dataset.item_id"
 
     # System values
     class System:

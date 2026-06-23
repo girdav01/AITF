@@ -66,7 +66,7 @@
         "gen_ai.usage.output_tokens": "gen_ai.usage.output_tokens",
         "gen_ai.response.finish_reasons": "gen_ai.response.finish_reasons"
       },
-      "ocsf_class_uid": 7001,
+      "ocsf_class_uid": 6003,
       "ocsf_activity_id_map": {
         "chat": 1,
         "text_completion": 2,

@@ -57,7 +57,7 @@
         "litellm.output_tokens": "gen_ai.usage.output_tokens",
         "litellm.response_time": "latency.total_ms"
       },
-      "ocsf_class_uid": 7001,
+      "ocsf_class_uid": 6003,
       "ocsf_activity_id_map": {
         "chat": 1,
         "text_completion": 2,
@@ -99,7 +99,7 @@
         "crewai.task.context": "agent.step_context",
         "crewai.task.async_execution": "agent.async"
       },
-      "ocsf_class_uid": 7002,
+      "ocsf_class_uid": 9001,
       "ocsf_activity_id_map": {
         "crew_execution": 1,
         "agent_execution": 3,
@@ -130,7 +130,7 @@
         "crewai.tool.duration_ms": "mcp.tool.duration_ms",
         "crewai.tool.cache_hit": "mcp.tool.cache_hit"
       },
-      "ocsf_class_uid": 7003,
+      "ocsf_class_uid": 6003,
       "ocsf_activity_id_map": {
         "function_call": 1,
         "search": 1,
@@ -151,7 +151,7 @@
         "crewai.delegation.reason": "agent.delegation.reason",
         "crewai.delegation.strategy": "agent.delegation.strategy"
       },
-      "ocsf_class_uid": 7002,
+      "ocsf_class_uid": 9001,
       "ocsf_activity_id_map": {
         "default": 4
       },

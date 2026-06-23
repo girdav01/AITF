@@ -82,6 +82,11 @@ class VendorMapping:
                     )
             self.span_name_patterns[event_type] = compiled
 
+        # Optional classification by an attribute *value* (e.g. Langfuse encodes
+        # the observation type in `langfuse.observation.type`, not the span name):
+        #   "type_attribute": { "key": "...", "values": { "<value>": "<event_type>" } }
+        self.type_attribute: dict[str, Any] = data.get("type_attribute", {})
+
         self.attribute_mappings: dict[str, dict[str, Any]] = data.get(
             "attribute_mappings", {}
         )
@@ -102,6 +107,19 @@ class VendorMapping:
                 if pat.search(span_name):
                     return event_type
         return None
+
+    def classify_by_attribute(self, attrs: dict[str, Any]) -> str | None:
+        """Return the event type from a declared type attribute, or ``None``.
+
+        Supports vendors (e.g. Langfuse) that encode the observation type in an
+        attribute *value* rather than the span name.
+        """
+        key = self.type_attribute.get("key")
+        if not key or key not in attrs:
+            return None
+        values: dict[str, str] = self.type_attribute.get("values", {})
+        raw = str(attrs[key])
+        return values.get(raw) or values.get(raw.lower())
 
     # -- attribute translation ----------------------------------------------
 
@@ -241,7 +259,13 @@ class VendorMapper:
             if event_type:
                 return (vendor_name, event_type)
 
-            # 2. Try attribute-prefix heuristic (e.g. "crewai.*", "langchain.*")
+            # 2. Try classification by a declared type attribute value
+            #    (e.g. Langfuse `langfuse.observation.type`)
+            event_type = mapping.classify_by_attribute(attrs)
+            if event_type:
+                return (vendor_name, event_type)
+
+            # 3. Try attribute-prefix heuristic (e.g. "crewai.*", "langchain.*")
             for attr_key in attrs:
                 if attr_key.startswith(f"{vendor_name}."):
                     # Determine event type from the second segment
@@ -390,6 +414,8 @@ class VendorMapper:
             "task": "agent",
             "retriever": "retrieval",
             "rag": "retrieval",
+            "score": "evaluation",
+            "scores": "evaluation",
         }
         candidate = aliases.get(segment)
         if candidate and candidate in known:
