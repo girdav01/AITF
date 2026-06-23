@@ -1,6 +1,6 @@
 # AITF - AI Telemetry Framework
 
-> **Version 0.1 — Proposal**
+> **Version 0.2 — Proposal**
 > Proposed by David Girard (TrendAI) to [CoSAI](https://www.coalitionforsafeai.org/) WS2.
 > This project has now been donated and is maintained by CoSAI at : https://github.com/cosai-oasis/ws2-defenders/tree/main/telemetry
 > 
@@ -137,6 +137,7 @@ the proposed `ai` category (`uid 9`).
 | **Python** | Stable | `pip install aitf` |
 | **Go** | Stable | `go get github.com/girdav01/AITF/sdk/go` |
 | **TypeScript/JavaScript** | Stable | `npm install @aitf/sdk` |
+| **Rust** | Beta (core) | `aitf` crate — `sdk/rust/` |
 | **Java** | Roadmap | Planned — contributions welcome |
 | **C++** | Roadmap | Planned — contributions welcome |
 

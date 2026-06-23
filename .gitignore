@@ -13,6 +13,9 @@ node_modules/
 *.exe
 *.test
 
+# Rust
+sdk/rust/target/
+
 # IDE
 .idea/
 .vscode/
