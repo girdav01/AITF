@@ -284,7 +284,9 @@ fields:
    detection (e.g. "agent contacted an untrusted peer") and chase schema
    churn. Mirror OCSF's own "generic class + protocol id" pattern
    (`network_activity` + `tls`/`dns_query`); keep per-protocol detail in a
-   `metadata` escape hatch.
+   `metadata` escape hatch. **Fully specified as a standalone PR:**
+   [`ocsf-agent-message-pr-draft.md`](./ocsf-agent-message-pr-draft.md)
+   (sequenced after the `ai` category from #1640 lands).
 
 ## Backwards compatibility
 
