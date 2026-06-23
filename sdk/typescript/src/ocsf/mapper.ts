@@ -11,11 +11,13 @@ import { ReadableSpan } from "@opentelemetry/sdk-trace-base";
 import {
   AIModelInferenceEvent,
   AIAgentActivityEvent,
+  AIAgentCommunicationEvent,
   AIToolExecutionEvent,
   AIDataRetrievalEvent,
   AISecurityFindingEvent,
   createModelInferenceEvent,
   createAgentActivityEvent,
+  createAgentCommunicationEvent,
   createToolExecutionEvent,
   createDataRetrievalEvent,
   createSecurityFindingEvent,
@@ -28,6 +30,7 @@ import {
   AISecurityFinding,
   AITokenUsage,
   OCSFSeverity,
+  OCSFStatus,
   createTokenUsage,
 } from "./schema";
 import {
@@ -45,6 +48,7 @@ import {
   buildDelegation,
   buildDelegationLineage,
 } from "./crosswalk";
+import { buildAgentMessage } from "./agent-comm";
 
 type SpanAttributes = Record<string, unknown>;
 
@@ -71,6 +75,8 @@ export class OCSFMapper {
     let event: AIBaseEvent | null;
     if (this._isInferenceSpan(name, attrs)) {
       event = this._mapInference(span, attrs);
+    } else if (this._isAgentCommSpan(name, attrs)) {
+      event = this._mapAgentCommunication(span, attrs);
     } else if (this._isAgentSpan(name, attrs)) {
       event = this._mapAgentActivity(span, attrs);
     } else if (this._isToolSpan(name, attrs)) {
@@ -80,6 +86,10 @@ export class OCSFMapper {
     } else if (this._isSecuritySpan(name, attrs)) {
       event = this._mapSecurityFinding(span, attrs);
     } else {
+      return null;
+    }
+
+    if (event === null) {
       return null;
     }
 
@@ -277,6 +287,53 @@ export class OCSFMapper {
       ),
       activityId,
       message: name,
+      time: spanTime(span),
+    });
+  }
+
+  private _isAgentCommSpan(name: string, attrs: SpanAttributes): boolean {
+    return (
+      name.startsWith("a2a.") ||
+      name.startsWith("acp.") ||
+      name.startsWith("anp.") ||
+      Object.keys(attrs).some(
+        (k) =>
+          k.startsWith("a2a.") ||
+          k.startsWith("acp.") ||
+          k.startsWith("anp.") ||
+          k.startsWith("agent.comm.")
+      )
+    );
+  }
+
+  private _mapAgentCommunication(
+    span: ReadableSpan,
+    attrs: SpanAttributes
+  ): AIAgentCommunicationEvent | null {
+    const msg = buildAgentMessage(attrs);
+    if (msg === undefined) {
+      return null;
+    }
+
+    // activity_id from direction: 1 Send, 2 Receive, 3 Stream, 4 Notify.
+    const directionMap: Record<string, number> = {
+      request: 1,
+      response: 2,
+      stream: 3,
+      notification: 4,
+    };
+    const activityId = directionMap[msg.direction ?? ""] ?? 99;
+
+    const statusId =
+      msg.status === "failed" || msg.error_code
+        ? OCSFStatus.FAILURE
+        : OCSFStatus.SUCCESS;
+
+    return createAgentCommunicationEvent({
+      agentMessage: msg,
+      activityId,
+      statusId,
+      message: span.name ?? `agent.comm.${msg.protocol ?? "unknown"}`,
       time: spanTime(span),
     });
   }

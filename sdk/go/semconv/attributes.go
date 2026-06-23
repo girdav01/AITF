@@ -836,6 +836,99 @@ const (
 	ACPRunModeStream = "stream"
 )
 
+// --- AITF ANP (Agent Network Protocol) Attributes ---
+//
+// ANP is a decentralized, DID-based agent-to-agent protocol with meta-protocol
+// negotiation and encrypted peer channels. https://agentnetworkprotocol.com
+const (
+	ANPProtocolVersionKey = attribute.Key("anp.protocol.version")
+	ANPTransportKey       = attribute.Key("anp.transport") // http, ws
+
+	// DID identity
+	ANPDIDKey     = attribute.Key("anp.did")      // this agent's DID
+	ANPPeerDIDKey = attribute.Key("anp.peer.did") // peer agent's DID
+
+	// Meta-protocol negotiation
+	ANPMetaProtocolNameKey       = attribute.Key("anp.meta_protocol.name")
+	ANPMetaProtocolVersionKey    = attribute.Key("anp.meta_protocol.version")
+	ANPMetaProtocolNegotiatedKey = attribute.Key("anp.meta_protocol.negotiated")
+
+	// Message
+	ANPMessageIDKey         = attribute.Key("anp.message.id")
+	ANPMessageTypeKey       = attribute.Key("anp.message.type")
+	ANPMessageRoleKey       = attribute.Key("anp.message.role")
+	ANPMessagePartsCountKey = attribute.Key("anp.message.parts_count")
+
+	// Encrypted channel
+	ANPEncryptedKey  = attribute.Key("anp.encrypted")
+	ANPEncryptionKey = attribute.Key("anp.encryption") // e.g. ecdhe
+
+	// Trust / domains
+	ANPTrustDomainKey     = attribute.Key("anp.trust.domain")
+	ANPPeerTrustDomainKey = attribute.Key("anp.trust.peer_domain")
+	ANPCrossDomainKey     = attribute.Key("anp.trust.cross_domain")
+
+	// Errors
+	ANPErrorCodeKey    = attribute.Key("anp.error.code")
+	ANPErrorMessageKey = attribute.Key("anp.error.message")
+)
+
+// --- AITF Canonical Agent Communication Attributes ---
+//
+// A single, protocol-agnostic namespace that A2A / ACP / ANP (and future
+// agentic protocols) normalize onto. The protocol discriminator carries the
+// wire protocol; protocol-specific detail stays in the per-protocol namespaces
+// (a2a.* / acp.* / anp.*). This is the AITF analogue of OCSF's "one generic
+// class + protocol id" pattern and the source for the OCSF agent_message object.
+const (
+	AgentCommProtocolKey        = attribute.Key("agent.comm.protocol") // a2a | acp | anp | mcp | custom
+	AgentCommProtocolVersionKey = attribute.Key("agent.comm.protocol_version")
+	AgentCommDirectionKey       = attribute.Key("agent.comm.direction") // request | response | stream | notification
+	AgentCommRoleKey            = attribute.Key("agent.comm.role")      // client | server
+	AgentCommOperationKey       = attribute.Key("agent.comm.operation")
+	AgentCommUnitIDKey          = attribute.Key("agent.comm.unit_id")   // normalized task/run/message id
+	AgentCommUnitTypeKey        = attribute.Key("agent.comm.unit_type") // task | run | message
+	AgentCommStatusKey          = attribute.Key("agent.comm.status")    // canonical lifecycle status
+	AgentCommPreviousStatusKey  = attribute.Key("agent.comm.previous_status")
+	AgentCommSrcAgentIDKey      = attribute.Key("agent.comm.src_agent_id")
+	AgentCommSrcAgentNameKey    = attribute.Key("agent.comm.src_agent_name")
+	AgentCommPeerAgentIDKey     = attribute.Key("agent.comm.peer_agent_id")
+	AgentCommPeerAgentNameKey   = attribute.Key("agent.comm.peer_agent_name")
+	AgentCommPeerDIDKey         = attribute.Key("agent.comm.peer_did")
+	AgentCommPartsCountKey      = attribute.Key("agent.comm.parts_count")
+	AgentCommPartTypesKey       = attribute.Key("agent.comm.part_types")
+	AgentCommArtifactsCountKey  = attribute.Key("agent.comm.artifacts_count")
+	AgentCommTransportKey       = attribute.Key("agent.comm.transport")
+	AgentCommEndpointKey        = attribute.Key("agent.comm.endpoint")
+	AgentCommPeerEndpointKey    = attribute.Key("agent.comm.peer_endpoint")
+	AgentCommTrustDomainKey     = attribute.Key("agent.comm.trust_domain")
+	AgentCommPeerTrustDomainKey = attribute.Key("agent.comm.peer_trust_domain")
+	AgentCommCrossDomainKey     = attribute.Key("agent.comm.cross_domain")
+	AgentCommErrorCodeKey       = attribute.Key("agent.comm.error_code")
+	AgentCommErrorMessageKey    = attribute.Key("agent.comm.error_message")
+	AgentCommDurationMsKey      = attribute.Key("agent.comm.duration_ms")
+)
+
+// Canonical agent-communication lifecycle status values.
+const (
+	AgentCommStatusSubmitted     = "submitted"
+	AgentCommStatusWorking       = "working"
+	AgentCommStatusInputRequired = "input_required"
+	AgentCommStatusCompleted     = "completed"
+	AgentCommStatusFailed        = "failed"
+	AgentCommStatusCanceling     = "canceling"
+	AgentCommStatusCanceled      = "canceled"
+)
+
+// Canonical agent-communication protocol values.
+const (
+	AgentCommProtocolA2A    = "a2a"
+	AgentCommProtocolACP    = "acp"
+	AgentCommProtocolANP    = "anp"
+	AgentCommProtocolMCP    = "mcp"
+	AgentCommProtocolCustom = "custom"
+)
+
 // --- AITF Agentic Log Attributes (Table 10.1 minimal fields) ---
 
 const (

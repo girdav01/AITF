@@ -70,6 +70,29 @@ func (e *AIAgentActivityEvent) ToJSON() ([]byte, error) {
 	return json.Marshal(e)
 }
 
+// AIAgentCommunicationEvent is the new OCSF agent_communication class (9003) in
+// the proposed "ai" category (9) for agent-to-agent communication (A2A / ACP /
+// ANP / MCP). The wire protocol is a discriminator on the agent_message object
+// rather than a dedicated class per protocol. UID is provisional pending OCSF
+// issue #1640 ratification.
+type AIAgentCommunicationEvent struct {
+	AIBaseEvent
+	AgentMessage *OCSFAgentMessage `json:"agent_message"`
+}
+
+// NewAIAgentCommunicationEvent creates a new agent communication event.
+func NewAIAgentCommunicationEvent(msg *OCSFAgentMessage, activityID int) *AIAgentCommunicationEvent {
+	return &AIAgentCommunicationEvent{
+		AIBaseEvent:  NewAIBaseEvent(OCSFCategoryUIDAI, ClassUIDAgentCommunication, activityID),
+		AgentMessage: msg,
+	}
+}
+
+// ToJSON serializes the event to JSON bytes.
+func (e *AIAgentCommunicationEvent) ToJSON() ([]byte, error) {
+	return json.Marshal(e)
+}
+
 // AIToolExecutionEvent reuses OCSF API Activity (6003) for a tool/function
 // execution, including MCP tools and skills.
 type AIToolExecutionEvent struct {
