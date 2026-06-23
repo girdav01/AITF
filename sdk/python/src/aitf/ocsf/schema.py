@@ -82,6 +82,7 @@ class OCSFClassUID(IntEnum):
     # UIDs are provisional pending OCSF issue #1640 ratification.
     AGENT_ACTIVITY = 9001
     DELEGATION_ACTIVITY = 9002
+    AGENT_COMMUNICATION = 9003
 
 
 # Backward-compatible alias. AITF previously defined a bespoke Category 7 with
@@ -294,6 +295,78 @@ class OCSFDelegation(BaseModel):
     scope: list[str] = Field(default_factory=list)
     proof_type: str | None = None  # dpop, mtls_binding, signed_assertion
     ttl_seconds: int | None = None
+
+
+class AgentProtocolID(IntEnum):
+    """Agent-to-agent communication protocol (OCSF ``agent_message.protocol_id``).
+
+    One generic discriminator across agentic protocols rather than a dedicated
+    OCSF object per protocol — protocol-specific detail stays in the
+    per-protocol OTel namespaces.
+    """
+    UNKNOWN = 0
+    A2A = 1
+    ACP = 2
+    ANP = 3
+    MCP = 4
+    OTHER = 99
+
+
+AGENT_PROTOCOL_LABELS: dict[int, str] = {
+    0: "Unknown", 1: "A2A", 2: "ACP", 3: "ANP", 4: "MCP", 99: "Other",
+}
+
+_PROTOCOL_TO_ID: dict[str, int] = {
+    "a2a": AgentProtocolID.A2A,
+    "acp": AgentProtocolID.ACP,
+    "anp": AgentProtocolID.ANP,
+    "mcp": AgentProtocolID.MCP,
+}
+
+
+def normalize_agent_protocol_id(protocol: str | None) -> int:
+    """Map a protocol string to an OCSF ``agent_message.protocol_id``."""
+    if not protocol:
+        return AgentProtocolID.UNKNOWN
+    return int(_PROTOCOL_TO_ID.get(protocol.strip().lower(), AgentProtocolID.OTHER))
+
+
+class OCSFAgentMessage(BaseModel):
+    """OCSF ``agent_message`` object — one generic representation of an
+    agent-to-agent communication across A2A / ACP / ANP / MCP.
+
+    Proposed addition (see ocsf-mapping/ocsf-pr-draft.md). Carries the wire
+    ``protocol_id`` discriminator plus the shared core (peer agents, unit of
+    work + lifecycle status, transport, trust); protocol-specific extras live
+    in ``metadata``.
+    """
+    protocol_id: int = AgentProtocolID.UNKNOWN
+    protocol: str | None = None
+    protocol_version: str | None = None
+    direction: str | None = None  # request | response | stream | notification
+    role: str | None = None       # client | server
+    operation: str | None = None
+    unit_uid: str | None = None
+    unit_type: str | None = None  # task | run | message
+    status: str | None = None     # canonical lifecycle status
+    previous_status: str | None = None
+    src_agent: "OCSFAIAgent | None" = None
+    dst_agent: "OCSFAIAgent | None" = None
+    delegation: "OCSFDelegation | None" = None
+    parts_count: int | None = None
+    part_types: list[str] = Field(default_factory=list)
+    artifacts_count: int | None = None
+    transport: str | None = None
+    endpoint: str | None = None
+    peer_endpoint: str | None = None
+    trust_domain: str | None = None
+    peer_trust_domain: str | None = None
+    cross_domain: bool | None = None
+    peer_did: str | None = None
+    error_code: str | None = None
+    error_message: str | None = None
+    duration_ms: float | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class OCSFDelegationNode(BaseModel):

@@ -1179,6 +1179,97 @@ class ACPAttributes:
 # --- Agentic Log Attributes (Table 10.1 minimal fields) ---
 
 
+class ANPAttributes:
+    """AITF Agent Network Protocol (ANP) semantic convention attributes.
+
+    ANP is a decentralized, DID-based agent-to-agent protocol with
+    meta-protocol negotiation and encrypted peer channels.
+    https://agentnetworkprotocol.com
+    """
+
+    PROTOCOL_VERSION = "anp.protocol.version"
+    TRANSPORT = "anp.transport"  # http, ws
+    # DID identity
+    DID = "anp.did"                    # this agent's DID
+    PEER_DID = "anp.peer.did"          # peer agent's DID
+    # Meta-protocol negotiation
+    META_PROTOCOL_NAME = "anp.meta_protocol.name"
+    META_PROTOCOL_VERSION = "anp.meta_protocol.version"
+    META_PROTOCOL_NEGOTIATED = "anp.meta_protocol.negotiated"
+    # Message
+    MESSAGE_ID = "anp.message.id"
+    MESSAGE_TYPE = "anp.message.type"
+    MESSAGE_ROLE = "anp.message.role"
+    MESSAGE_PARTS_COUNT = "anp.message.parts_count"
+    # Encrypted channel
+    ENCRYPTED = "anp.encrypted"
+    ENCRYPTION = "anp.encryption"      # e.g. ecdhe
+    # Trust / domains
+    TRUST_DOMAIN = "anp.trust.domain"
+    PEER_TRUST_DOMAIN = "anp.trust.peer_domain"
+    CROSS_DOMAIN = "anp.trust.cross_domain"
+    # Errors
+    ERROR_CODE = "anp.error.code"
+    ERROR_MESSAGE = "anp.error.message"
+
+
+class AgentCommAttributes:
+    """Canonical agent-to-agent communication attributes.
+
+    A single, protocol-agnostic namespace that A2A / ACP / ANP (and future
+    agentic protocols) normalize onto. The ``protocol`` discriminator carries
+    the wire protocol; protocol-specific detail stays in the per-protocol
+    namespaces (``a2a.*`` / ``acp.*`` / ``anp.*``). This is the AITF analogue
+    of OCSF's "one generic class + protocol id" pattern and the source for the
+    OCSF ``agent_message`` object.
+    """
+
+    PROTOCOL = "agent.comm.protocol"            # a2a | acp | anp | mcp | custom
+    PROTOCOL_VERSION = "agent.comm.protocol_version"
+    DIRECTION = "agent.comm.direction"          # request | response | stream | notification
+    ROLE = "agent.comm.role"                    # client | server
+    OPERATION = "agent.comm.operation"
+    UNIT_ID = "agent.comm.unit_id"              # normalized task/run/message id
+    UNIT_TYPE = "agent.comm.unit_type"          # task | run | message
+    STATUS = "agent.comm.status"                # canonical lifecycle status
+    PREVIOUS_STATUS = "agent.comm.previous_status"
+    SRC_AGENT_ID = "agent.comm.src_agent_id"
+    SRC_AGENT_NAME = "agent.comm.src_agent_name"
+    PEER_AGENT_ID = "agent.comm.peer_agent_id"
+    PEER_AGENT_NAME = "agent.comm.peer_agent_name"
+    PEER_DID = "agent.comm.peer_did"
+    PARTS_COUNT = "agent.comm.parts_count"
+    PART_TYPES = "agent.comm.part_types"
+    ARTIFACTS_COUNT = "agent.comm.artifacts_count"
+    TRANSPORT = "agent.comm.transport"
+    ENDPOINT = "agent.comm.endpoint"
+    PEER_ENDPOINT = "agent.comm.peer_endpoint"
+    TRUST_DOMAIN = "agent.comm.trust_domain"
+    PEER_TRUST_DOMAIN = "agent.comm.peer_trust_domain"
+    CROSS_DOMAIN = "agent.comm.cross_domain"
+    ERROR_CODE = "agent.comm.error_code"
+    ERROR_MESSAGE = "agent.comm.error_message"
+    DURATION_MS = "agent.comm.duration_ms"
+
+    # Canonical lifecycle status values
+    class Status:
+        SUBMITTED = "submitted"
+        WORKING = "working"
+        INPUT_REQUIRED = "input_required"
+        COMPLETED = "completed"
+        FAILED = "failed"
+        CANCELING = "canceling"
+        CANCELED = "canceled"
+
+    # Protocol values
+    class Protocol:
+        A2A = "a2a"
+        ACP = "acp"
+        ANP = "anp"
+        MCP = "mcp"
+        CUSTOM = "custom"
+
+
 class AgenticLogAttributes:
     """AITF Agentic Log semantic convention attributes.
 

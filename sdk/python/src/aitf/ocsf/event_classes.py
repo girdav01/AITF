@@ -19,6 +19,7 @@ from aitf.ocsf.schema import (
     AISecurityFinding,
     AITeamInfo,
     AITokenUsage,
+    OCSFAgentMessage,
     OCSFCategoryUID,
     OCSFClassUID,
 )
@@ -64,6 +65,18 @@ class AIAgentActivityEvent(AIBaseEvent):
     observation: str | None = None
     delegation_target: str | None = None
     team_info: AITeamInfo | None = None
+
+
+class AIAgentCommunicationEvent(AIBaseEvent):
+    """Agent-to-agent communication (A2A / ACP / ANP / MCP).
+
+    A single generic event for inter-agent messaging across protocols, in the
+    proposed OCSF ``ai`` category. The wire protocol is a discriminator on the
+    ``agent_message`` object rather than a dedicated class per protocol.
+    """
+    category_uid: int = OCSFCategoryUID.AI
+    class_uid: int = OCSFClassUID.AGENT_COMMUNICATION
+    agent_message: OCSFAgentMessage
 
 
 class AIToolExecutionEvent(AIBaseEvent):
