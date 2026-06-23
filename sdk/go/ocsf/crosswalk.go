@@ -205,6 +205,7 @@ var OCSFClassCrosswalk = map[string]OCSFClassCrosswalkEntry{
 	// New control-plane classes in the proposed "ai" category (provisional UIDs).
 	"agent_activity":      {OCSFCategoryUID: OCSFCategoryUIDAI, OCSFClassUID: ClassUIDAgentActivity, OCSFClass: "agent_activity"},
 	"delegation_activity": {OCSFCategoryUID: OCSFCategoryUIDAI, OCSFClassUID: ClassUIDDelegationActivity, OCSFClass: "delegation_activity"},
+	"agent_communication": {OCSFCategoryUID: OCSFCategoryUIDAI, OCSFClassUID: ClassUIDAgentCommunication, OCSFClass: "agent_communication"},
 }
 
 // --- crosswalk attribute helpers ------------------------------------------

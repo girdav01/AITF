@@ -36,6 +36,7 @@ therefore **dropped Category 7** and now maps onto existing OCSF classes.
 | Asset Inventory | 5 Discovery | Inventory Info | 5001 |
 | **Agent lifecycle** | **9 AI (proposed)** | **agent_activity** | **9001\*** |
 | **Delegation lifecycle** | **9 AI (proposed)** | **delegation_activity** | **9002\*** |
+| **Agent-to-agent comms (A2A/ACP/ANP)** | **9 AI (proposed)** | **agent_communication** | **9003\*** |
 
 \* The `ai` category and its control-plane class UIDs are **provisional** —
 they will be reconciled with the final numbers once OCSF issue #1640 is

@@ -78,6 +78,7 @@ export enum OCSFClassUID {
   // UIDs are provisional pending OCSF issue #1640 ratification.
   AGENT_ACTIVITY = 9001,
   DELEGATION_ACTIVITY = 9002,
+  AGENT_COMMUNICATION = 9003,
 }
 
 /**
@@ -303,6 +304,85 @@ export interface OCSFDelegationNode {
 /** OCSF `delegation_lineage` — directed graph for ancestry queries. */
 export interface OCSFDelegationLineage {
   nodes: OCSFDelegationNode[];
+}
+
+/**
+ * Agent-to-agent communication protocol (OCSF `agent_message.protocol_id`).
+ *
+ * One generic discriminator across agentic protocols rather than a dedicated
+ * OCSF object per protocol — protocol-specific detail stays in the
+ * per-protocol OTel namespaces.
+ */
+export enum AgentProtocolID {
+  UNKNOWN = 0,
+  A2A = 1,
+  ACP = 2,
+  ANP = 3,
+  MCP = 4,
+  OTHER = 99,
+}
+
+export const AGENT_PROTOCOL_LABELS: Record<number, string> = {
+  0: "Unknown",
+  1: "A2A",
+  2: "ACP",
+  3: "ANP",
+  4: "MCP",
+  99: "Other",
+};
+
+const PROTOCOL_TO_ID: Record<string, AgentProtocolID> = {
+  a2a: AgentProtocolID.A2A,
+  acp: AgentProtocolID.ACP,
+  anp: AgentProtocolID.ANP,
+  mcp: AgentProtocolID.MCP,
+};
+
+/** Map a protocol string to an OCSF `agent_message.protocol_id`. */
+export function normalizeAgentProtocolId(protocol?: string | null): number {
+  if (!protocol) {
+    return AgentProtocolID.UNKNOWN;
+  }
+  const key = protocol.trim().toLowerCase();
+  return key in PROTOCOL_TO_ID ? PROTOCOL_TO_ID[key] : AgentProtocolID.OTHER;
+}
+
+/**
+ * OCSF `agent_message` object — one generic representation of an
+ * agent-to-agent communication across A2A / ACP / ANP / MCP.
+ *
+ * Carries the wire `protocol_id` discriminator plus the shared core (peer
+ * agents, unit of work + lifecycle status, transport, trust); protocol-specific
+ * extras live in `metadata`.
+ */
+export interface OCSFAgentMessage {
+  protocol_id: number;
+  protocol?: string;
+  protocol_version?: string;
+  direction?: string; // request | response | stream | notification
+  role?: string; // client | server
+  operation?: string;
+  unit_uid?: string;
+  unit_type?: string; // task | run | message
+  status?: string; // canonical lifecycle status
+  previous_status?: string;
+  src_agent?: OCSFAIAgent;
+  dst_agent?: OCSFAIAgent;
+  delegation?: OCSFDelegation;
+  parts_count?: number;
+  part_types: string[];
+  artifacts_count?: number;
+  transport?: string;
+  endpoint?: string;
+  peer_endpoint?: string;
+  trust_domain?: string;
+  peer_trust_domain?: string;
+  cross_domain?: boolean;
+  peer_did?: string;
+  error_code?: string;
+  error_message?: string;
+  duration_ms?: number;
+  metadata?: Record<string, unknown>;
 }
 
 /** Compliance framework mappings. */

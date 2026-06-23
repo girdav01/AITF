@@ -17,6 +17,7 @@ import {
   AISecurityFinding,
   AITeamInfo,
   AITokenUsage,
+  OCSFAgentMessage,
   OCSFCategoryUID,
   OCSFClassUID,
   createBaseEvent,
@@ -51,6 +52,17 @@ export interface AIAgentActivityEvent extends AIBaseEvent {
   observation?: string;
   delegation_target?: string;
   team_info?: AITeamInfo;
+}
+
+/**
+ * Agent-to-agent communication (A2A / ACP / ANP / MCP).
+ *
+ * A single generic event for inter-agent messaging across protocols, in the
+ * proposed OCSF `ai` category. The wire protocol is a discriminator on the
+ * `agent_message` object rather than a dedicated class per protocol.
+ */
+export interface AIAgentCommunicationEvent extends AIBaseEvent {
+  agent_message: OCSFAgentMessage;
 }
 
 /** Tool/MCP/function execution — reuses OCSF API Activity (6003). */
@@ -199,6 +211,7 @@ const VALID_CLASS_CATEGORY: ReadonlyMap<number, number> = new Map([
   [OCSFClassUID.INVENTORY_INFO, OCSFCategoryUID.DISCOVERY],
   [OCSFClassUID.AGENT_ACTIVITY, OCSFCategoryUID.AI],
   [OCSFClassUID.DELEGATION_ACTIVITY, OCSFCategoryUID.AI],
+  [OCSFClassUID.AGENT_COMMUNICATION, OCSFCategoryUID.AI],
 ]);
 
 /**
@@ -325,6 +338,36 @@ export function createAgentActivityEvent(
     observation: options.observation,
     delegation_target: options.delegationTarget,
     team_info: options.teamInfo,
+  };
+}
+
+/** Create an Agent Communication event. */
+export function createAgentCommunicationEvent(
+  options: {
+    agentMessage: OCSFAgentMessage;
+    activityId?: number;
+    statusId?: number;
+    message?: string;
+    time?: string;
+  }
+): AIAgentCommunicationEvent {
+  if (!options.agentMessage || typeof options.agentMessage !== "object") {
+    throw new Error(
+      "createAgentCommunicationEvent: required field 'agentMessage' must be a valid OCSFAgentMessage object."
+    );
+  }
+  const base = createBaseEvent(OCSFClassUID.AGENT_COMMUNICATION, {
+    category_uid: OCSFCategoryUID.AI,
+    activity_id: options.activityId,
+    status_id: options.statusId,
+    message: options.message,
+    time: options.time,
+  });
+  validateBaseFields(base, "createAgentCommunicationEvent");
+
+  return {
+    ...base,
+    agent_message: options.agentMessage,
   };
 }
 

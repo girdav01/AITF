@@ -139,7 +139,52 @@ const (
 	// provisional pending OCSF issue #1640 ratification.
 	ClassUIDAgentActivity      = 9001
 	ClassUIDDelegationActivity = 9002
+	ClassUIDAgentCommunication = 9003
 )
+
+// AgentProtocolID represents the agent-to-agent communication protocol (OCSF
+// agent_message.protocol_id). One generic discriminator across agentic
+// protocols rather than a dedicated OCSF object per protocol — protocol-specific
+// detail stays in the per-protocol OTel namespaces.
+const (
+	AgentProtocolIDUnknown = 0
+	AgentProtocolIDA2A     = 1
+	AgentProtocolIDACP     = 2
+	AgentProtocolIDANP     = 3
+	AgentProtocolIDMCP     = 4
+	AgentProtocolIDOther   = 99
+)
+
+// AgentProtocolLabels maps AgentProtocolID values to their captions.
+var AgentProtocolLabels = map[int]string{
+	AgentProtocolIDUnknown: "Unknown",
+	AgentProtocolIDA2A:     "A2A",
+	AgentProtocolIDACP:     "ACP",
+	AgentProtocolIDANP:     "ANP",
+	AgentProtocolIDMCP:     "MCP",
+	AgentProtocolIDOther:   "Other",
+}
+
+// protocolToID maps a protocol string to an OCSF agent_message.protocol_id.
+var protocolToID = map[string]int{
+	"a2a": AgentProtocolIDA2A,
+	"acp": AgentProtocolIDACP,
+	"anp": AgentProtocolIDANP,
+	"mcp": AgentProtocolIDMCP,
+}
+
+// NormalizeAgentProtocolID maps a protocol string to an OCSF
+// agent_message.protocol_id. Empty -> Unknown (0); known protocols -> their
+// enum member; any other non-empty value -> Other (99).
+func NormalizeAgentProtocolID(protocol string) int {
+	if protocol == "" {
+		return AgentProtocolIDUnknown
+	}
+	if id, ok := protocolToID[strings.ToLower(strings.TrimSpace(protocol))]; ok {
+		return id
+	}
+	return AgentProtocolIDOther
+}
 
 // Backward-compatible aliases. AITF previously defined a bespoke Category 7
 // with classes 7001-7010; events now reuse the OCSF classes above per OCSF's
@@ -331,6 +376,44 @@ type OCSFDelegationNode struct {
 // ancestry queries (OCSF issue #1640).
 type OCSFDelegationLineage struct {
 	Nodes []OCSFDelegationNode `json:"nodes,omitempty"`
+}
+
+// OCSFAgentMessage is the OCSF agent_message object — one generic
+// representation of an agent-to-agent communication across A2A / ACP / ANP /
+// MCP.
+//
+// Proposed addition (see ocsf-mapping/ocsf-pr-draft.md). Carries the wire
+// protocol_id discriminator plus the shared core (peer agents, unit of work +
+// lifecycle status, transport, trust); protocol-specific extras live in
+// metadata.
+type OCSFAgentMessage struct {
+	ProtocolID      int                    `json:"protocol_id"`
+	Protocol        string                 `json:"protocol,omitempty"`
+	ProtocolVersion string                 `json:"protocol_version,omitempty"`
+	Direction       string                 `json:"direction,omitempty"` // request | response | stream | notification
+	Role            string                 `json:"role,omitempty"`      // client | server
+	Operation       string                 `json:"operation,omitempty"`
+	UnitUID         string                 `json:"unit_uid,omitempty"`
+	UnitType        string                 `json:"unit_type,omitempty"` // task | run | message
+	Status          string                 `json:"status,omitempty"`    // canonical lifecycle status
+	PreviousStatus  string                 `json:"previous_status,omitempty"`
+	SrcAgent        *OCSFAIAgent           `json:"src_agent,omitempty"`
+	DstAgent        *OCSFAIAgent           `json:"dst_agent,omitempty"`
+	Delegation      *OCSFDelegation        `json:"delegation,omitempty"`
+	PartsCount      *int                   `json:"parts_count,omitempty"`
+	PartTypes       []string               `json:"part_types,omitempty"`
+	ArtifactsCount  *int                   `json:"artifacts_count,omitempty"`
+	Transport       string                 `json:"transport,omitempty"`
+	Endpoint        string                 `json:"endpoint,omitempty"`
+	PeerEndpoint    string                 `json:"peer_endpoint,omitempty"`
+	TrustDomain     string                 `json:"trust_domain,omitempty"`
+	PeerTrustDomain string                 `json:"peer_trust_domain,omitempty"`
+	CrossDomain     *bool                  `json:"cross_domain,omitempty"`
+	PeerDID         string                 `json:"peer_did,omitempty"`
+	ErrorCode       string                 `json:"error_code,omitempty"`
+	ErrorMessage    string                 `json:"error_message,omitempty"`
+	DurationMs      *float64               `json:"duration_ms,omitempty"`
+	Metadata        map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // ComplianceMetadata holds compliance framework mappings.

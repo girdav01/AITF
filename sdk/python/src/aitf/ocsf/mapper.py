@@ -14,12 +14,14 @@ from typing import Any
 from opentelemetry.sdk.trace import ReadableSpan
 
 from aitf.ocsf.crosswalk import (
+    build_agent_message,
     build_ai_agent,
     build_delegation,
     build_delegation_lineage,
 )
 from aitf.ocsf.event_classes import (
     AIAgentActivityEvent,
+    AIAgentCommunicationEvent,
     AIAssetInventoryEvent,
     AIDataRetrievalEvent,
     AIGovernanceEvent,
@@ -84,6 +86,8 @@ class OCSFMapper:
         event: AIBaseEvent | None
         if self._is_inference_span(name, attrs):
             event = self._map_inference(span, attrs)
+        elif self._is_agent_comm_span(name, attrs):
+            event = self._map_agent_communication(span, attrs)
         elif self._is_agent_span(name, attrs):
             event = self._map_agent_activity(span, attrs)
         elif self._is_tool_span(name, attrs):
@@ -251,6 +255,34 @@ class OCSFMapper:
             observation=_opt_str(attrs.get(AgentAttributes.STEP_OBSERVATION)),
             delegation_target=_opt_str(attrs.get(AgentAttributes.DELEGATION_TARGET_AGENT)),
             message=name,
+            time=_span_time(span),
+        )
+
+    def _is_agent_comm_span(self, name: str, attrs: dict) -> bool:
+        return (
+            name.startswith("a2a.")
+            or name.startswith("acp.")
+            or name.startswith("anp.")
+            or any(k.startswith(("a2a.", "acp.", "anp.", "agent.comm.")) for k in attrs)
+        )
+
+    def _map_agent_communication(self, span: ReadableSpan, attrs: dict) -> AIAgentCommunicationEvent | None:
+        """Map an A2A/ACP/ANP span to OCSF agent_communication (ai category)."""
+        msg = build_agent_message(attrs)
+        if msg is None:
+            return None
+
+        # activity_id from direction: 1 Send, 2 Receive, 3 Stream, 4 Notify.
+        direction_map = {"request": 1, "response": 2, "stream": 3, "notification": 4}
+        activity_id = direction_map.get(msg.direction or "", 99)
+
+        status_id = OCSFStatus.FAILURE if (msg.status == "failed" or msg.error_code) else OCSFStatus.SUCCESS
+
+        return AIAgentCommunicationEvent(
+            activity_id=activity_id,
+            status_id=status_id,
+            agent_message=msg,
+            message=span.name or f"agent.comm.{msg.protocol or 'unknown'}",
             time=_span_time(span),
         )
 

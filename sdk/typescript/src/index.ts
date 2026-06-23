@@ -30,6 +30,10 @@ export {
   AssetInventoryAttributes,
   DriftDetectionAttributes,
   MemorySecurityAttributes,
+  A2AAttributes,
+  ACPAttributes,
+  ANPAttributes,
+  AgentCommAttributes,
   AgenticLogAttributes,
 } from "./semantic-conventions/attributes";
 
@@ -191,8 +195,11 @@ export {
   AIClassUID,
   AgentTypeID,
   AGENT_TYPE_LABELS,
+  AgentProtocolID,
+  AGENT_PROTOCOL_LABELS,
   OCSF_AI_CATEGORY_UID,
   normalizeAgentTypeId,
+  normalizeAgentProtocolId,
   createMetadata,
   createTokenUsage,
   createBaseEvent,
@@ -212,6 +219,7 @@ export {
   type OCSFDelegation,
   type OCSFDelegationNode,
   type OCSFDelegationLineage,
+  type OCSFAgentMessage,
   type ComplianceMetadata,
   type AIBaseEvent,
 } from "./ocsf/schema";
@@ -227,10 +235,17 @@ export {
   type OCSFClassTarget,
 } from "./ocsf/crosswalk";
 
+// OCSF Agent-to-agent communication normalization (A2A / ACP / ANP)
+export {
+  buildAgentMessage,
+  canonicalCommStatus,
+} from "./ocsf/agent-comm";
+
 // OCSF Event Classes
 export {
   type AIModelInferenceEvent,
   type AIAgentActivityEvent,
+  type AIAgentCommunicationEvent,
   type AIToolExecutionEvent,
   type AIDataRetrievalEvent,
   type AISecurityFindingEvent,
@@ -241,6 +256,7 @@ export {
   type AIAssetInventoryEvent,
   createModelInferenceEvent,
   createAgentActivityEvent,
+  createAgentCommunicationEvent,
   createToolExecutionEvent,
   createDataRetrievalEvent,
   createSecurityFindingEvent,
