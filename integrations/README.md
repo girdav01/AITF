@@ -13,7 +13,8 @@ This directory contains vendor-specific instrumentation modules that wrap popula
 integrations/
 ├── anthropic/              # Anthropic
 │   ├── claude-api/         #   Claude Messages API
-│   └── claude-code/        #   Claude Code / Agent SDK
+│   ├── claude-code/        #   Claude Code / Agent SDK
+│   └── compliance/         #   Claude Compliance API (Activity Feed → OCSF)
 ├── openai/                 # OpenAI
 │   ├── gpt-api/            #   Chat Completions, Embeddings
 │   └── assistants-api/     #   Assistants, Threads, Runs
@@ -137,6 +138,7 @@ LakeraInstrumentor(tracer_provider=provider).instrument()
 |--------|---------|-----|----------------|--------------|
 | Anthropic | Claude API | `anthropic` | `gen_ai.*` | Messages, streaming, tool use, vision, caching |
 | Anthropic | Claude Code | Agent SDK | `aitf.agent.*`, `aitf.mcp.*` | Agent sessions, MCP tools, file operations |
+| Anthropic | Claude Compliance API | Activity Feed REST | `claude.compliance.*` → OCSF | Audit activity → OCSF (auth/IAM/content), SIEM forwarding |
 | OpenAI | GPT API | `openai` | `gen_ai.*` | Chat, embeddings, structured outputs, function calling |
 | OpenAI | Assistants | `openai` | `aitf.agent.*` | Threads, runs, file search, code interpreter |
 | Google AI | Gemini | `google-generativeai` | `gen_ai.*` | Multimodal, grounding, safety settings |

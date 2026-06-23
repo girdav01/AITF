@@ -31,10 +31,27 @@ with any OpenTelemetry-compatible backend (Jaeger, OTLP, etc.).
 
 from __future__ import annotations
 
-from integrations.anthropic.claude_api.instrumentor import AnthropicInstrumentor
-from integrations.anthropic.claude_code.instrumentor import ClaudeCodeInstrumentor
+# SDK instrumentors require optional vendor packages; guard so the dependency-
+# light Compliance API integration remains importable without them.
+try:
+    from integrations.anthropic.claude_api.instrumentor import AnthropicInstrumentor
+    from integrations.anthropic.claude_code.instrumentor import ClaudeCodeInstrumentor
+except ImportError:  # pragma: no cover - optional vendor SDKs not installed
+    AnthropicInstrumentor = None  # type: ignore[assignment]
+    ClaudeCodeInstrumentor = None  # type: ignore[assignment]
 
 __all__ = [
     "AnthropicInstrumentor",
     "ClaudeCodeInstrumentor",
+    "ClaudeComplianceMapper",
+    "iter_activities",
 ]
+
+
+def __getattr__(name: str):
+    # Lazily expose the Compliance API integration without importing it (and
+    # its aitf dependency) unless requested.
+    if name in ("ClaudeComplianceMapper", "iter_activities"):
+        from integrations.anthropic import compliance
+        return getattr(compliance, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
