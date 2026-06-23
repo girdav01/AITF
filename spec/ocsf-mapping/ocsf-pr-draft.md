@@ -270,6 +270,21 @@ fields:
    on `agent_activity`.
 8. **AI quality metrics** — an `ai_quality` object (hallucination score,
    confidence, factuality) on `ai_operation`.
+9. **Agent-to-agent communication** — ONE generic `agent_message` object with a
+   `protocol_id` discriminator (A2A / ACP / ANP / MCP / Other), not a separate
+   object per protocol. Carries the shared core of every agentic exchange:
+   `src_agent`/`dst_agent` (`ai_agent`), `delegation`, unit-of-work
+   (task/run/message) `uid` + a canonical lifecycle `status`, `operation`,
+   `transport`, parts/artifacts counts, trust (domain/cross-domain/DID), and
+   error. Carried on a new `agent_communication` class (or `agent_activity`)
+   in the `ai` category. **Rationale:** OCSF gives SMTP/SMB/DNS/SSH dedicated
+   objects because they are mature, ubiquitous, and semantically distinct;
+   agentic protocols are nascent, fast-churning, and converging on one
+   conceptual model — a per-protocol object would fragment cross-protocol
+   detection (e.g. "agent contacted an untrusted peer") and chase schema
+   churn. Mirror OCSF's own "generic class + protocol id" pattern
+   (`network_activity` + `tls`/`dns_query`); keep per-protocol detail in a
+   `metadata` escape hatch.
 
 ## Backwards compatibility
 

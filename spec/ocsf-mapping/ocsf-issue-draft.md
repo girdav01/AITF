@@ -73,6 +73,13 @@ Each closes a gap where an AI event reuses an OCSF class that lacks the fields:
   `2003` / asset inventory.
 - **Agent reasoning & multi-agent** objects (`ai_reasoning`, `ai_team`) on
   `agent_activity`; **AI quality metrics** (`ai_quality`) on `ai_operation`.
+- **Agent-to-agent communication** — ONE generic `agent_message` object with a
+  `protocol_id` discriminator (A2A / ACP / ANP / MCP / Other), **not** a
+  per-protocol object. Same conceptual core for every protocol (peer agents +
+  delegation, unit-of-work + canonical lifecycle status, operation, transport,
+  trust/DID). Per-protocol objects would fragment cross-protocol detection and
+  chase fast schema churn; mirror OCSF's "generic class + protocol id" pattern
+  (`network_activity` + `tls`/`dns_query`).
 
 ### Backwards compatibility
 
