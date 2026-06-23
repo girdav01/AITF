@@ -16,6 +16,12 @@ class GenAIAttributes:
     CONVERSATION_ID = "gen_ai.conversation.id"
     OUTPUT_TYPE = "gen_ai.output.type"
     PROMPT_NAME = "gen_ai.prompt.name"
+    PROMPT_VERSION = "gen_ai.prompt.version"
+    PROMPT_LABEL = "gen_ai.prompt.label"
+
+    # End-user / tagging (general; e.g. Langfuse userId / tags)
+    USER_ID = "user.id"
+    TAGS = "tags"
 
     # Input/output content attributes
     INPUT_MESSAGES = "gen_ai.input.messages"
@@ -87,7 +93,11 @@ class GenAIAttributes:
     EVALUATION_NAME = "gen_ai.evaluation.name"
     EVALUATION_SCORE_VALUE = "gen_ai.evaluation.score.value"
     EVALUATION_SCORE_LABEL = "gen_ai.evaluation.score.label"
+    EVALUATION_SCORE_DATA_TYPE = "gen_ai.evaluation.score.data_type"  # numeric | categorical | boolean
+    EVALUATION_SOURCE = "gen_ai.evaluation.source"  # human | llm | eval | annotation | api
+    EVALUATION_COMMENT = "gen_ai.evaluation.comment"
     EVALUATION_EXPLANATION = "gen_ai.evaluation.explanation"
+    EVALUATION_DATASET_ITEM_ID = "gen_ai.evaluation.dataset.item_id"
 
     # System values
     class System:
@@ -444,9 +454,43 @@ class CostAttributes:
     ATTRIBUTION_PROJECT = "cost.attribution.project"
 
 
+class ClaudeComplianceAttributes:
+    """Anthropic Claude Compliance API (Activity Feed) attributes.
+
+    Normalizes records from ``GET /v1/compliance/activities`` so Claude
+    Enterprise audit activity can be carried as AITF telemetry and mapped to
+    OCSF. See https://platform.claude.com/docs/en/manage-claude/compliance-api
+    """
+
+    # Activity envelope
+    ACTIVITY_ID = "claude.compliance.activity.id"
+    ACTIVITY_TYPE = "claude.compliance.activity.type"
+    ACTIVITY_CATEGORY = "claude.compliance.activity.category"  # derived: auth/account/content/...
+    CREATED_AT = "claude.compliance.activity.created_at"
+    ORGANIZATION_ID = "claude.compliance.organization.id"
+    ORGANIZATION_UUID = "claude.compliance.organization.uuid"
+
+    # Actor (discriminated union)
+    ACTOR_TYPE = "claude.compliance.actor.type"  # user_actor, api_actor, admin_api_key_actor, ...
+    ACTOR_EMAIL = "claude.compliance.actor.email_address"
+    ACTOR_USER_ID = "claude.compliance.actor.user_id"
+    ACTOR_IP = "claude.compliance.actor.ip_address"
+    ACTOR_USER_AGENT = "claude.compliance.actor.user_agent"
+    ACTOR_API_KEY_ID = "claude.compliance.actor.api_key_id"
+    ACTOR_ADMIN_API_KEY_ID = "claude.compliance.actor.admin_api_key_id"
+    ACTOR_DIRECTORY_ID = "claude.compliance.actor.directory_id"
+    ACTOR_IDP_CONNECTION_TYPE = "claude.compliance.actor.idp_connection_type"
+
+    # Type-specific resource identifiers
+    CHAT_ID = "claude.compliance.chat.id"
+    PROJECT_ID = "claude.compliance.project.id"
+    FILE_ID = "claude.compliance.file.id"
+    FILENAME = "claude.compliance.file.name"
+    TARGET_USER_ID = "claude.compliance.target.user_id"
+
+
 class QualityAttributes:
     """AITF Quality semantic convention attributes."""
-
     HALLUCINATION_SCORE = "quality.hallucination_score"
     CONFIDENCE = "quality.confidence"
     FACTUALITY = "quality.factuality"

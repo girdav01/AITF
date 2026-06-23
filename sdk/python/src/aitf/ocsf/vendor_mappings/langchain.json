@@ -70,7 +70,7 @@
         "langchain.run.response_id": "gen_ai.response.id",
         "langchain.run.finish_reason": "gen_ai.response.finish_reasons"
       },
-      "ocsf_class_uid": 7001,
+      "ocsf_class_uid": 6003,
       "ocsf_activity_id_map": {
         "chat": 1,
         "text_completion": 2,
@@ -98,7 +98,7 @@
         "langgraph.checkpoint_ns": "agent.checkpoint",
         "langgraph.triggers": "agent.step.action"
       },
-      "ocsf_class_uid": 7002,
+      "ocsf_class_uid": 9001,
       "ocsf_activity_id_map": {
         "session_start": 1,
         "session_end": 2,
@@ -126,7 +126,7 @@
         "tool.input": "gen_ai.tool.call.arguments",
         "tool.output": "gen_ai.tool.call.result"
       },
-      "ocsf_class_uid": 7003,
+      "ocsf_class_uid": 6003,
       "ocsf_activity_id_map": {
         "function_call": 1,
         "mcp_tool": 2,
@@ -151,7 +151,7 @@
         "retriever.documents.count": "rag.retrieve.results_count",
         "retriever.embeddings.model": "rag.query.embedding_model"
       },
-      "ocsf_class_uid": 7004,
+      "ocsf_class_uid": 6005,
       "ocsf_activity_id_map": {
         "vector_search": 1,
         "document_retrieval": 2,

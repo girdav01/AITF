@@ -19,6 +19,7 @@ export {
   RAGAttributes,
   SecurityAttributes,
   ComplianceAttributes,
+  ClaudeComplianceAttributes,
   CostAttributes,
   QualityAttributes,
   SupplyChainAttributes,
@@ -257,6 +258,15 @@ export {
   ComplianceMapper,
   FRAMEWORK_MAPPINGS,
 } from "./ocsf/compliance-mapper";
+
+export {
+  ClaudeComplianceMapper,
+  classify as classifyClaudeComplianceActivity,
+  iterActivities,
+  type ActivityFeedOptions,
+  type ClassifyResult,
+  type ClaudeComplianceActivity,
+} from "./ocsf/claude-compliance";
 
 // Exporters
 export {

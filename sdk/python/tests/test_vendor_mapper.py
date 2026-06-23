@@ -90,10 +90,10 @@ class TestVendorMapping:
         assert result["gen_ai.operation.name"] == "embeddings"
 
     def test_ocsf_class_uid(self):
-        assert self.mapping.get_ocsf_class_uid("inference") == 7001
-        assert self.mapping.get_ocsf_class_uid("agent") == 7002
-        assert self.mapping.get_ocsf_class_uid("tool") == 7003
-        assert self.mapping.get_ocsf_class_uid("retrieval") == 7004
+        assert self.mapping.get_ocsf_class_uid("inference") == 6003
+        assert self.mapping.get_ocsf_class_uid("agent") == 9001
+        assert self.mapping.get_ocsf_class_uid("tool") == 6003
+        assert self.mapping.get_ocsf_class_uid("retrieval") == 6005
 
     def test_ocsf_activity_id(self):
         assert self.mapping.get_ocsf_activity_id("inference", "chat") == 1
@@ -203,10 +203,10 @@ class TestCrewAIMapping:
         assert result["aitf.agent.delegation.task"] == "Find papers on LLM security"
 
     def test_ocsf_class_uids(self):
-        assert self.mapping.get_ocsf_class_uid("inference") == 7001
-        assert self.mapping.get_ocsf_class_uid("agent") == 7002
-        assert self.mapping.get_ocsf_class_uid("tool") == 7003
-        assert self.mapping.get_ocsf_class_uid("delegation") == 7002
+        assert self.mapping.get_ocsf_class_uid("inference") == 6003
+        assert self.mapping.get_ocsf_class_uid("agent") == 9001
+        assert self.mapping.get_ocsf_class_uid("tool") == 6003
+        assert self.mapping.get_ocsf_class_uid("delegation") == 9001
 
     def test_severity_mapping(self):
         assert self.mapping.get_severity_id("crewai.task.status", "completed") == 1
@@ -324,7 +324,7 @@ class TestOpenRouterMapping:
         assert result["gen_ai.system"] == "anthropic"
 
     def test_ocsf_class_uid(self):
-        assert self.mapping.get_ocsf_class_uid("inference") == 7001
+        assert self.mapping.get_ocsf_class_uid("inference") == 6003
 
     def test_ocsf_activity_id(self):
         assert self.mapping.get_ocsf_activity_id("inference", "chat") == 1
@@ -510,9 +510,9 @@ class TestVendorMapper:
     # -- OCSF helpers -------------------------------------------------------
 
     def test_get_ocsf_class_uid(self):
-        assert self.mapper.get_ocsf_class_uid("langchain", "inference") == 7001
-        assert self.mapper.get_ocsf_class_uid("crewai", "agent") == 7002
-        assert self.mapper.get_ocsf_class_uid("openrouter", "inference") == 7001
+        assert self.mapper.get_ocsf_class_uid("langchain", "inference") == 6003
+        assert self.mapper.get_ocsf_class_uid("crewai", "agent") == 9001
+        assert self.mapper.get_ocsf_class_uid("openrouter", "inference") == 6003
         assert self.mapper.get_ocsf_class_uid("unknown", "agent") is None
 
     def test_get_ocsf_activity_id(self):
@@ -535,7 +535,7 @@ class TestVendorMapper:
                     "vendor_to_aitf": {
                         "test.model": "gen_ai.request.model"
                     },
-                    "ocsf_class_uid": 7001,
+                    "ocsf_class_uid": 6003,
                     "defaults": {}
                 }
             }
@@ -558,6 +558,60 @@ class TestVendorMapper:
 # ---------------------------------------------------------------------------
 # TestMappingFileIntegrity – validates the JSON mapping files themselves
 # ---------------------------------------------------------------------------
+
+class TestLangfuseMapping:
+    """Tests for the Langfuse vendor mapping (classify-by-attribute + scores)."""
+
+    def setup_method(self):
+        self.mapper = VendorMapper()
+
+    def test_langfuse_loaded(self):
+        assert "langfuse" in self.mapper.vendors
+
+    def test_generation_classified_as_inference(self):
+        # Langfuse encodes the type in the attribute value, not the span name.
+        span = _make_span("my-llm-call", {
+            "langfuse.observation.type": "generation",
+            "langfuse.observation.model.name": "gpt-4o",
+            "langfuse.observation.input": "[{...}]",
+            "langfuse.session.id": "sess-1",
+            "langfuse.user.id": "user-42",
+        })
+        result = self.mapper.normalize_span(span)
+        assert result is not None
+        vendor, event_type, attrs = result
+        assert vendor == "langfuse"
+        assert event_type == "inference"
+        assert attrs["gen_ai.request.model"] == "gpt-4o"
+        assert attrs["gen_ai.conversation.id"] == "sess-1"
+        assert attrs["user.id"] == "user-42"
+        assert self.mapper.get_ocsf_class_uid("langfuse", "inference") == 6003
+
+    def test_span_classified_as_agent(self):
+        span = _make_span("planner", {"langfuse.observation.type": "span"})
+        result = self.mapper.normalize_span(span)
+        assert result is not None
+        assert result[1] == "agent"
+        assert self.mapper.get_ocsf_class_uid("langfuse", "agent") == 9001
+
+    def test_score_classified_as_evaluation(self):
+        span = _make_span("score-event", {
+            "langfuse.score.name": "helpfulness",
+            "langfuse.score.value": 0.9,
+            "langfuse.score.data_type": "NUMERIC",
+            "langfuse.score.source": "EVAL",
+            "langfuse.score.comment": "looks good",
+        })
+        result = self.mapper.normalize_span(span)
+        assert result is not None
+        vendor, event_type, attrs = result
+        assert event_type == "evaluation"
+        assert attrs["gen_ai.evaluation.name"] == "helpfulness"
+        assert attrs["gen_ai.evaluation.score.value"] == 0.9
+        assert attrs["gen_ai.evaluation.score.data_type"] == "NUMERIC"
+        assert attrs["gen_ai.evaluation.source"] == "EVAL"
+        assert attrs["gen_ai.evaluation.comment"] == "looks good"
+
 
 class TestMappingFileIntegrity:
     """Validate that all vendor mapping JSON files are well-formed."""
@@ -593,7 +647,7 @@ class TestMappingFileIntegrity:
 
     def test_ocsf_class_uids_are_valid(self, mapping_file):
         data = json.loads(mapping_file.read_text(encoding="utf-8"))
-        valid_uids = {7001, 7002, 7003, 7004, 7005, 7006, 7007, 7008}
+        valid_uids = {2002, 2003, 2004, 3002, 5001, 6002, 6003, 6005, 9001, 9002}
         for event_type, block in data["attribute_mappings"].items():
             if "ocsf_class_uid" in block:
                 assert block["ocsf_class_uid"] in valid_uids, (
