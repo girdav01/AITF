@@ -29,9 +29,12 @@
 //! assert!(json.contains("\"class_uid\":6003"));
 //! ```
 
+pub mod exporters;
 pub mod ocsf;
 pub mod semconv;
 
+pub use exporters::{CefSyslogExporter, ImmutableLogExporter, OcsfExporter};
 pub use ocsf::{
-    AIBaseEvent, AttrValue, ClaudeComplianceMapper, OcsfMapper, SpanData,
+    AIBaseEvent, AttrValue, ClaudeComplianceMapper, ComplianceMapper, ComplianceMetadata,
+    OcsfMapper, SpanData,
 };

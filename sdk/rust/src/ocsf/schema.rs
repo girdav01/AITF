@@ -478,6 +478,10 @@ pub struct AIBaseEvent {
     /// (class 9003).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub agent_message: Option<OCSFAgentMessage>,
+
+    /// Compliance-framework metadata, attached by the [`crate::ocsf::ComplianceMapper`].
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub compliance: Option<crate::ocsf::compliance::ComplianceMetadata>,
 }
 
 impl AIBaseEvent {
@@ -503,6 +507,7 @@ impl AIBaseEvent {
             delegation: None,
             delegation_lineage: None,
             agent_message: None,
+            compliance: None,
         }
     }
 

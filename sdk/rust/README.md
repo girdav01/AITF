@@ -22,6 +22,27 @@ What's included:
   the `ai_operation` profile.
 - **`ocsf::claude_compliance`** — the Anthropic Claude Compliance Activity Feed
   mapper (`classify`, `ClaudeComplianceMapper::map_activity`).
+- **`ocsf::compliance`** — the compliance-framework mapper (`ComplianceMapper`)
+  covering NIST AI RMF, MITRE ATLAS, ISO/IEC 42001, EU AI Act, SOC 2, GDPR, CCPA,
+  and CSA AICM; `map_event`, `enrich_event`, `get_coverage_matrix`, and optional
+  framework filtering. Control IDs match the Go/Python SDKs exactly.
+- **`exporters`** — `OcsfExporter` (OCSF JSON Lines, file append, and — with the
+  `client` feature — HTTP POST), `CefSyslogExporter` (CEF syslog message
+  strings for non-OCSF SIEMs), and `ImmutableLogExporter` (append-only, SHA-256
+  hash-chained, tamper-evident audit log with `verify_immutable_log`). The Rust
+  exporters consume already-mapped `AIBaseEvent` values (the crate has no OTel
+  dependency).
+- **`semconv::metrics`** — AITF metric-name constants (ported from Go
+  `semconv/metrics.go`).
+- **`ocsf::claude_compliance_client`** *(feature `client`)* — the Activity Feed
+  HTTP poller (`for_each_activity`, `collect_activities_as_events`) with cursor
+  pagination, array-bracket repeatable filters, and limit validation.
+
+## Feature flags
+
+- `default` — dependency-light: `serde`, `serde_json`, `sha2` only.
+- `client` — enables HTTP (`ureq`): the OCSF exporter's `post_to_endpoint` and
+  the Claude Compliance Activity Feed poller.
 
 ## Install
 
@@ -32,7 +53,13 @@ This is a standalone crate (no workspace). Add it as a path dependency:
 aitf = { path = "../AITF/sdk/rust" }
 ```
 
-Runtime dependencies are limited to `serde` and `serde_json`.
+Runtime dependencies are limited to `serde`, `serde_json`, and `sha2` by
+default. The optional `client` feature adds `ureq` for HTTP. To enable it:
+
+```toml
+[dependencies]
+aitf = { path = "../AITF/sdk/rust", features = ["client"] }
+```
 
 ## Usage
 
@@ -79,15 +106,14 @@ assert_eq!(event.class_uid, 6001); // Web Resources Activity
 
 ## Scope / not yet ported
 
-This is a v0 focused on the schema + mapping core. The following are present in
-the Go/Python SDKs but **not** ported here yet:
+The schema, mappers, exporters (OCSF / CEF / immutable log), compliance-framework
+mapper, metric-name constants, and the Claude Compliance Activity Feed poller
+(feature `client`) are all supported. The following remain present in the
+Go/Python SDKs but **not** ported here yet:
 
-- Exporters: OTLP, OCSF, and CEF.
 - The vendor mapper (OpenAI/Anthropic/etc. response normalization).
-- The compliance-framework mapper (NIST AI RMF / EU AI Act / CSA AICM / ...).
-- Metrics instruments and auto-instrumentation.
-- The Claude Compliance Activity Feed **HTTP poller** (the Rust standard library
-  has no HTTP client; the mapper maps records you supply).
+- Metrics instruments and auto-instrumentation (only the metric-name constants
+  are ported, in `semconv::metrics`).
 
 Timestamps and metadata UIDs use a dependency-free placeholder scheme in v0
 (no `chrono`/`uuid`); mappers overwrite `time` from the span start time.

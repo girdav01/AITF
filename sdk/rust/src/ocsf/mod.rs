@@ -6,11 +6,15 @@
 //! delegation control-plane lifecycle uses the proposed "ai" category (uid 9).
 
 pub mod claude_compliance;
+#[cfg(feature = "client")]
+pub mod claude_compliance_client;
+pub mod compliance;
 pub mod crosswalk;
 pub mod mapper;
 pub mod schema;
 
 pub use claude_compliance::{classify, ClaudeComplianceMapper};
+pub use compliance::{ComplianceMapper, ComplianceMetadata, FrameworkControls};
 pub use crosswalk::{
     build_agent_message, build_ai_agent, build_delegation, build_delegation_lineage,
     canonical_comm_status, ocsf_agent_activity_crosswalk, ocsf_class_crosswalk,

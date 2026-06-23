@@ -428,6 +428,53 @@ pub mod agent_comm {
     pub const PROTOCOL_CUSTOM: &str = "custom";
 }
 
+/// AITF metric-name constants (ported from Go `semconv/metrics.go`).
+pub mod metrics {
+    // OTel GenAI metrics (preserved)
+    pub const GEN_AI_TOKEN_USAGE: &str = "gen_ai.client.token.usage";
+    pub const GEN_AI_OPERATION_DURATION: &str = "gen_ai.client.operation.duration";
+
+    // Inference metrics
+    pub const INFERENCE_REQUESTS: &str = "inference.requests";
+    pub const INFERENCE_ERRORS: &str = "inference.errors";
+    pub const INFERENCE_TTFT: &str = "inference.time_to_first_token";
+    pub const INFERENCE_TPS: &str = "inference.tokens_per_second";
+
+    // Agent metrics
+    pub const AGENT_SESSIONS: &str = "agent.sessions";
+    pub const AGENT_STEPS: &str = "agent.steps";
+    pub const AGENT_SESSION_DURATION: &str = "agent.session.duration";
+    pub const AGENT_DELEGATIONS: &str = "agent.delegations";
+
+    // MCP metrics
+    pub const MCP_TOOL_INVOCATIONS: &str = "mcp.tool.invocations";
+    pub const MCP_TOOL_DURATION: &str = "mcp.tool.duration";
+    pub const MCP_SERVER_CONNECTIONS: &str = "mcp.server.connections";
+    pub const MCP_TOOL_APPROVALS: &str = "mcp.tool.approvals";
+
+    // Skill metrics
+    pub const SKILL_INVOCATIONS: &str = "skill.invocations";
+    pub const SKILL_DURATION: &str = "skill.duration";
+
+    // Cost metrics
+    pub const COST_TOTAL: &str = "cost.total";
+    pub const COST_BUDGET_UTILIZATION: &str = "cost.budget.utilization";
+
+    // Security metrics
+    pub const SECURITY_THREATS: &str = "security.threats_detected";
+    pub const SECURITY_BLOCKED: &str = "security.requests_blocked";
+    pub const SECURITY_PII: &str = "security.pii_detected";
+    pub const SECURITY_GUARDRAILS: &str = "security.guardrail.checks";
+
+    // RAG metrics
+    pub const RAG_RETRIEVALS: &str = "rag.retrievals";
+    pub const RAG_RETRIEVAL_DURATION: &str = "rag.retrieval.duration";
+
+    // Quality metrics
+    pub const QUALITY_HALLUCINATION: &str = "quality.hallucination";
+    pub const QUALITY_USER_RATING: &str = "quality.user_rating";
+}
+
 /// Anthropic Claude Compliance API (Activity Feed) attributes.
 pub mod claude_compliance {
     pub const ACTIVITY_ID: &str = "claude.compliance.activity.id";

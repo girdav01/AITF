@@ -7,8 +7,10 @@
 //! mapper and the Go port exactly.
 //!
 //! Docs: <https://platform.claude.com/docs/en/manage-claude/compliance-api>
-//
-// TODO: Activity Feed poller (needs an HTTP client dep) — v0 only maps records.
+//!
+//! The Activity Feed HTTP poller lives in
+//! [`crate::ocsf::claude_compliance_client`] behind the `client` feature; this
+//! module maps the records the poller (or any caller) supplies.
 
 use std::collections::HashMap;
 
