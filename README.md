@@ -1,6 +1,6 @@
 # AITF - AI Telemetry Framework
 
-> **Version 0.1 — Proposal**
+> **Version 0.2 — Proposal**
 > Proposed by David Girard (TrendAI) to [CoSAI](https://www.coalitionforsafeai.org/) WS2.
 > This project has now been donated and is maintained by CoSAI at : https://github.com/cosai-oasis/ws2-defenders/tree/main/telemetry
 > 
