@@ -101,7 +101,7 @@ from aitf.ocsf.compliance_mapper import ComplianceMapper
 # ---------------------------------------------------------------------------
 # Synthetic generator import
 # ---------------------------------------------------------------------------
-from generate_synthetic_events import generate_events, strip_none, CLASS_NAMES
+from generate_synthetic_events import generate_events, strip_none
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -115,6 +115,43 @@ SEVERITY_NAMES = {
     0: "Unknown", 1: "Info", 2: "Low", 3: "Medium",
     4: "High", 5: "Critical", 6: "Fatal",
 }
+
+# Under OCSF class reuse, class_uid is no longer unique per AITF event type
+# (e.g. Model Inference and Tool Execution both reuse API Activity 6003).
+# Events are therefore grouped by AITF event type, derived from the reused
+# class_uid plus a discriminating AI field, rather than by class_uid alone.
+EVENT_TYPE_LABELS = {
+    "model_inference": "Model Inference (API Activity 6003)",
+    "agent_activity": "Agent Activity (agent_activity 9001)",
+    "tool_execution": "Tool Execution (API Activity 6003)",
+    "data_retrieval": "Data Retrieval (Datastore Activity 6005)",
+    "security_finding": "Security Finding (Detection Finding 2004)",
+    "supply_chain": "Supply Chain (Vulnerability Finding 2002)",
+    "governance": "Governance (Compliance Finding 2003)",
+    "identity": "Identity (Authentication 3002)",
+}
+
+
+def classify_event_type(evt: dict) -> str:
+    """Map a reused-class OCSF event back to its AITF event type.
+
+    class_uid alone is ambiguous under class reuse, so 6003 (API Activity)
+    is disambiguated via the AI fields present on the event: inference events
+    carry ``model``/``token_usage``; tool events carry ``tool_name``.
+    """
+    cuid = evt.get("class_uid")
+    if cuid == 6003:
+        if "tool_name" in evt:
+            return "tool_execution"
+        return "model_inference"
+    return {
+        9001: "agent_activity",
+        6005: "data_retrieval",
+        2004: "security_finding",
+        2002: "supply_chain",
+        2003: "governance",
+        3002: "identity",
+    }.get(cuid, "unknown")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -170,7 +207,7 @@ def setup_pipeline(output_file: str) -> tuple[TracerProvider, OCSFExporter]:
 # ═══════════════════════════════════════════════════════════════════════════
 
 def replay_inference_events(events: list[dict], llm: LLMInstrumentor) -> int:
-    """Replay 7001 Model Inference events through LLMInstrumentor."""
+    """Replay Model Inference events (API Activity 6003) through LLMInstrumentor."""
     count = 0
     for evt in events:
         model_info = evt.get("model", {})
@@ -243,7 +280,7 @@ def replay_inference_events(events: list[dict], llm: LLMInstrumentor) -> int:
 
 
 def replay_agent_events(events: list[dict], agent_inst: AgentInstrumentor) -> int:
-    """Replay 7002 Agent Activity events through AgentInstrumentor."""
+    """Replay Agent Activity events (agent_activity 9001) through AgentInstrumentor."""
     count = 0
     for evt in events:
         agent_name = evt.get("agent_name", "unknown")
@@ -287,7 +324,7 @@ def replay_agent_events(events: list[dict], agent_inst: AgentInstrumentor) -> in
 
 
 def replay_tool_events(events: list[dict], mcp_inst: MCPInstrumentor, skill_inst: SkillInstrumentor) -> int:
-    """Replay 7003 Tool Execution events through MCP/Skills instrumentors."""
+    """Replay Tool Execution events (API Activity 6003) through MCP/Skills instrumentors."""
     count = 0
     for evt in events:
         tool_type = evt.get("tool_type", "function")
@@ -331,7 +368,7 @@ def replay_tool_events(events: list[dict], mcp_inst: MCPInstrumentor, skill_inst
 
 
 def replay_rag_events(events: list[dict], rag_inst: RAGInstrumentor) -> int:
-    """Replay 7004 Data Retrieval events through RAGInstrumentor."""
+    """Replay Data Retrieval events (Datastore Activity 6005) through RAGInstrumentor."""
     count = 0
     for evt in events:
         pipeline_name = evt.get("pipeline_name", "default-rag")
@@ -373,19 +410,20 @@ def replay_rag_events(events: list[dict], rag_inst: RAGInstrumentor) -> int:
 # ═══════════════════════════════════════════════════════════════════════════
 
 def generate_ocsf_events_direct(
-    events_by_class: dict[int, list[dict]],
+    events_by_type: dict[str, list[dict]],
     compliance_mapper: ComplianceMapper,
 ) -> list[dict]:
-    """Generate OCSF events directly for 7005-7008 (no OTel instrumentor needed).
+    """Generate OCSF events directly for the finding/identity AITF event types.
 
-    These event classes (Security Finding, Supply Chain, Governance, Identity)
-    are typically produced by processors or external systems, not by
-    span-based instrumentors.
+    These AITF event types — Security Finding (Detection Finding 2004),
+    Supply Chain (Vulnerability Finding 2002), Governance (Compliance
+    Finding 2003), Identity (Authentication 3002) — are typically produced by
+    processors or external systems, not by span-based instrumentors.
     """
     ocsf_events: list[dict] = []
 
-    # 7005 — Security Findings
-    for evt in events_by_class.get(7005, []):
+    # security_finding — Detection Finding (2004)
+    for evt in events_by_type.get("security_finding", []):
         finding_data = evt.get("finding", {})
         ocsf = AISecurityFindingEvent(
             activity_id=evt.get("activity_id", 1),
@@ -410,8 +448,8 @@ def generate_ocsf_events_direct(
         compliance_mapper.enrich_event(ocsf, "security_finding")
         ocsf_events.append(ocsf.model_dump(exclude_none=True))
 
-    # 7006 — Supply Chain
-    for evt in events_by_class.get(7006, []):
+    # supply_chain — Vulnerability Finding (2002)
+    for evt in events_by_type.get("supply_chain", []):
         ocsf = AISupplyChainEvent(
             activity_id=evt.get("activity_id", 1),
             severity_id=evt.get("severity_id", 1),
@@ -430,8 +468,8 @@ def generate_ocsf_events_direct(
         compliance_mapper.enrich_event(ocsf, "supply_chain")
         ocsf_events.append(ocsf.model_dump(exclude_none=True))
 
-    # 7007 — Governance
-    for evt in events_by_class.get(7007, []):
+    # governance — Compliance Finding (2003)
+    for evt in events_by_type.get("governance", []):
         ocsf = AIGovernanceEvent(
             activity_id=evt.get("activity_id", 99),
             severity_id=evt.get("severity_id", 1),
@@ -449,8 +487,8 @@ def generate_ocsf_events_direct(
         compliance_mapper.enrich_event(ocsf, "governance")
         ocsf_events.append(ocsf.model_dump(exclude_none=True))
 
-    # 7008 — Identity
-    for evt in events_by_class.get(7008, []):
+    # identity — Authentication (3002)
+    for evt in events_by_type.get("identity", []):
         ocsf = AIIdentityEvent(
             activity_id=evt.get("activity_id", 1),
             severity_id=evt.get("severity_id", 1),
@@ -479,7 +517,7 @@ def generate_ocsf_events_direct(
 def print_analytics(
     all_events: list[dict],
     ocsf_direct: list[dict],
-    replay_counts: dict[int, int],
+    replay_counts: dict[str, int],
     ocsf_exporter: OCSFExporter,
     elapsed: float,
 ) -> None:
@@ -499,22 +537,23 @@ def print_analytics(
     print(f"  OCSF events direct:        {len(ocsf_direct)}")
     print(f"  Total OCSF events:         {ocsf_exporter.event_count + len(ocsf_direct)}")
 
-    # --- Class distribution ---
-    class_counts = Counter(e["class_uid"] for e in all_events)
-    print(f"\n  {'─' * 56}")
-    print(f"  Event Class Distribution:")
-    print(f"  {'─' * 56}")
-    print(f"  {'Class':>5s}  {'Name':<27s}  {'Count':>5s}  {'Replayed':>8s}")
-    print(f"  {'─' * 56}")
-    for cuid in sorted(class_counts):
-        name = CLASS_NAMES.get(cuid, "Unknown")
-        cnt = class_counts[cuid]
-        replayed = replay_counts.get(cuid, 0)
-        pct = cnt / total * 100
-        bar = "█" * int(pct / 2)
-        print(f"  {cuid:>5d}  {name:<27s}  {cnt:>5d}  {replayed:>8d}  {bar}")
-    print(f"  {'─' * 56}")
-    print(f"  {'Total':<34s}  {total:>5d}  {sum(replay_counts.values()):>8d}")
+    # --- AITF event-type distribution ---
+    # Under OCSF class reuse, class_uid is no longer unique per AITF event type
+    # (inference and tool execution both reuse API Activity 6003), so we report
+    # the distribution by AITF event type.
+    type_counts = Counter(classify_event_type(e) for e in all_events)
+    print(f"\n  {'─' * 62}")
+    print(f"  AITF Event Type Distribution (reused OCSF class):")
+    print(f"  {'─' * 62}")
+    print(f"  {'Event Type':<40s}  {'Count':>5s}  {'Replayed':>8s}")
+    print(f"  {'─' * 62}")
+    for etype in sorted(type_counts):
+        name = EVENT_TYPE_LABELS.get(etype, etype)
+        cnt = type_counts[etype]
+        replayed = replay_counts.get(etype, 0)
+        print(f"  {name:<40s}  {cnt:>5d}  {replayed:>8d}")
+    print(f"  {'─' * 62}")
+    print(f"  {'Total':<40s}  {total:>5d}  {sum(replay_counts.values()):>8d}")
 
     # --- Severity distribution ---
     sev_counts = Counter(e.get("severity_id", 0) for e in all_events)
@@ -527,8 +566,8 @@ def print_analytics(
         pct = cnt / total * 100
         print(f"  {name:<12s}  {cnt:>5d}  ({pct:5.1f}%)")
 
-    # --- Cost summary (from 7001 events) ---
-    inference_events = [e for e in all_events if e["class_uid"] == 7001]
+    # --- Cost summary (from Model Inference / API Activity 6003 events) ---
+    inference_events = [e for e in all_events if classify_event_type(e) == "model_inference"]
     total_cost = sum(
         e.get("cost", {}).get("total_cost_usd", 0.0)
         for e in inference_events
@@ -570,8 +609,8 @@ def print_analytics(
     for mid, mc in sorted(model_costs.items(), key=lambda x: x[1]["cost"], reverse=True)[:8]:
         print(f"  {mid:<30s}  {mc['count']:>8d}  {mc['tokens']:>10,d}  ${mc['cost']:>9,.4f}")
 
-    # --- Security findings ---
-    security_events = [e for e in all_events if e["class_uid"] == 7005]
+    # --- Security findings (Detection Finding 2004) ---
+    security_events = [e for e in all_events if classify_event_type(e) == "security_finding"]
     if security_events:
         finding_types = Counter(
             e.get("finding", {}).get("finding_type", "unknown")
@@ -596,8 +635,8 @@ def print_analytics(
         for cat, cnt in owasp_counts.most_common():
             print(f"    {cat:<10s}  {cnt:>4d}")
 
-    # --- Agent activity ---
-    agent_events = [e for e in all_events if e["class_uid"] == 7002]
+    # --- Agent activity (agent_activity 9001) ---
+    agent_events = [e for e in all_events if classify_event_type(e) == "agent_activity"]
     if agent_events:
         agent_names = Counter(e.get("agent_name", "unknown") for e in agent_events)
         frameworks = Counter(e.get("framework", "unknown") for e in agent_events)
@@ -617,8 +656,8 @@ def print_analytics(
         for fw, cnt in frameworks.most_common():
             print(f"    {fw:<15s}  {cnt:>4d}")
 
-    # --- Tool execution ---
-    tool_events = [e for e in all_events if e["class_uid"] == 7003]
+    # --- Tool execution (API Activity 6003) ---
+    tool_events = [e for e in all_events if classify_event_type(e) == "tool_execution"]
     if tool_events:
         tool_types = Counter(e.get("tool_type", "unknown") for e in tool_events)
         tool_names = Counter(e.get("tool_name", "unknown") for e in tool_events)
@@ -636,8 +675,8 @@ def print_analytics(
         for tn, cnt in tool_names.most_common(8):
             print(f"    {tn:<25s}  {cnt:>4d}")
 
-    # --- Identity ---
-    identity_events = [e for e in all_events if e["class_uid"] == 7008]
+    # --- Identity (Authentication 3002) ---
+    identity_events = [e for e in all_events if classify_event_type(e) == "identity"]
     if identity_events:
         auth_results = Counter(e.get("auth_result", "unknown") for e in identity_events)
         auth_methods = Counter(e.get("auth_method", "unknown") for e in identity_events)
@@ -666,8 +705,8 @@ def print_analytics(
         ctrl_count = sum(len(ctrls) for ctrls in frameworks_map.values())
         print(f"  {evt_type:<20s}  {fw_count:>17d}  {ctrl_count:>8d}")
 
-    # --- Supply chain ---
-    sc_events = [e for e in all_events if e["class_uid"] == 7006]
+    # --- Supply chain (Vulnerability Finding 2002) ---
+    sc_events = [e for e in all_events if classify_event_type(e) == "supply_chain"]
     if sc_events:
         verification_results = Counter(e.get("verification_result", "unknown") for e in sc_events)
         signed_count = sum(1 for e in sc_events if e.get("model_signed"))
@@ -719,14 +758,14 @@ def main() -> None:
         all_events = [strip_none(e) for e in generate_events(seed=args.seed)]
         print(f"  Generated {len(all_events)} events (seed={args.seed})")
 
-    # Group by class
-    events_by_class: dict[int, list[dict]] = defaultdict(list)
+    # Group by AITF event type (class_uid is not unique per type under reuse)
+    events_by_type: dict[str, list[dict]] = defaultdict(list)
     for e in all_events:
-        events_by_class[e["class_uid"]].append(e)
+        events_by_type[classify_event_type(e)].append(e)
 
-    for cuid in sorted(events_by_class):
-        name = CLASS_NAMES.get(cuid, "Unknown")
-        print(f"    {cuid} {name}: {len(events_by_class[cuid])} events")
+    for etype in sorted(events_by_type):
+        name = EVENT_TYPE_LABELS.get(etype, etype)
+        print(f"    {name}: {len(events_by_type[etype])} events")
 
     # ── Step 2: Set up pipeline ──
     print(f"\n[2/4] Setting up AITF pipeline...")
@@ -761,35 +800,35 @@ def main() -> None:
     skill_inst = SkillInstrumentor(tracer_provider=provider)
     skill_inst.instrument()
 
-    replay_counts: dict[int, int] = {}
+    replay_counts: dict[str, int] = {}
 
-    # 7001 — Model Inference
-    cnt = replay_inference_events(events_by_class.get(7001, []), llm_inst)
-    replay_counts[7001] = cnt
-    print(f"    7001 Model Inference:  {cnt} events replayed")
+    # Model Inference — API Activity 6003
+    cnt = replay_inference_events(events_by_type.get("model_inference", []), llm_inst)
+    replay_counts["model_inference"] = cnt
+    print(f"    Model Inference (6003):  {cnt} events replayed")
 
-    # 7002 — Agent Activity
-    cnt = replay_agent_events(events_by_class.get(7002, []), agent_inst)
-    replay_counts[7002] = cnt
-    print(f"    7002 Agent Activity:   {cnt} events replayed")
+    # Agent Activity — agent_activity 9001
+    cnt = replay_agent_events(events_by_type.get("agent_activity", []), agent_inst)
+    replay_counts["agent_activity"] = cnt
+    print(f"    Agent Activity (9001):   {cnt} events replayed")
 
-    # 7003 — Tool Execution
-    cnt = replay_tool_events(events_by_class.get(7003, []), mcp_inst, skill_inst)
-    replay_counts[7003] = cnt
-    print(f"    7003 Tool Execution:   {cnt} events replayed")
+    # Tool Execution — API Activity 6003
+    cnt = replay_tool_events(events_by_type.get("tool_execution", []), mcp_inst, skill_inst)
+    replay_counts["tool_execution"] = cnt
+    print(f"    Tool Execution (6003):   {cnt} events replayed")
 
-    # 7004 — Data Retrieval
-    cnt = replay_rag_events(events_by_class.get(7004, []), rag_inst)
-    replay_counts[7004] = cnt
-    print(f"    7004 Data Retrieval:   {cnt} events replayed")
+    # Data Retrieval — Datastore Activity 6005
+    cnt = replay_rag_events(events_by_type.get("data_retrieval", []), rag_inst)
+    replay_counts["data_retrieval"] = cnt
+    print(f"    Data Retrieval (6005):   {cnt} events replayed")
 
-    # 7005-7008 — Direct OCSF generation (no instrumentor)
+    # Finding/identity types — direct OCSF generation (no instrumentor)
     compliance_mapper = ComplianceMapper(frameworks=ALL_FRAMEWORKS)
-    ocsf_direct = generate_ocsf_events_direct(events_by_class, compliance_mapper)
-    for cuid in (7005, 7006, 7007, 7008):
-        cnt = len(events_by_class.get(cuid, []))
-        replay_counts[cuid] = cnt
-        print(f"    {cuid} {CLASS_NAMES.get(cuid, 'Unknown'):<20s}  {cnt} events (direct OCSF)")
+    ocsf_direct = generate_ocsf_events_direct(events_by_type, compliance_mapper)
+    for etype in ("security_finding", "supply_chain", "governance", "identity"):
+        cnt = len(events_by_type.get(etype, []))
+        replay_counts[etype] = cnt
+        print(f"    {EVENT_TYPE_LABELS.get(etype, etype):<44s}  {cnt} events (direct OCSF)")
 
     # Flush the pipeline
     provider.force_flush()

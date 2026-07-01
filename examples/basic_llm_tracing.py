@@ -310,7 +310,7 @@ else:
     print(f"  Events written to:    /tmp/aitf_ocsf_events.jsonl")
 print(f"\n  Every LLM call produces a span that can be exported as:")
 print(f"    OTel (OTLP):  Security-enriched trace span for observability & security backends")
-print(f"    OCSF (7001):  Security event for SIEM/XDR with:")
+print(f"    OCSF (6003 API Activity + ai_operation):  Security event for SIEM/XDR with:")
 print(f"      - Model, provider, prompt/completion content")
 print(f"      - Token counts, cost, and latency")
 print(f"      - NIST AI RMF + EU AI Act + MITRE ATLAS compliance controls")

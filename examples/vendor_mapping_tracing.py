@@ -101,7 +101,7 @@ if result:
     print(f"        ls_provider           → gen_ai.provider.name  = {aitf_attrs.get('gen_ai.provider.name')}")
     print(f"        ls_model_name         → gen_ai.request.model  = {aitf_attrs.get('gen_ai.request.model')}")
     print(f"        llm.token_count.*     → gen_ai.usage.*        = {aitf_attrs.get('gen_ai.usage.input_tokens')} in / {aitf_attrs.get('gen_ai.usage.output_tokens')} out")
-    print(f"        OCSF class:  {vendor_mapper.get_ocsf_class_uid(vendor, event_type)} (AI Model Inference)")
+    print(f"        OCSF class:  {vendor_mapper.get_ocsf_class_uid(vendor, event_type)} (API Activity, AI inference via ai_operation profile)")
 
 # Step B: LangChain Vector Store Retriever
 print(f"\n  [B] VectorStoreRetriever — Pinecone Knowledge Base")
@@ -121,7 +121,7 @@ if result:
     print(f"        langchain.retriever.name  → gen_ai.data_source.id       = {aitf_attrs.get('gen_ai.data_source.id')}")
     print(f"        langchain.retriever.k     → rag.retrieve.top_k         = {aitf_attrs.get('rag.retrieve.top_k')}")
     print(f"        langchain.retriever.query  → rag.query                 = {aitf_attrs.get('rag.query')}")
-    print(f"        OCSF class:  {vendor_mapper.get_ocsf_class_uid(vendor, event_type)} (AI Data Retrieval)")
+    print(f"        OCSF class:  {vendor_mapper.get_ocsf_class_uid(vendor, event_type)} (Datastore Activity, AI retrieval via ai_operation profile)")
 
 # Step C: LangChain Agent with tool call
 print(f"\n  [C] AgentExecutor — Support Agent with Tool Call")
@@ -135,7 +135,7 @@ result = vendor_mapper.normalize_span(lc_agent)
 if result:
     vendor, event_type, aitf_attrs = result
     print(f"      langchain.agent.name → gen_ai.agent.name = {aitf_attrs.get('gen_ai.agent.name')}")
-    print(f"      OCSF class:  {vendor_mapper.get_ocsf_class_uid(vendor, event_type)} (AI Agent Activity)")
+    print(f"      OCSF class:  {vendor_mapper.get_ocsf_class_uid(vendor, event_type)} (agent_activity, ai category)")
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -252,7 +252,7 @@ autogen_mapping = {
                 "autogen.llm.model": "gen_ai.request.model",
                 "autogen.llm.provider": "gen_ai.provider.name",
             },
-            "ocsf_class_uid": 7001,
+            "ocsf_class_uid": 6003,  # API Activity (reused for AI inference, ai_operation profile)
             "ocsf_activity_id_map": {"chat": 1, "default": 1},
             "defaults": {"gen_ai.operation.name": "chat"},
         },
@@ -261,7 +261,7 @@ autogen_mapping = {
                 "autogen.agent.name": "gen_ai.agent.name",
                 "autogen.agent.type": "agent.type",
             },
-            "ocsf_class_uid": 7002,
+            "ocsf_class_uid": 9001,  # agent_activity (proposed ai category, uid 9)
             "ocsf_activity_id_map": {"default": 3},
             "defaults": {"agent.framework": "autogen"},
         },
@@ -308,7 +308,7 @@ print("=" * 70)
 print("""
   A LangChain ChatAnthropic span flows through the entire pipeline:
     1. VendorMapper normalizes attributes
-    2. OCSFMapper produces an OCSF 7001 event
+    2. OCSFMapper produces an OCSF 6003 API Activity event (ai_operation profile)
     3. ComplianceMapper enriches with regulatory controls
 """)
 
@@ -336,7 +336,7 @@ if norm:
     ocsf_event = ocsf_mapper.map_span(normalized_span)
     if ocsf_event:
         print(f"\n  Step 2 — OCSF Mapping")
-        print(f"    Class UID:  {ocsf_event.class_uid} (AI Model Inference)")
+        print(f"    Class UID:  {ocsf_event.class_uid} (API Activity, AI inference via ai_operation profile)")
         print(f"    Type UID:   {ocsf_event.type_uid}")
         print(f"    Model:      {ocsf_event.model.model_id}")
         print(f"    Provider:   {ocsf_event.model.provider}")
