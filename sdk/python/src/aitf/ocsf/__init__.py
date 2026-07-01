@@ -1,6 +1,6 @@
 """AITF OCSF Module.
 
-Provides OCSF v1.1.0 schema definitions for AI events (Category 7),
+Provides OCSF schema definitions for AI events (class-reuse model),
 event class models, span-to-OCSF mapping, and compliance mapping.
 
 Based on the OCSF schema extensions from the AITelemetry project.

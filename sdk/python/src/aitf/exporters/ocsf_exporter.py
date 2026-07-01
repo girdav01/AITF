@@ -1,6 +1,6 @@
 """AITF OCSF Exporter.
 
-OTel SpanExporter that converts AI spans to OCSF Category 7 events
+OTel SpanExporter that converts AI spans to OCSF events (class-reuse model)
 and exports them to SIEM/XDR endpoints, S3, or local files.
 
 Based on forwarder architecture from the AITelemetry project.
@@ -82,7 +82,7 @@ def _validate_output_path(output_file: str) -> Path:
 
 
 class OCSFExporter(SpanExporter):
-    """Exports OTel spans as OCSF Category 7 AI events.
+    """Exports OTel spans as OCSF AI events (class-reuse model).
 
     Converts AI-related spans to OCSF events using OCSFMapper,
     enriches with compliance metadata, and exports to configured
