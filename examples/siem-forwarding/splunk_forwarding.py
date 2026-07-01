@@ -165,17 +165,34 @@ CIM_FIELD_MAPPINGS = {
     },
 }
 
-# Map OCSF class_uid to CIM data model
+# Map reused OCSF class_uid to CIM data model.
+# Under OCSF class reuse, AI events reuse existing OCSF classes (ai_operation
+# profile); only agent/delegation lifecycle use the proposed ai category (9).
+# API Activity (6003) is shared by Model Inference and Tool Execution, so 6003
+# is disambiguated by field presence in cim_model_for_event() below.
 CLASS_UID_TO_CIM_MODEL = {
-    AIClassUID.MODEL_INFERENCE: "performance",
-    AIClassUID.AGENT_ACTIVITY: "change",
-    AIClassUID.TOOL_EXECUTION: "change",
-    AIClassUID.DATA_RETRIEVAL: "performance",
-    AIClassUID.SECURITY_FINDING: "alerts",
-    AIClassUID.SUPPLY_CHAIN: "change",
-    AIClassUID.GOVERNANCE: "change",
-    AIClassUID.IDENTITY: "authentication",
+    AIClassUID.API_ACTIVITY: "performance",     # 6003 inference (default); tool -> "change"
+    AIClassUID.AGENT_ACTIVITY: "change",        # 9001 (was 7002 Agent Activity)
+    AIClassUID.DATASTORE_ACTIVITY: "performance",  # 6005 (was 7004 Data Retrieval)
+    AIClassUID.DETECTION_FINDING: "alerts",     # 2004 (was 7005 Security Finding)
+    AIClassUID.VULNERABILITY_FINDING: "change", # 2002 (was 7006 Supply Chain)
+    AIClassUID.COMPLIANCE_FINDING: "change",    # 2003 (was 7007 Governance)
+    AIClassUID.AUTHENTICATION: "authentication",  # 3002 (was 7008 Identity)
 }
+
+
+def cim_model_for_event(event: dict[str, Any]) -> str | None:
+    """Choose the CIM data model for a (reused-class) OCSF event.
+
+    class_uid is no longer unique per AITF event type under OCSF class reuse:
+    Model Inference and Tool Execution both reuse API Activity (6003). Tool
+    executions carry ``tool_name`` and map to the CIM "change" model, whereas
+    inference events map to "performance".
+    """
+    class_uid = event.get("class_uid", 0)
+    if class_uid == AIClassUID.API_ACTIVITY and "tool_name" in event:
+        return "change"
+    return CLASS_UID_TO_CIM_MODEL.get(class_uid)
 
 
 def map_ocsf_to_cim(event: dict[str, Any]) -> dict[str, Any]:
@@ -188,8 +205,7 @@ def map_ocsf_to_cim(event: dict[str, Any]) -> dict[str, Any]:
     The original OCSF fields are preserved; CIM fields are added
     under a top-level 'cim' key.
     """
-    class_uid = event.get("class_uid", 0)
-    cim_model = CLASS_UID_TO_CIM_MODEL.get(class_uid)
+    cim_model = cim_model_for_event(event)
 
     if cim_model is None:
         return event
@@ -230,13 +246,18 @@ def build_splunk_hec_event(
     # Map CIM fields and determine sourcetype based on event class
     enriched_event = map_ocsf_to_cim(ocsf_event)
 
+    # Reused OCSF class_uid -> AITF sourcetype suffix. API Activity (6003) is
+    # shared by inference and tool execution, so disambiguate via tool_name.
     class_uid = ocsf_event.get("class_uid", 0)
     class_names = {
-        7001: "inference", 7002: "agent", 7003: "tool",
-        7004: "retrieval", 7005: "security", 7006: "supply_chain",
-        7007: "governance", 7008: "identity",
+        6003: "inference", 9001: "agent",
+        6005: "retrieval", 2004: "security", 2002: "supply_chain",
+        2003: "governance", 3002: "identity",
     }
-    class_suffix = class_names.get(class_uid, "unknown")
+    if class_uid == 6003 and "tool_name" in ocsf_event:
+        class_suffix = "tool"
+    else:
+        class_suffix = class_names.get(class_uid, "unknown")
 
     return {
         "time": epoch_time,
@@ -651,11 +672,16 @@ SPL_QUERIES = {
 
     "dashboard_single_values": """
         | Search: Single-value panels for executive dashboard
+        | Note: OCSF class reuse — Model Inference and Tool Execution both use
+        |   API Activity (6003), so inference is isolated with isnull(tool_name).
+        |   Detection Finding (2004) is shared with non-AI findings, but the
+        |   aitf_ai_telemetry index only holds AITF AI events, so no extra
+        |   AI-field filter is required here.
         index=aitf_ai_telemetry earliest=-24h
         | stats count as total_events,
-                sum(eval(if('event.class_uid'=7001, 1, 0))) as inference_count,
-                sum(eval(if('event.class_uid'=7005, 1, 0))) as security_finding_count,
-                sum(eval(if('event.class_uid'=7005 AND 'event.finding.risk_score'>=80, 1, 0))) as critical_findings,
+                sum(eval(if('event.class_uid'=6003 AND isnull('event.tool_name'), 1, 0))) as inference_count,
+                sum(eval(if('event.class_uid'=2004, 1, 0))) as security_finding_count,
+                sum(eval(if('event.class_uid'=2004 AND 'event.finding.risk_score'>=80, 1, 0))) as critical_findings,
                 sum('event.cost.total_cost_usd') as total_cost_usd,
                 avg('event.latency.total_ms') as avg_latency_ms,
                 dc('event.agent_name') as active_agents,
@@ -666,14 +692,14 @@ SPL_QUERIES = {
         | Search: Event timeline for main dashboard panel
         index=aitf_ai_telemetry earliest=-24h
         | eval event_type=case(
-            'event.class_uid'=7001, "Inference",
-            'event.class_uid'=7002, "Agent",
-            'event.class_uid'=7003, "Tool",
-            'event.class_uid'=7004, "Retrieval",
-            'event.class_uid'=7005, "Security",
-            'event.class_uid'=7006, "Supply Chain",
-            'event.class_uid'=7007, "Governance",
-            'event.class_uid'=7008, "Identity",
+            'event.class_uid'=6003 AND isnotnull('event.tool_name'), "Tool",
+            'event.class_uid'=6003, "Inference",
+            'event.class_uid'=9001, "Agent",
+            'event.class_uid'=6005, "Retrieval",
+            'event.class_uid'=2004, "Security",
+            'event.class_uid'=2002, "Supply Chain",
+            'event.class_uid'=2003, "Governance",
+            'event.class_uid'=3002, "Identity",
             1=1, "Other"
           )
         | timechart span=15m count by event_type
@@ -783,10 +809,10 @@ DASHBOARD_XML = """
           <query>
             index=aitf_ai_telemetry earliest=-24h
             | eval event_type=case(
-                event.class_uid=7001, "Inference",
-                event.class_uid=7002, "Agent",
-                event.class_uid=7003, "Tool",
-                event.class_uid=7005, "Security",
+                event.class_uid=6003 AND isnotnull(event.tool_name), "Tool",
+                event.class_uid=6003, "Inference",
+                event.class_uid=9001, "Agent",
+                event.class_uid=2004, "Security",
                 1=1, "Other")
             | timechart span=15m count by event_type
           </query>
@@ -1070,7 +1096,8 @@ def main():
     print("=== Step 5: CIM Mapping Example ===\n")
 
     sample_security_event = {
-        "class_uid": 7005,
+        "class_uid": 2004,  # Detection Finding (was 7005 Security Finding)
+        "category_uid": 2,
         "severity_id": 4,
         "status_id": 1,
         "message": "Prompt injection detected",

@@ -300,7 +300,7 @@ def scenario_1_rag_prompt_injection(
     # Display
     print(box_top(
         "SCENARIO 1: Indirect Prompt Injection via RAG",
-        "MITRE ATLAS: AML.T0051.001 | OWASP: LLM01 | OCSF: 7001 + 7004",
+        "MITRE ATLAS: AML.T0051.001 | OWASP: LLM01 | OCSF: 6003 + 6005",
     ))
     print(box_traditional([
         "HTTP Status:     200 OK",
@@ -403,7 +403,7 @@ def scenario_2_tool_chain_exfiltration(
 
     print(box_top(
         "SCENARIO 2: Slow Data Exfiltration via Tool Chaining",
-        "MITRE ATLAS: AML.T0024 | OWASP: LLM06 | OCSF: 7002 + 7003",
+        "MITRE ATLAS: AML.T0024 | OWASP: LLM06 | OCSF: 9001 + 6003",
     ))
     print(box_traditional([
         "HTTP Status:     200 OK (all 3 tool calls)",
@@ -503,7 +503,7 @@ def scenario_3_agent_loop(
 
     print(box_top(
         "SCENARIO 3: Agent Infinite Loop / Resource Exhaustion",
-        "MITRE ATLAS: AML.T0048 | OWASP: LLM06 | OCSF: 7002 + 7003 + 7001",
+        "MITRE ATLAS: AML.T0048 | OWASP: LLM06 | OCSF: 9001 + 6003",
     ))
     print(box_traditional([
         "HTTP Status:     200 OK (all 12 iterations)",
@@ -591,7 +591,7 @@ def scenario_4_supply_chain_swap(
 
     print(box_top(
         "SCENARIO 4: Model Supply Chain Swap",
-        "MITRE ATLAS: AML.T0010 | OWASP: LLM03 | OCSF: 7001 + 7006",
+        "MITRE ATLAS: AML.T0010 | OWASP: LLM03 | OCSF: 6003 + 2002",
     ))
     print(box_traditional([
         "HTTP Status:     200 OK",
@@ -710,7 +710,7 @@ def scenario_5_jailbreak_escalation(
 
     print(box_top(
         "SCENARIO 5: Multi-Turn Jailbreak Escalation",
-        "MITRE ATLAS: AML.T0051 | OWASP: LLM01 | OCSF: 7001 + 7005",
+        "MITRE ATLAS: AML.T0051 | OWASP: LLM01 | OCSF: 6003 + 2004",
     ))
     print(box_traditional([
         "HTTP Status:     200 OK (all 5 turns)",
@@ -811,7 +811,7 @@ def scenario_6_unauthorized_delegation(
 
     print(box_top(
         "SCENARIO 6: Unauthorized Agent Delegation (Privilege Escalation)",
-        "MITRE ATLAS: AML.T0050 | OWASP: LLM06 | OCSF: 7002 + 7008",
+        "MITRE ATLAS: AML.T0050 | OWASP: LLM06 | OCSF: 9001 + 3002",
     ))
     print(box_traditional([
         "HTTP Status:     200 OK",
@@ -931,7 +931,7 @@ def scenario_7_rag_poisoning(
 
     print(box_top(
         "SCENARIO 7: RAG Poisoning via Document Injection",
-        "MITRE ATLAS: AML.T0020 | OWASP: LLM08 | OCSF: 7004 + 7001",
+        "MITRE ATLAS: AML.T0020 | OWASP: LLM08 | OCSF: 6005 + 6003",
     ))
     print(box_traditional([
         "HTTP Status:     200 OK",

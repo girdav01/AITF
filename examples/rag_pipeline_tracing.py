@@ -13,7 +13,7 @@ with LangChain, LlamaIndex, or a custom RAG stack:
 
 Every step produces OTel spans that can be exported as:
   - **OTLP** → Jaeger / Grafana Tempo / Datadog / Elastic Security (observability & security analytics)
-  - **OCSF** → OCSF-native SIEM / XDR (7001 / 7004 events)
+  - **OCSF** → OCSF-native SIEM / XDR (6003 API Activity / 6005 Datastore Activity events, ai_operation profile)
   - **Both** → via ``DualPipelineProvider`` (recommended)
 
 See ``dual_pipeline_tracing.py`` for the full dual-pipeline setup.
@@ -320,4 +320,4 @@ print(f"  Quality scores:      context=0.91, answer=0.88, faith=0.95, ground=0.9
 print(f"  OCSF events:         {ocsf_exporter.event_count}")
 print(f"  Events written to:   /tmp/aitf_rag_events.jsonl")
 print(f"\n  AITF captured: embedding call, vector search, rerank, generation,")
-print(f"  and quality metrics — all as auditable OCSF 7001/7004 events.")
+print(f"  and quality metrics — all as auditable OCSF 6003/6005 events (ai_operation profile).")

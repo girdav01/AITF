@@ -2,7 +2,7 @@
 
 OCSF v1.1.0 base objects and AI-specific extension models.
 Based on the OCSF schema from the AITelemetry project, enhanced
-for AITF Category 7 AI events.
+for AITF AI events under the OCSF class-reuse model.
 """
 
 from __future__ import annotations
@@ -134,9 +134,9 @@ def normalize_agent_type_id(framework: str | None) -> int:
     return int(_FRAMEWORK_TO_TYPE_ID.get(framework.strip().lower(), AgentTypeID.OTHER))
 
 
-# OCSF AI category and control-plane classes proposed in OCSF issue #1640.
-# AITF keeps its established Category 7 classes but records the upstream
-# target so consumers can crosswalk to the future native ``ai`` category.
+# OCSF AI category proposed in OCSF issue #1640. AITF reuses existing OCSF
+# classes for data-plane AI activity and uses this ``ai`` category only for the
+# new agent / delegation / agent-comm control-plane classes.
 OCSF_AI_CATEGORY_UID = 9  # proposed "AI Activity" category (OCSF issue #1640)
 
 

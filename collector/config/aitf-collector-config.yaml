@@ -6,7 +6,7 @@
 # Dual Pipeline Architecture:
 #   The main traces/ai pipeline exports to BOTH:
 #     - otlp      → Standard OTel backends (Jaeger, Grafana Tempo, Datadog)
-#     - file/ocsf → OCSF Category 7 events for SIEM/XDR
+#     - file/ocsf → OCSF events (reused classes + ai_operation profile; ai category uid 9 for agent lifecycle) for SIEM/XDR
 #   This means the same AI spans are available for observability AND security
 #   from a single collector pipeline. See service.pipelines.traces/ai below.
 

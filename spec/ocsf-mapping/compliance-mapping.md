@@ -325,7 +325,7 @@ AITF can generate audit records from compliance events:
   "audit_id": "aud-abc123",
   "timestamp": "2026-02-15T10:30:00Z",
   "event_type": "model_inference",
-  "ocsf_class_uid": 7001,
+  "ocsf_class_uid": 6003,
   "frameworks_mapped": 8,
   "controls_mapped": 33,
   "violations_detected": 0,

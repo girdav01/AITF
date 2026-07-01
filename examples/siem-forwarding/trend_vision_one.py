@@ -173,18 +173,22 @@ _OCSF_TO_CEF_SEVERITY = {
     6: 10,  # Fatal -> 10
 }
 
-# Map OCSF class_uid to human-readable CEF event names
+# Map reused OCSF class_uid to human-readable CEF event names.
+# Under OCSF class reuse, AI events reuse existing OCSF classes (enriched with
+# the ai_operation profile); only agent/delegation lifecycle use the proposed
+# ai category (uid 9). Several AITF event types share a class_uid (e.g. Model
+# Inference and Tool Execution both reuse API Activity 6003), so names below
+# describe the reused class rather than the original bespoke AITF type.
 _CLASS_UID_TO_NAME = {
-    7001: "AI Model Inference",
-    7002: "AI Agent Activity",
-    7003: "AI Tool Execution",
-    7004: "AI Data Retrieval",
-    7005: "AI Security Finding",
-    7006: "AI Supply Chain Event",
-    7007: "AI Governance Event",
-    7008: "AI Identity Event",
-    7009: "AI Model Operations Event",
-    7010: "AI Asset Inventory Event",
+    2002: "AI Vulnerability Finding",   # was 7006 Supply Chain
+    2003: "AI Compliance Finding",      # was 7007 Governance
+    2004: "AI Detection Finding",       # was 7005 Security Finding
+    3002: "AI Authentication",          # was 7008 Identity
+    5001: "AI Inventory Info",          # was 7010 Asset Inventory
+    6002: "AI Application Lifecycle",   # was 7009 Model Operations
+    6003: "AI API Activity",            # was 7001 Model Inference / 7003 Tool Execution
+    6005: "AI Datastore Activity",      # was 7004 Data Retrieval
+    9001: "AI Agent Activity",          # was 7002 Agent Activity
 }
 
 
@@ -241,7 +245,7 @@ def ocsf_to_cef(event: dict[str, Any]) -> str:
     extensions.append(f"cs1Label=ocsf_class_uid")
     extensions.append(f"cs2={activity_id}")
     extensions.append(f"cs2Label=ocsf_activity_id")
-    extensions.append(f"cs3={event.get('category_uid', 7)}")
+    extensions.append(f"cs3={event.get('category_uid', 0)}")
     extensions.append(f"cs3Label=ocsf_category_uid")
 
     # Model information
@@ -985,10 +989,24 @@ class TrendVisionOneExporter(SpanExporter):
         return SpanExportResult.SUCCESS
 
     def _should_push_indicator(self, event: dict[str, Any]) -> bool:
-        """Check if event contains a finding severe enough for indicator push."""
-        if event.get("class_uid") != AIClassUID.SECURITY_FINDING:
+        """Check if event contains an AI finding severe enough for indicator push.
+
+        Under OCSF class reuse, AI security findings share Detection Finding
+        (2004) with ordinary (non-AI) detection findings, so class_uid alone is
+        no longer sufficient. We additionally require an AITF AI marker — an
+        OWASP LLM category on the finding, or agent/model context — so only AI
+        findings are pushed as TV1 threat indicators.
+        """
+        if event.get("class_uid") != AIClassUID.DETECTION_FINDING:
             return False
         finding = event.get("finding", {})
+        is_ai_finding = bool(
+            finding.get("owasp_category")
+            or event.get("agent_name")
+            or event.get("model")
+        )
+        if not is_ai_finding:
+            return False
         return finding.get("risk_score", 0) >= self._indicator_risk_threshold
 
     def _push_threat_indicators(
@@ -1099,9 +1117,9 @@ def main():
     print("=== Step 2: OCSF -> CEF Conversion ===\n")
 
     sample_event = {
-        "class_uid": 7005,
+        "class_uid": 2004,  # Detection Finding (was 7005 Security Finding)
         "activity_id": 1,
-        "category_uid": 7,
+        "category_uid": 2,
         "severity_id": 4,
         "time": datetime.now(timezone.utc).isoformat(),
         "message": "Prompt injection attempt detected",

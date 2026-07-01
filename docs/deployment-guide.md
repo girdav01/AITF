@@ -143,7 +143,7 @@ with instrumentor.llm.trace_inference(
 
 Output:
 - **OTLP** → Traces visible in Jaeger at `http://localhost:16686`
-- **OCSF** → `/var/log/aitf/ocsf_events.jsonl` — one OCSF Category 7 JSON event per line
+- **OCSF** → `/var/log/aitf/ocsf_events.jsonl` — one OCSF JSON event per line (reused classes + `ai_operation` profile; `ai` category uid 9 for agent lifecycle)
 
 ### OCSF-Only (Security / SIEM)
 
@@ -243,7 +243,7 @@ instrumentor.instrument_all()
 
 1. **Instrumentors** create OpenTelemetry spans with AITF semantic attributes
 2. **Processors** enrich spans in-flight (security findings, PII flags, cost)
-3. **Exporters** convert spans to OCSF Category 7 events and deliver them
+3. **Exporters** convert spans to OCSF events (reused classes + `ai_operation` profile; `ai` category uid 9 for agent lifecycle) and deliver them
 
 ---
 
@@ -330,7 +330,7 @@ AITF provides three exporters. All implement the OpenTelemetry `SpanExporter` in
 
 ### OCSF Exporter
 
-Converts spans to OCSF Category 7 AI events and exports to a local JSONL file and/or an HTTPS endpoint.
+Converts spans to OCSF events under reused existing classes enriched with the `ai_operation` profile (with the proposed `ai` category, uid 9, for agent/delegation lifecycle) and exports to a local JSONL file and/or an HTTPS endpoint.
 
 ```python
 from aitf.exporters.ocsf_exporter import OCSFExporter
@@ -399,7 +399,7 @@ exporter = ImmutableLogExporter(
   "timestamp": "2026-02-24T12:00:00.000000+00:00",
   "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
   "hash": "a1b2c3d4...",
-  "event": { "class_uid": 7001, "category_uid": 7, ... }
+  "event": { "class_uid": 6003, "category_uid": 6, ... }
 }
 ```
 
@@ -475,7 +475,7 @@ exporter = CEFSyslogExporter(
 **CEF message format:**
 
 ```
-CEF:0|AITF|AI-Telemetry-Framework|1.0.0|700101|AI Model Inference|1|rt=2026-02-24T12:00:00Z msg=chat gpt-4o cs1=7001 cs1Label=ocsf_class_uid cs4=gpt-4o cs4Label=ai_model_id cn2=25 cn2Label=input_tokens cn3=45 cn3Label=output_tokens
+CEF:0|AITF|AI-Telemetry-Framework|1.0.0|600301|AI Model Inference|1|rt=2026-02-24T12:00:00Z msg=chat gpt-4o cs1=6003 cs1Label=ocsf_class_uid cs4=gpt-4o cs4Label=ai_model_id cn2=25 cn2Label=input_tokens cn3=45 cn3Label=output_tokens
 ```
 
 ### Using Multiple Exporters
@@ -1029,7 +1029,7 @@ AITF works with three data formats. Each serves a different role in the observab
      │   OCSF (JSON)   │   │   CEF (Syslog)  │   │   OTLP (Proto)  │
      │                 │   │                 │   │                 │
      │ Rich structured │   │ Flat key=value  │   │ Native OTel     │
-     │ Category 7 AI   │   │ SIEM universal  │   │ gRPC / HTTP     │
+     │ reused-class AI │   │ SIEM universal  │   │ gRPC / HTTP     │
      │ events          │   │ format          │   │ protobuf        │
      └────────┬────────┘   └────────┬────────┘   └────────┬────────┘
               │                     │                      │
@@ -1045,7 +1045,7 @@ AITF works with three data formats. Each serves a different role in the observab
 
 | Aspect | OCSF (JSON) | CEF (Syslog) | OTLP (Protobuf) |
 |---|---|---|---|
-| **Schema** | OCSF Category 7 (AI) | CEF 0 flat key=value | OTel Span protobuf |
+| **Schema** | OCSF reused classes + `ai_operation` profile | CEF 0 flat key=value | OTel Span protobuf |
 | **Structure** | Deeply nested JSON | Flat string, pipe-delimited header | Structured binary |
 | **AI semantics** | Full (8 event classes, 50+ fields) | Mapped to 6 custom string fields | Raw span attributes |
 | **Compliance metadata** | Native (embedded per event) | Limited (via flexString) | Via span attributes |
@@ -1069,28 +1069,28 @@ AITF supports delivery over five transport mechanisms:
 
 ### OCSF Native (JSON)
 
-OCSF (Open Cybersecurity Schema Framework) Category 7 defines AI-specific event classes. AITF maps every span to the appropriate OCSF class.
+OCSF (Open Cybersecurity Schema Framework) AI events reuse existing OCSF classes enriched with the `ai_operation` profile; only agent/delegation lifecycle uses the proposed `ai` category (uid 9). AITF maps every span to the appropriate OCSF class.
 
 **OCSF Event Classes:**
 
-| Class UID | Event Class | Type UIDs | Description |
+| Class UID | Reused OCSF Class | AITF Event | Description |
 |---|---|---|---|
-| 7001 | AI Model Inference | 700101-700199 | LLM chat, completion, embeddings |
-| 7002 | AI Agent Activity | 700201-700299 | Agent sessions, steps, delegation |
-| 7003 | AI Tool Execution | 700301-700399 | MCP tools, skills, function calls |
-| 7004 | AI Data Retrieval | 700401-700499 | RAG retrieval, reranking |
-| 7005 | AI Security Finding | 700501-700599 | OWASP threats, guardrail triggers |
-| 7006 | AI Supply Chain | 700601-700699 | Model registration, AI-BOM, verification |
-| 7007 | AI Governance | 700701-700799 | Compliance, audit, violations |
-| 7008 | AI Identity | 700801-700899 | Agent auth, delegation chains |
+| 6003 | API Activity | AI Model Inference | LLM chat, completion, embeddings |
+| 9001 | agent_activity (`ai` cat) | AI Agent Activity | Agent sessions, steps, delegation |
+| 6003 | API Activity | AI Tool Execution | MCP tools, skills, function calls |
+| 6005 | Datastore Activity | AI Data Retrieval | RAG retrieval, reranking |
+| 2004 | Detection Finding | AI Security Finding | OWASP threats, guardrail triggers |
+| 2002 | Vulnerability Finding | AI Supply Chain | Model registration, AI-BOM, verification |
+| 2003 | Compliance Finding | AI Governance | Compliance, audit, violations |
+| 3002 | Authentication | AI Identity | Agent auth, delegation chains |
 
 **OCSF JSON event example (model inference):**
 
 ```json
 {
-  "class_uid": 7001,
-  "category_uid": 7,
-  "type_uid": 700101,
+  "class_uid": 6003,
+  "category_uid": 6,
+  "type_uid": 600301,
   "activity_id": 1,
   "activity_name": "Model Inference",
   "severity_id": 1,
@@ -1175,12 +1175,12 @@ CEF:0|DeviceVendor|DeviceProduct|DeviceVersion|SignatureID|Name|Severity|Extensi
 | `DeviceVendor` | Configurable | `AITF` |
 | `DeviceProduct` | Configurable | `AI-Telemetry-Framework` |
 | `DeviceVersion` | Configurable | `1.0.0` |
-| `SignatureID` | OCSF `type_uid` | `700101` |
+| `SignatureID` | OCSF `type_uid` | `600301` |
 | `Name` | OCSF class name | `AI Model Inference` |
 | `Severity` | OCSF → CEF severity | `1` (Info) to `10` (Fatal) |
 | `rt` | Event timestamp | `2026-02-24T12:00:00Z` |
 | `msg` | Event message | `chat gpt-4o` |
-| `cs1/cs1Label` | OCSF class_uid | `7001` / `ocsf_class_uid` |
+| `cs1/cs1Label` | OCSF class_uid | `6003` / `ocsf_class_uid` |
 | `cs2/cs2Label` | OCSF activity_id | `1` / `ocsf_activity_id` |
 | `cs4/cs4Label` | Model ID | `gpt-4o` / `ai_model_id` |
 | `cs5/cs5Label` | Provider | `openai` / `ai_provider` |
@@ -1245,7 +1245,7 @@ cef_udp = CEFSyslogExporter(
 **Complete CEF message example:**
 
 ```
-CEF:0|AITF|AI-Telemetry-Framework|1.0.0|700501|AI Security Finding|7|rt=2026-02-24T12:00:00Z msg=Prompt injection detected cs1=7005 cs1Label=ocsf_class_uid cs2=1 cs2Label=ocsf_activity_id cs3=7 cs3Label=ocsf_category_uid cat=prompt_injection cn1=85 cn1Label=risk_score flexString1=LLM01 flexString1Label=owasp_category flexString2=AML.T0043 flexString2Label=mitre_technique
+CEF:0|AITF|AI-Telemetry-Framework|1.0.0|200401|AI Security Finding|7|rt=2026-02-24T12:00:00Z msg=Prompt injection detected cs1=2004 cs1Label=ocsf_class_uid cs2=1 cs2Label=ocsf_activity_id cs3=2 cs3Label=ocsf_category_uid cat=prompt_injection cn1=85 cn1Label=risk_score flexString1=LLM01 flexString1Label=owasp_category flexString2=AML.T0043 flexString2Label=mitre_technique
 ```
 
 ### OpenTelemetry (OTLP)
@@ -2231,8 +2231,8 @@ Trace a hierarchical multi-agent team with structured agentic log entries (Table
                                    ▼
                            ┌──────────────┐
                            │ OCSF Events: │
-                           │ 7002 Agent   │
-                           │ 7003 Tool    │
+                           │ 9001 Agent   │
+                           │ 6003 Tool    │
                            │ (+ agentic   │
                            │  log attrs)  │
                            └──────────────┘
@@ -2383,7 +2383,7 @@ Trace the full model lifecycle from training through deployment and monitoring.
                            ▼
                   ┌────────────────┐
                   │  OCSF Events   │
-                  │  7009 ModelOps  │
+                  │  6002 ModelOps  │
                   │  + compliance  │
                   └────────────────┘
 ```
@@ -2547,11 +2547,11 @@ Trace shadow AI discovery scans (e.g., from [AIDisco](https://github.com/girdav0
                               ▼
                     ┌────────────────────┐
                     │   OCSF Events:     │
-                    │   701002 Discovery  │
-                    │   701001 Register   │
-                    │   701007 Shadow     │
-                    │   701004 Classify   │
-                    │   701003 Audit      │
+                    │   500102 Discovery  │
+                    │   500101 Register   │
+                    │   500107 Shadow     │
+                    │   500104 Classify   │
+                    │   500103 Audit      │
                     └─────────┬──────────┘
                               │
                   ┌───────────┴───────────┐
@@ -2653,7 +2653,7 @@ Set up an immutable audit log and verify its integrity.
   │  seq: 0                                                         │
   │  prev_hash: 000000000000000000000000000000000000000000000000...  │
   │  hash: a1b2c3d4... ← SHA-256(seq|time|prev_hash|event_json)    │
-  │  event: { class_uid: 7001, ... }                                │
+  │  event: { class_uid: 6003, ... }                                │
   └──────────────────────┬──────────────────────────────────────────┘
                          │ hash chain
                          ▼
@@ -2662,7 +2662,7 @@ Set up an immutable audit log and verify its integrity.
   │  seq: 1                                                         │
   │  prev_hash: a1b2c3d4... ← must match Entry 0's hash            │
   │  hash: e5f6g7h8...                                              │
-  │  event: { class_uid: 7002, ... }                                │
+  │  event: { class_uid: 9001, ... }                                │
   └──────────────────────┬──────────────────────────────────────────┘
                          │ hash chain
                          ▼
@@ -2671,7 +2671,7 @@ Set up an immutable audit log and verify its integrity.
   │  seq: 2                                                         │
   │  prev_hash: e5f6g7h8... ← must match Entry 1's hash            │
   │  hash: i9j0k1l2...                                              │
-  │  event: { class_uid: 7001, ... }                                │
+  │  event: { class_uid: 6003, ... }                                │
   └─────────────────────────────────────────────────────────────────┘
                          │
                         ...
@@ -2913,7 +2913,7 @@ trace.set_tracer_provider(provider)
 ```spl
 index=cef sourcetype=syslog CEF
 | rex field=_raw "cs1=(?<ocsf_class_uid>\d+)"
-| where ocsf_class_uid=7005
+| where ocsf_class_uid=2004
 | stats count by cat, flexString1
 | rename cat AS "Threat Type", flexString1 AS "OWASP Category"
 | sort - count
@@ -2926,7 +2926,7 @@ SELECT UTF8(payload) AS cef_message,
        CATEGORYNAME(category) AS threat_category
 FROM events
 WHERE LOGSOURCENAME(logsourceid) = 'AITF'
-  AND UTF8(payload) LIKE '%cs1=7005%'
+  AND UTF8(payload) LIKE '%cs1=2004%'
 ORDER BY starttime DESC
 LAST 24 HOURS
 ```
@@ -2966,9 +2966,9 @@ Generate an AI Bill of Materials for model supply chain transparency.
 │                         │                                         │
 │                         ▼                                         │
 │  ┌──────────────────────────────────────────────────────┐         │
-│  │              OCSF Supply Chain Event (7006)           │         │
+│  │              OCSF Supply Chain Event (2002)           │         │
 │  │                                                      │         │
-│  │  type_uid: 700603 (AI-BOM Generation)                │         │
+│  │  type_uid: 200203 (AI-BOM Generation)                │         │
 │  │  ai_bom_id: "bom-cs-llama-70b-v3"                   │         │
 │  │  ai_bom_components: [base_model, training_data, ...]│         │
 │  │  model_source: "InnovaCorp ML Team"                  │         │
@@ -3276,7 +3276,7 @@ Each vendor mapping file follows this schema:
         "myframework.tokens.in": "gen_ai.usage.input_tokens",
         "myframework.tokens.out": "gen_ai.usage.output_tokens"
       },
-      "ocsf_class_uid": 7001,
+      "ocsf_class_uid": 6003,
       "ocsf_activity_id_map": {
         "chat": 1,
         "embeddings": 3,

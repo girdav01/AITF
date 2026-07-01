@@ -382,7 +382,7 @@ class TestCEFComplianceFieldSeparation:
         from aitf.exporters.cef_syslog_exporter import ocsf_event_to_cef
 
         event = {
-            "class_uid": 7005,
+            "class_uid": 2004,
             "activity_id": 1,
             "severity_id": 4,
             "finding": {

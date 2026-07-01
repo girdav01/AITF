@@ -3,7 +3,7 @@
 > **OTel Alignment Note:** MCP tool invocations adopt OTel GenAI tool attributes (`gen_ai.tool.{name,type,call.id,call.arguments,call.result}`)
 > where OTel defines them. MCP-specific extension attributes (server lifecycle, resources, prompts, sampling) use the `mcp.*` namespace.
 
-Status: **Normative** | CoSAI WS2 Alignment: **MCP_ACTIVITY** | OCSF Class: **7003 Tool Execution**
+Status: **Normative** | CoSAI WS2 Alignment: **MCP_ACTIVITY** | OCSF Class: **API Activity (6003)** (`ai_operation` profile)
 
 AITF defines semantic conventions for the Model Context Protocol (MCP), covering server lifecycle, tool discovery and invocation, resource access, prompt management, and sampling. This specification defines the normative field requirements aligned with CoSAI Working Stream 2 (Telemetry for AI) and mapped to applicable compliance and threat frameworks.
 

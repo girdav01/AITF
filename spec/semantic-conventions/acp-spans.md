@@ -1,6 +1,6 @@
 # ACP Span Conventions (Agent Communication Protocol)
 
-Status: **Normative** | OCSF Class: **7002 Agent Activity**
+Status: **Normative** | OCSF Class: **agent_activity (9001)** (`ai_operation` profile)
 
 AITF defines semantic conventions for the [ACP (Agent Communication Protocol)](https://agentcommunicationprotocol.dev/), a REST-based protocol for agent discovery, run execution, and human-in-the-loop interactions. ACP supports synchronous, asynchronous (polling), and streaming (SSE) execution modes with explicit await/resume semantics for interactive agent workflows.
 

@@ -12,7 +12,7 @@ cost, speed, and capability:
 Each call flows through the OpenRouter vendor mapping:
 
     App Code → OpenRouter API → VendorMapper → OCSFMapper → SIEM
-    (openrouter.* attrs)       (JSON-driven)   (OCSF 7001)
+    (openrouter.* attrs)       (JSON-driven)   (OCSF 6003 API Activity)
 
 All spans are exportable as both OTel traces (OTLP → Jaeger/Tempo) and
 OCSF security events (→ SIEM/XDR).  See ``dual_pipeline_tracing.py``
@@ -350,7 +350,7 @@ print(f"""
                                     ↓
                               gen_ai.* attrs + openrouter.* routing
                                     ↓
-                              OCSFMapper → OCSF 7001 events
+                              OCSFMapper → OCSF 6003 API Activity events (ai_operation profile)
                                     ↓
                               ComplianceMapper → NIST + EU AI Act
                                     ↓

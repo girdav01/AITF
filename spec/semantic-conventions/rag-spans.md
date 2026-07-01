@@ -1,6 +1,6 @@
 # RAG Span Conventions (RAG_CONTEXT)
 
-Status: **Normative** | CoSAI WS2 Alignment: **RAG_CONTEXT** | OCSF Class: **7004 Data Retrieval**
+Status: **Normative** | CoSAI WS2 Alignment: **RAG_CONTEXT** | OCSF Class: **Datastore Activity (6005)** (`ai_operation` profile)
 
 AITF defines semantic conventions for Retrieval-Augmented Generation (RAG) pipelines, covering query processing, vector retrieval, document scoring, reranking, and context quality evaluation. This specification defines the normative field requirements aligned with CoSAI Working Stream 2 (Telemetry for AI) and mapped to applicable compliance and threat frameworks.
 

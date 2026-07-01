@@ -4,7 +4,7 @@ Forward OCSF-formatted AI telemetry from AITF into security platforms for monito
 
 ## Overview
 
-AITF generates **OCSF Category 7** (AI System Activity) events from AI workloads -- LLM inference, agent sessions, MCP tool calls, RAG pipelines, and security findings. These examples show how to forward those events into three major security platforms:
+AITF generates **OCSF** events from AI workloads -- LLM inference, agent sessions, MCP tool calls, RAG pipelines, and security findings -- emitted under reused existing classes (API Activity, Datastore Activity, Findings, IAM, Discovery) enriched with the `ai_operation` profile, with new agent/delegation lifecycle events using the proposed `ai` category (uid 9). These examples show how to forward those events into three major security platforms:
 
 | Platform | Native OCSF | Ingestion Method | Real-Time | Batch |
 |---|---|---|---|---|
@@ -32,18 +32,18 @@ All three examples use the AITF Python SDK (`aitf.ocsf.*`, `aitf.exporters.*`, `
  |  - ComplianceProcessor|
  +-----------+-----------+
              |
-             | OCSF Category 7 Events
+             | OCSF Events (reused classes + ai_operation profile)
              v
  +-----------+-----------+
  |   AITF OCSFMapper     |
- |  - 7001 Inference     |
- |  - 7002 Agent         |
- |  - 7003 Tool          |
- |  - 7004 Retrieval     |
- |  - 7005 Security      |
- |  - 7006 Supply Chain  |
- |  - 7007 Governance    |
- |  - 7008 Identity      |
+ |  - Inference   -> 6003|
+ |  - Agent       -> 9001|
+ |  - Tool        -> 6003|
+ |  - Retrieval   -> 6005|
+ |  - Security    -> 2004|
+ |  - Supply Chain-> 2002|
+ |  - Governance  -> 2003|
+ |  - Identity    -> 3002|
  +-----------+-----------+
              |
      +-------+-------+------------------+
@@ -289,14 +289,14 @@ Events are categorized by OCSF class with specific sourcetypes:
 
 | OCSF Class | Class UID | Splunk Sourcetype |
 |---|---|---|
-| Model Inference | 7001 | `aitf:ocsf:ai:inference` |
-| Agent Activity | 7002 | `aitf:ocsf:ai:agent` |
-| Tool Execution | 7003 | `aitf:ocsf:ai:tool` |
-| Data Retrieval | 7004 | `aitf:ocsf:ai:retrieval` |
-| Security Finding | 7005 | `aitf:ocsf:ai:security` |
-| Supply Chain | 7006 | `aitf:ocsf:ai:supply_chain` |
-| Governance | 7007 | `aitf:ocsf:ai:governance` |
-| Identity | 7008 | `aitf:ocsf:ai:identity` |
+| Model Inference (API Activity) | 6003 | `aitf:ocsf:ai:inference` |
+| Agent Activity (agent_activity) | 9001 | `aitf:ocsf:ai:agent` |
+| Tool Execution (API Activity) | 6003 | `aitf:ocsf:ai:tool` |
+| Data Retrieval (Datastore Activity) | 6005 | `aitf:ocsf:ai:retrieval` |
+| Security Finding (Detection Finding) | 2004 | `aitf:ocsf:ai:security` |
+| Supply Chain (Vulnerability Finding) | 2002 | `aitf:ocsf:ai:supply_chain` |
+| Governance (Compliance Finding) | 2003 | `aitf:ocsf:ai:governance` |
+| Identity (Authentication) | 3002 | `aitf:ocsf:ai:identity` |
 
 ### Running
 
@@ -352,16 +352,18 @@ exporter = OCSFExporter(
 
 ## OCSF Event Classes Reference
 
-| Class UID | Event Class | Description |
-|---|---|---|
-| 7001 | Model Inference | LLM/embedding inference operations |
-| 7002 | Agent Activity | Agent sessions, steps, delegation |
-| 7003 | Tool Execution | Function calls, MCP tools, skills |
-| 7004 | Data Retrieval | RAG, vector search, document retrieval |
-| 7005 | Security Finding | OWASP threats, injections, exfiltration |
-| 7006 | Supply Chain | Model provenance, integrity, AI BOM |
-| 7007 | Governance | Compliance checks, policy violations |
-| 7008 | Identity | Agent auth, permissions, delegation chains |
+AITF reuses existing OCSF classes enriched with the `ai_operation` profile; new agent/delegation lifecycle uses the proposed `ai` category (uid 9).
+
+| Class UID | Reused OCSF Class | AITF Event | Description |
+|---|---|---|---|
+| 6003 | API Activity | Model Inference | LLM/embedding inference operations |
+| 9001 | agent_activity (`ai` cat) | Agent Activity | Agent sessions, steps, delegation |
+| 6003 | API Activity | Tool Execution | Function calls, MCP tools, skills |
+| 6005 | Datastore Activity | Data Retrieval | RAG, vector search, document retrieval |
+| 2004 | Detection Finding | Security Finding | OWASP threats, injections, exfiltration |
+| 2002 | Vulnerability Finding | Supply Chain | Model provenance, integrity, AI BOM |
+| 2003 | Compliance Finding | Governance | Compliance checks, policy violations |
+| 3002 | Authentication | Identity | Agent auth, permissions, delegation chains |
 
 
 ## API & Documentation References

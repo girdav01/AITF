@@ -1,6 +1,7 @@
-"""AITF OCSF Category 7 Event Classes.
+"""AITF OCSF AI Event Classes (class-reuse model).
 
-Defines all ten AI event classes (7001-7010) for OCSF integration.
+Defines the ten AI event types, each mapped onto its reused OCSF class
+(OCSF PR #1641 / issue #1640) rather than a bespoke Category 7.
 Based on event classes from the AITelemetry project, extended
 for AITF with MCP, Skills, ModelOps, Asset Inventory, and enhanced agent support.
 """

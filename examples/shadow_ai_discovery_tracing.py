@@ -19,12 +19,12 @@ Telemetry generated:
   │  └── asset.audit     (integrity / compliance check per asset)      │
   └─────────────────────────────────────────────────────────────────────┘
 
-OCSF events emitted:
-  701002  Asset Discovery       – scan summary
-  701001  Asset Registration    – per asset
-  701007  Shadow Asset Detected – per unregistered asset
-  701004  Risk Classification   – when risk is assessed
-  701003  Asset Audit           – per asset audit
+OCSF events emitted (Inventory Info class 5001, ai_operation profile):
+  500102  Asset Discovery       – scan summary
+  500101  Asset Registration    – per asset
+  500107  Shadow Asset Detected – per unregistered asset
+  500104  Risk Classification   – when risk is assessed
+  500103  Asset Audit           – per asset audit
 
 All spans are exportable as both OTel traces (OTLP → Jaeger/Tempo) and
 OCSF security events (→ SIEM/XDR).  See ``dual_pipeline_tracing.py``
@@ -345,12 +345,12 @@ print(f"  Shadow (unregistered): {len(shadow_results)}")
 # Trend Vision One — ready for SOC analysts.
 #
 # ┌──────────────────────────────────────────────────────────────────────────┐
-# │ OCSF 701002 — Asset Discovery                                          │
+# │ OCSF 500102 — Asset Discovery (Inventory Info 5001)                    │
 # │                                                                         │
 # │  {                                                                      │
-# │    "class_uid": 7010,                                                   │
-# │    "category_uid": 7,                                                   │
-# │    "type_uid": 701002,                                                  │
+# │    "class_uid": 5001,                                                   │
+# │    "category_uid": 5,                                                   │
+# │    "type_uid": 500102,                                                  │
 # │    "activity_id": 2,                                                    │
 # │    "activity_name": "Asset Discovery",                                  │
 # │    "severity_id": 4,           // High — shadow assets found            │
@@ -375,11 +375,11 @@ print(f"  Shadow (unregistered): {len(shadow_results)}")
 # │  }                                                                      │
 # │                                                                         │
 # ├──────────────────────────────────────────────────────────────────────────┤
-# │ OCSF 701007 — Shadow Asset Detected  (one per shadow asset)            │
+# │ OCSF 500107 — Shadow Asset Detected (Inventory Info 5001, one per asset)│
 # │                                                                         │
 # │  {                                                                      │
-# │    "class_uid": 7010,                                                   │
-# │    "type_uid": 701007,                                                  │
+# │    "class_uid": 5001,                                                   │
+# │    "type_uid": 500107,                                                  │
 # │    "activity_id": 7,                                                    │
 # │    "activity_name": "Shadow Asset Detected",                            │
 # │    "severity_id": 4,                                                    │
@@ -404,11 +404,11 @@ print(f"  Shadow (unregistered): {len(shadow_results)}")
 # │  }                                                                      │
 # │                                                                         │
 # ├──────────────────────────────────────────────────────────────────────────┤
-# │ OCSF 701001 — Asset Registration  (one per asset)                      │
+# │ OCSF 500101 — Asset Registration (Inventory Info 5001, one per asset)  │
 # │                                                                         │
 # │  {                                                                      │
-# │    "class_uid": 7010,                                                   │
-# │    "type_uid": 701001,                                                  │
+# │    "class_uid": 5001,                                                   │
+# │    "type_uid": 500101,                                                  │
 # │    "activity_id": 1,                                                    │
 # │    "activity_name": "Asset Registration",                               │
 # │    "severity_id": 1,                                                    │
@@ -426,11 +426,11 @@ print(f"  Shadow (unregistered): {len(shadow_results)}")
 # │  }                                                                      │
 # │                                                                         │
 # ├──────────────────────────────────────────────────────────────────────────┤
-# │ OCSF 701004 — Risk Classification  (shadow assets only)                │
+# │ OCSF 500104 — Risk Classification (Inventory Info 5001, shadow only)   │
 # │                                                                         │
 # │  {                                                                      │
-# │    "class_uid": 7010,                                                   │
-# │    "type_uid": 701004,                                                  │
+# │    "class_uid": 5001,                                                   │
+# │    "type_uid": 500104,                                                  │
 # │    "activity_id": 4,                                                    │
 # │    "activity_name": "Risk Classification",                              │
 # │    "severity_id": 3,                                                    │
@@ -451,11 +451,11 @@ print(f"  Shadow (unregistered): {len(shadow_results)}")
 # │  }                                                                      │
 # │                                                                         │
 # ├──────────────────────────────────────────────────────────────────────────┤
-# │ OCSF 701003 — Asset Audit  (one per asset)                             │
+# │ OCSF 500103 — Asset Audit (Inventory Info 5001, one per asset)         │
 # │                                                                         │
 # │  {                                                                      │
-# │    "class_uid": 7010,                                                   │
-# │    "type_uid": 701003,                                                  │
+# │    "class_uid": 5001,                                                   │
+# │    "type_uid": 500103,                                                  │
 # │    "activity_id": 3,                                                    │
 # │    "activity_name": "Asset Audit",                                      │
 # │    "severity_id": 4,                                                    │
@@ -527,7 +527,9 @@ print(f"  Shadow (unregistered): {len(shadow_results)}")
 # Splunk SPL query to find shadow AI from AIDisco scans
 # ---------------------------------------------------------------------------
 #
-# index=ocsf sourcetype=aitf:ocsf type_uid=701007
+# Inventory Info (class 5001) is now shared with non-AI asset events, so we also
+# require the AITF product tag to isolate AI-asset (AIDisco) inventory records.
+# index=ocsf sourcetype=aitf:ocsf type_uid=500107 metadata.product.name="AITF"
 # | stats count by asset_info.name, asset_info.type,
 #              asset_info.deployment_environment,
 #              asset_info.risk_classification,
@@ -561,7 +563,10 @@ print(f"  Shadow (unregistered): {len(shadow_results)}")
 #   product: aitf
 # detection:
 #   selection:
-#     type_uid: 701007
+#     # class 5001 (Inventory Info) is shared with non-AI asset events; the
+#     # AITF product tag isolates AI-asset (AIDisco) inventory records.
+#     type_uid: 500107
+#     metadata.product.name: "AITF"
 #     asset_info.deployment_environment: "shadow"
 #   condition: selection
 # falsepositives:
