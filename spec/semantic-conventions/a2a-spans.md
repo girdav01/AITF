@@ -1,6 +1,6 @@
 # A2A Span Conventions (Agent-to-Agent Protocol)
 
-Status: **Normative** | OCSF Class: **7002 Agent Activity** / **7003 Tool Execution**
+Status: **Normative** | OCSF Class: **agent_activity (9001)** / **API Activity (6003)** (`ai_operation` profile)
 
 AITF defines semantic conventions for the [Google A2A (Agent-to-Agent) protocol](https://a2a-protocol.org/), covering agent discovery via Agent Cards, task lifecycle (create, poll, cancel), message exchange (synchronous and streaming), and push notifications. A2A uses JSON-RPC 2.0 over HTTP(S) and enables cross-platform agent interoperability.
 

@@ -4,7 +4,7 @@
 > `gen_ai.conversation.id`) where OTel now defines them. Extension attributes for step reasoning, delegation,
 > team orchestration, and memory use short namespaces (e.g., `agent.step.*`, `agent.team.*`, `memory.*`).
 
-Status: **Normative** | CoSAI WS2 Alignment: **AGENT_TRACE** | OCSF Class: **7002 Agent Activity**
+Status: **Normative** | CoSAI WS2 Alignment: **AGENT_TRACE** | OCSF Class: **agent_activity (9001)** (`ai_operation` profile)
 
 AITF defines comprehensive semantic conventions for AI agent telemetry, supporting single agents, multi-agent orchestration, delegation, and agent memory. This specification defines the normative field requirements aligned with CoSAI Working Stream 2 (Telemetry for AI) and mapped to applicable compliance and threat frameworks.
 

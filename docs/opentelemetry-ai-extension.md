@@ -55,7 +55,7 @@ The central innovation in AITF is the dual-pipeline architecture. A single instr
 2. **Shared TracerProvider** — One `TracerProvider` with multiple `SpanProcessor` chains attached.
 3. **Parallel export** — Every span flows through all processors and exporters simultaneously:
    - The **OTLP exporter** sends the security-enriched OTel span (including `security.*` attributes, risk scores, and compliance metadata) to OTLP-compatible backends for both observability and security analytics.
-   - The **OCSF exporter** converts the span to an OCSF Category 7 AI event for SIEMs that require OCSF-native ingestion (Splunk, AWS Security Lake, QRadar, Sentinel).
+   - The **OCSF exporter** converts the span to an OCSF event under a reused existing class (API Activity, Datastore Activity, Findings, IAM, Discovery) enriched with the `ai_operation` profile — or the proposed `ai` category (uid 9) for agent/delegation lifecycle — for SIEMs that require OCSF-native ingestion (Splunk, AWS Security Lake, QRadar, Sentinel).
    - Optional **CEF/Syslog** and **immutable log** exporters add legacy SIEM and tamper-evident audit trail support.
 
 ### Pipeline options
@@ -63,11 +63,11 @@ The central innovation in AITF is the dual-pipeline architecture. A single instr
 | Pipeline | Format | Purpose | Backends |
 |----------|--------|---------|----------|
 | OTLP | OTLP (gRPC/HTTP) | Distributed tracing, latency analysis, security analytics, dependency maps | Jaeger, Grafana Tempo, Datadog, Elastic Security, Honeycomb |
-| OCSF | OCSF Category 7 (JSON) | OCSF-normalized security events, compliance, threat detection | Splunk, AWS Security Lake, QRadar, Sentinel |
+| OCSF | OCSF (JSON, reused classes + `ai_operation` profile) | OCSF-normalized security events, compliance, threat detection | Splunk, AWS Security Lake, QRadar, Sentinel |
 | CEF/Syslog | CEF over Syslog | Legacy SIEM integration | ArcSight, LogRhythm, QRadar |
 | Audit | Hash-chained JSONL | Tamper-evident audit trail (EU AI Act Art. 12, SOC 2 CC8.1) | File-based, S3, compliance archives |
 
-> **Note:** Both OTLP and OCSF pipelines carry full security context. OTel spans include `security.*` attributes (threat detection, risk scores, OWASP classifications), making them directly consumable by OTLP-compatible security platforms. The OCSF pipeline provides additional normalization into the OCSF Category 7 schema for SIEMs that require OCSF-native ingestion.
+> **Note:** Both OTLP and OCSF pipelines carry full security context. OTel spans include `security.*` attributes (threat detection, risk scores, OWASP classifications), making them directly consumable by OTLP-compatible security platforms. The OCSF pipeline provides additional normalization into reused OCSF classes enriched with the `ai_operation` profile (with new agent/delegation lifecycle events using the proposed `ai` category, uid 9) for SIEMs that require OCSF-native ingestion.
 
 ### Setup
 
@@ -189,25 +189,25 @@ Spans nest to capture the full execution tree of an AI agent interaction:
 
 ```
 agent.session research-bot
-├── identity.auth research-bot                    (OCSF 7008)
+├── identity.auth research-bot                    (OCSF Authentication 3002)
 ├── agent.step.planning research-bot
-│    └── chat gpt-4o                              (OCSF 7001)
+│    └── chat gpt-4o                              (OCSF API Activity 6003)
 ├── agent.step.tool_use research-bot
-│    ├── identity.authz research-bot -> customer-db  (OCSF 7008)
-│    └── mcp.tool.invoke search_docs              (OCSF 7003)
-│         └── skill.invoke vector_search           (OCSF 7003)
+│    ├── identity.authz research-bot -> customer-db  (OCSF Authentication 3002)
+│    └── mcp.tool.invoke search_docs              (OCSF API Activity 6003)
+│         └── skill.invoke vector_search           (OCSF API Activity 6003)
 ├── agent.step.rag research-bot
 │    └── rag.pipeline knowledge-retrieval
-│         ├── rag.retrieve pinecone               (OCSF 7004)
-│         └── chat gpt-4o                         (OCSF 7001)
+│         ├── rag.retrieve pinecone               (OCSF Datastore Activity 6005)
+│         └── chat gpt-4o                         (OCSF API Activity 6003)
 ├── agent.step.response research-bot
-│    └── chat gpt-4o                              (OCSF 7001)
+│    └── chat gpt-4o                              (OCSF API Activity 6003)
 └── agent.step.delegation research-bot
-     ├── identity.delegate research-bot -> writer  (OCSF 7008)
+     ├── identity.delegate research-bot -> writer  (OCSF Authentication 3002)
      └── agent.session writer                     (recursive)
 ```
 
-Every span in this tree flows simultaneously to both the OTLP pipeline (carrying full security context for observability and security analytics) and the OCSF pipeline (normalized into OCSF Category 7 events for OCSF-native SIEMs).
+Every span in this tree flows simultaneously to both the OTLP pipeline (carrying full security context for observability and security analytics) and the OCSF pipeline (normalized into OCSF events under reused classes enriched with the `ai_operation` profile, plus the proposed `ai` category (uid 9) for agent/delegation lifecycle, for OCSF-native SIEMs).
 
 ## 5. Processors: In-Flight Span Enrichment
 
@@ -264,22 +264,24 @@ Tracks agent memory mutations for security:
 
 ## 6. OCSF Mapping: OTel Spans to Security Events
 
-The `OCSFMapper` converts OTel spans to OCSF Category 7 (AI System Activity) events. While OTLP already carries full security context and can feed security analytics platforms directly, the OCSF pipeline provides additional schema normalization for SIEMs and data lakes that require OCSF-native ingestion (Splunk, AWS Security Lake, QRadar, Sentinel).
+The `OCSFMapper` converts OTel spans to OCSF events under reused existing classes enriched with the `ai_operation` profile (with agent/delegation lifecycle using the proposed `ai` category, uid 9). While OTLP already carries full security context and can feed security analytics platforms directly, the OCSF pipeline provides additional schema normalization for SIEMs and data lakes that require OCSF-native ingestion (Splunk, AWS Security Lake, QRadar, Sentinel).
 
-### 6.1 OCSF Category 7 Event Classes
+### 6.1 OCSF Reused Event Classes
 
-| Class UID | Event Class | OTel Span Triggers | What It Captures |
-|-----------|-------------|-------------------|------------------|
-| 7001 | `AIModelInferenceEvent` | `chat *`, `embeddings *`, `gen_ai.provider.name` attr | Model, tokens, latency, cost, finish reason |
-| 7002 | `AIAgentActivityEvent` | `agent.*`, `gen_ai.agent.name` attr | Agent identity, step type, thought/action/observation, delegation |
-| 7003 | `AIToolExecutionEvent` | `mcp.tool.*`, `skill.invoke*` | Tool name/type, input/output, MCP server, approval status |
-| 7004 | `AIDataRetrievalEvent` | `rag.*`, `gen_ai.data_source.id` attr | Database, query, top_k, results count, scores |
-| 7005 | `AISecurityFindingEvent` | `security.threat_detected` attr | Finding type, OWASP category, risk score, confidence, blocked |
-| 7006 | `AISupplyChainEvent` | `supply_chain.*`, `supply_chain.model.source` attr | Model source/hash/license, signature verification, AI BOM |
-| 7007 | `AIGovernanceEvent` | `governance.*`, `compliance.*` | Compliance frameworks, controls, violations, audit ID |
-| 7008 | `AIIdentityEvent` | `identity.*`, `identity.agent_id` attr | Auth method/result, credential type, delegation chain, scope |
-| 7009 | `AIModelOpsEvent` | `model_ops.*`, `drift.*` | Training, evaluation, deployment, serving, monitoring, drift |
-| 7010 | `AIAssetInventoryEvent` | `asset.*`, `asset.id` attr | Asset type, owner, risk classification, discovery, audit |
+AI events reuse existing OCSF classes enriched with the `ai_operation` profile; only agent/delegation lifecycle uses the proposed `ai` category (uid 9). Where several AITF events share a `class_uid` (e.g. inference and tool execution → 6003) they are distinguished by `activity_id` and the presence of the `ai_operation` profile.
+
+| Class UID | Reused OCSF Class | OTel Span Triggers | What It Captures |
+|-----------|-------------------|-------------------|------------------|
+| 6003 | API Activity (Model Inference) | `chat *`, `embeddings *`, `gen_ai.provider.name` attr | Model, tokens, latency, cost, finish reason |
+| 9001 | agent_activity (`ai` cat) | `agent.*`, `gen_ai.agent.name` attr | Agent identity, step type, thought/action/observation, delegation |
+| 6003 | API Activity (Tool Execution) | `mcp.tool.*`, `skill.invoke*` | Tool name/type, input/output, MCP server, approval status |
+| 6005 | Datastore Activity (Data Retrieval) | `rag.*`, `gen_ai.data_source.id` attr | Database, query, top_k, results count, scores |
+| 2004 | Detection Finding (Security Finding) | `security.threat_detected` attr | Finding type, OWASP category, risk score, confidence, blocked |
+| 2002 | Vulnerability Finding (Supply Chain) | `supply_chain.*`, `supply_chain.model.source` attr | Model source/hash/license, signature verification, AI BOM |
+| 2003 | Compliance Finding (Governance) | `governance.*`, `compliance.*` | Compliance frameworks, controls, violations, audit ID |
+| 3002 | Authentication (Identity) | `identity.*`, `identity.agent_id` attr | Auth method/result, credential type, delegation chain, scope |
+| 6002 | Application Lifecycle (Model Operations) | `model_ops.*`, `drift.*` | Training, evaluation, deployment, serving, monitoring, drift |
+| 5001 | Inventory Info (Asset Inventory) | `asset.*`, `asset.id` attr | Asset type, owner, risk classification, discovery, audit |
 
 ### 6.2 Mapping Flow
 
@@ -296,8 +298,8 @@ OCSFMapper.map_span()
     ▼
 AIBaseEvent (Pydantic model)
     │
-    ├── class_uid: 7001-7010
-    ├── category_uid: 7 (AI System Activity)
+    ├── class_uid: reused OCSF class (6003/6005/6002/2004/2002/2003/3002/5001) or ai category (9001/9002)
+    ├── category_uid: reused category (6/2/3/5) or 9 (AI, proposed) for agent lifecycle
     ├── type_uid: class_uid * 100 + activity_id
     ├── time: span start time (ISO 8601)
     ├── metadata: OCSF v1.1.0 + AITF product info
@@ -313,9 +315,9 @@ An OTel span named `chat gpt-4o` with `gen_ai.*` and AITF attributes produces:
 
 ```json
 {
-  "class_uid": 7001,
-  "category_uid": 7,
-  "type_uid": 700101,
+  "class_uid": 6003,
+  "category_uid": 6,
+  "type_uid": 600301,
   "activity_id": 1,
   "time": "2026-02-26T10:30:00Z",
   "severity_id": 1,
@@ -367,8 +369,8 @@ Security hardening: HTTPS enforcement for non-localhost endpoints, path traversa
 Converts OCSF events to CEF (Common Event Format) syslog messages for legacy SIEMs:
 
 ```
-CEF:0|AITF|AI-Telemetry-Framework|1.0.0|700101|AI Model Inference|3|
-  rt=2026-02-26T10:30:00Z msg=chat gpt-4o cs1=7001 cs1Label=ocsf_class_uid ...
+CEF:0|AITF|AI-Telemetry-Framework|1.0.0|600301|AI Model Inference|3|
+  rt=2026-02-26T10:30:00Z msg=chat gpt-4o cs1=6003 cs1Label=ocsf_class_uid ...
 ```
 
 Supports TCP with TLS (RFC 5425), TCP without TLS (development), and UDP (RFC 3164).
@@ -467,7 +469,7 @@ AITF provides consistent implementations across three language SDKs:
 | Component | Python | TypeScript | Go |
 |-----------|--------|------------|-----|
 | OCSF Schema (class UIDs, base events) | Pydantic models | TypeScript interfaces + enums | Go structs + constants |
-| Event Classes (7001-7010) | Pydantic models with validators | Interfaces + factory functions | Structs + constructors |
+| Event Classes (reused OCSF classes + `ai` category) | Pydantic models with validators | Interfaces + factory functions | Structs + constructors |
 | OCSFMapper | `OCSFMapper.map_span()` | `OCSFMapper.mapSpan()` | Not yet implemented |
 | Compliance Mapper | `ComplianceMapper` | `ComplianceMapper` | Not yet implemented |
 | Semantic Conventions | Python constants | TypeScript constants | Go constants |
@@ -490,7 +492,7 @@ All SDKs share the same OCSF JSON Schema (`spec/schema/aitf-ocsf-schema.json`) a
 
 - OTLP carries full security context and is sufficient for many security use cases. However, some SIEMs and data lakes require events in OCSF format.
 - OCSF is an open standard (by AWS, Splunk, IBM, etc.) specifically designed for security event normalization. Platforms like AWS Security Lake, Splunk, and QRadar ingest OCSF natively.
-- Category 7 (AI System Activity) provides a structured schema for AI-specific security events with standardized `class_uid` / `activity_id` / `type_uid` classification.
+- Reusing existing OCSF classes enriched with the `ai_operation` profile (plus the proposed `ai` category, uid 9, for agent/delegation lifecycle) provides a structured schema for AI-specific security events with standardized `class_uid` / `activity_id` / `type_uid` classification.
 - The OCSF pipeline is an additional normalization layer — not the exclusive security path. Security teams can choose OTLP, OCSF, or both depending on their SIEM infrastructure.
 
 ### Why dual-pipeline instead of post-processing?

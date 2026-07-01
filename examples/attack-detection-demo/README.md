@@ -15,7 +15,7 @@ Standard APM and infrastructure monitoring tools track HTTP status codes, latenc
 
 Traditional monitoring sees a perfectly healthy system. No alerts fire. No dashboards turn red. The attack succeeds in complete silence.
 
-**AITF changes this** by instrumenting the AI-specific semantics — prompts, token flows, agent reasoning chains, tool permissions, RAG retrieval provenance, model supply chain hashes, and cross-agent delegation — and emitting structured telemetry (OCSF Category 7) that security tools can reason about.
+**AITF changes this** by instrumenting the AI-specific semantics — prompts, token flows, agent reasoning chains, tool permissions, RAG retrieval provenance, model supply chain hashes, and cross-agent delegation — and emitting structured telemetry (OCSF events under reused classes enriched with the `ai_operation` profile, plus the proposed `ai` category (uid 9) for agent/delegation lifecycle) that security tools can reason about.
 
 ## Attack Scenarios
 
@@ -136,4 +136,4 @@ For each scenario, the demo prints:
 - [MITRE ATLAS](https://atlas.mitre.org/) — Adversarial Threat Landscape for AI Systems
 - [OWASP LLM Top 10](https://genai.owasp.org/) — Top 10 for LLM Applications
 - [CoSAI WS2](https://www.cosai.dev/) — Coalition for Secure AI
-- [OCSF AI Activity Events](https://schema.ocsf.io/) — Category 7 (7001–7008)
+- [OCSF AI Activity Events](https://schema.ocsf.io/) — reused classes (API Activity 6003, Datastore Activity 6005, Findings 2002/2003/2004, Authentication 3002, Inventory Info 5001) + `ai_operation` profile, plus proposed `ai` category (uid 9)

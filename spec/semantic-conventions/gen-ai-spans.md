@@ -1,6 +1,6 @@
 # GenAI Span Conventions (AI_INTERACTION)
 
-Status: **Normative** | CoSAI WS2 Alignment: **AI_INTERACTION** | OCSF Class: **7001 Model Inference**
+Status: **Normative** | CoSAI WS2 Alignment: **AI_INTERACTION** | OCSF Class: **API Activity (6003)** (`ai_operation` profile)
 
 AITF preserves and extends OpenTelemetry GenAI span conventions for LLM inference operations. This specification defines the normative field requirements for AI interaction telemetry, aligned with CoSAI Working Stream 2 (Telemetry for AI) and mapped to applicable compliance and threat frameworks.
 
