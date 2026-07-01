@@ -1,6 +1,6 @@
 # AITF Specification Overview
 
-**Version:** 1.0.0-draft
+**Version:** 0.2 — Proposal
 **Status:** Draft
 **Date:** 2026-02-15
 
