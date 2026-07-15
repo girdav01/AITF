@@ -287,6 +287,19 @@ fields:
    `metadata` escape hatch. **Fully specified as a standalone PR:**
    [`ocsf-agent-message-pr-draft.md`](./ocsf-agent-message-pr-draft.md)
    (sequenced after the `ai` category from #1640 lands).
+10. **Agent memory operations** — an `ai_memory` object for the read/write/
+    retrieve/evict operations agents perform against short- and long-term
+    memory: `operation_id` (enum: Read / Write / Update / Delete / Retrieve /
+    Evict / Consolidate), `store` (working / episodic / semantic / vector),
+    `key`, `is_hit`, `ttl`, `provenance` (trusted / user / tool / untrusted),
+    and an optional `integrity` block (content hash, poisoning score,
+    cross-session flag). Rides on `agent_activity` (ai category) and reuses
+    Detection Finding `2004` (with the `ai_finding` profile) when a
+    memory-integrity violation is raised. **Rationale:** memory is where agents
+    persist state and where poisoning / cross-session-leakage attacks land, yet
+    OCSF has no representation of it today — it is neither a datastore query nor
+    a file op. AITF already emits this as `memory.*` OTel telemetry; this object
+    is its OCSF projection.
 
 ## Backwards compatibility
 

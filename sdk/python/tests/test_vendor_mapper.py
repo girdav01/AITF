@@ -613,6 +613,99 @@ class TestLangfuseMapping:
         assert attrs["gen_ai.evaluation.comment"] == "looks good"
 
 
+class TestOpenInferenceMapping:
+    """OpenInference / Arize Phoenix mapping (classify by openinference.span.kind)."""
+
+    def setup_method(self):
+        self.mapper = VendorMapper()
+
+    def test_loaded(self):
+        assert "openinference" in self.mapper.vendors
+
+    def test_llm_kind_classified_as_inference(self):
+        # Generic span name; the span kind attribute is the authoritative signal.
+        span = _make_span("ChatCompletion", {
+            "openinference.span.kind": "LLM",
+            "llm.model_name": "gpt-4o",
+            "llm.system": "openai",
+            "llm.token_count.prompt": 100,
+            "session.id": "s1",
+        })
+        result = self.mapper.normalize_span(span)
+        assert result is not None
+        vendor, event_type, attrs = result
+        assert vendor == "openinference"
+        assert event_type == "inference"
+        assert attrs["gen_ai.request.model"] == "gpt-4o"
+        assert attrs["gen_ai.usage.input_tokens"] == 100
+        assert attrs["gen_ai.conversation.id"] == "s1"
+        assert self.mapper.get_ocsf_class_uid("openinference", "inference") == 6003
+
+    def test_kinds(self):
+        cases = {
+            "TOOL": ("tool", 6003),
+            "RETRIEVER": ("retrieval", 6005),
+            "AGENT": ("agent", 9001),
+            "GUARDRAIL": ("security", 2004),
+        }
+        for kind, (event_type, class_uid) in cases.items():
+            span = _make_span("x", {"openinference.span.kind": kind})
+            vendor, et, _ = self.mapper.normalize_span(span)
+            assert (vendor, et) == ("openinference", event_type), kind
+            assert self.mapper.get_ocsf_class_uid("openinference", event_type) == class_uid
+
+    def test_evaluator(self):
+        span = _make_span("x", {
+            "openinference.span.kind": "EVALUATOR",
+            "eval.name": "hallucination",
+            "eval.score": 0.1,
+            "eval.label": "faithful",
+        })
+        _, et, attrs = self.mapper.normalize_span(span)
+        assert et == "evaluation"
+        assert attrs["gen_ai.evaluation.name"] == "hallucination"
+        assert attrs["gen_ai.evaluation.score.value"] == 0.1
+
+
+class TestBraintrustMapping:
+    """Braintrust mapping (classify by braintrust.span_type)."""
+
+    def setup_method(self):
+        self.mapper = VendorMapper()
+
+    def test_loaded(self):
+        assert "braintrust" in self.mapper.vendors
+
+    def test_llm_type_classified_as_inference(self):
+        span = _make_span("llm-call", {
+            "braintrust.span_type": "llm",
+            "braintrust.metadata.model": "claude-sonnet-4-5",
+            "braintrust.metrics.prompt_tokens": 50,
+            "braintrust.metrics.completion_tokens": 20,
+        })
+        vendor, event_type, attrs = self.mapper.normalize_span(span)
+        assert vendor == "braintrust"
+        assert event_type == "inference"
+        assert attrs["gen_ai.request.model"] == "claude-sonnet-4-5"
+        assert attrs["gen_ai.usage.input_tokens"] == 50
+        assert attrs["gen_ai.usage.output_tokens"] == 20
+        assert self.mapper.get_ocsf_class_uid("braintrust", "inference") == 6003
+
+    def test_types(self):
+        for span_type, event_type in [("tool", "tool"), ("function", "tool"),
+                                      ("task", "agent"), ("eval", "evaluation")]:
+            span = _make_span("x", {"braintrust.span_type": span_type})
+            vendor, et, _ = self.mapper.normalize_span(span)
+            assert (vendor, et) == ("braintrust", event_type), span_type
+
+    def test_does_not_steal_other_vendors(self):
+        # A LangChain-named span must not be captured by Braintrust's (now
+        # attribute-only) detection.
+        span = _make_span("ChatOpenAI", {"ls_model_name": "gpt-4o"})
+        vendor, _, _ = self.mapper.normalize_span(span)
+        assert vendor == "langchain"
+
+
 class TestMappingFileIntegrity:
     """Validate that all vendor mapping JSON files are well-formed."""
 

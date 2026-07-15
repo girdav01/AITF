@@ -1,0 +1,128 @@
+{
+  "$schema": "https://aitf.dev/schemas/vendor-mapping-v1.json",
+  "vendor": "openinference",
+  "version": "1.0",
+  "description": "Maps OpenInference telemetry (Arize Phoenix and other OpenInference instrumentors) to AITF semantic conventions. OpenInference encodes the span type in the `openinference.span.kind` attribute value (LLM/EMBEDDING/TOOL/RETRIEVER/RERANKER/AGENT/CHAIN/GUARDRAIL/EVALUATOR). Standard gen_ai.* attributes pass through unchanged.",
+  "homepage": "https://github.com/Arize-ai/openinference",
+
+  "type_attribute": {
+    "key": "openinference.span.kind",
+    "values": {
+      "LLM": "inference",
+      "EMBEDDING": "inference",
+      "TOOL": "tool",
+      "RETRIEVER": "retrieval",
+      "RERANKER": "retrieval",
+      "AGENT": "agent",
+      "CHAIN": "agent",
+      "GUARDRAIL": "security",
+      "EVALUATOR": "evaluation"
+    }
+  },
+
+  "_note": "Detection is via the openinference.span.kind attribute (type_attribute); span-name patterns are intentionally empty to avoid stealing other vendors' name-based detection, since OpenInference span names are generic.",
+  "span_name_patterns": {},
+
+  "attribute_mappings": {
+    "inference": {
+      "vendor_to_aitf": {
+        "llm.system": "gen_ai.provider.name",
+        "llm.model_name": "gen_ai.request.model",
+        "llm.invocation_parameters": "gen_ai.request.parameters",
+        "llm.token_count.prompt": "gen_ai.usage.input_tokens",
+        "llm.token_count.completion": "gen_ai.usage.output_tokens",
+        "llm.token_count.total": "gen_ai.usage.total_tokens",
+        "input.value": "gen_ai.input.messages",
+        "output.value": "gen_ai.output.messages",
+        "session.id": "gen_ai.conversation.id",
+        "user.id": "user.id",
+        "tag.tags": "tags",
+        "embedding.model_name": "gen_ai.request.model",
+
+        "gen_ai.request.model": "gen_ai.request.model",
+        "gen_ai.provider.name": "gen_ai.provider.name",
+        "gen_ai.usage.input_tokens": "gen_ai.usage.input_tokens",
+        "gen_ai.usage.output_tokens": "gen_ai.usage.output_tokens"
+      },
+      "ocsf_class_uid": 6003,
+      "ocsf_activity_id_map": { "chat": 1, "text_completion": 2, "embeddings": 3, "default": 1 },
+      "defaults": { "gen_ai.operation.name": "chat" }
+    },
+
+    "agent": {
+      "vendor_to_aitf": {
+        "input.value": "agent.step.action",
+        "output.value": "agent.step.observation",
+        "session.id": "gen_ai.conversation.id",
+        "user.id": "user.id",
+        "tag.tags": "tags"
+      },
+      "ocsf_class_uid": 9001,
+      "ocsf_activity_id_map": { "step_execute": 3, "default": 3 },
+      "defaults": { "agent.type": "autonomous" }
+    },
+
+    "tool": {
+      "vendor_to_aitf": {
+        "tool.name": "gen_ai.tool.name",
+        "tool.description": "gen_ai.tool.description",
+        "tool_call.function.name": "gen_ai.tool.name",
+        "tool_call.function.arguments": "gen_ai.tool.call.arguments",
+        "input.value": "gen_ai.tool.call.arguments",
+        "output.value": "gen_ai.tool.call.result"
+      },
+      "ocsf_class_uid": 6003,
+      "ocsf_activity_id_map": { "function_call": 1, "default": 1 },
+      "defaults": { "tool_type": "function" }
+    },
+
+    "retrieval": {
+      "vendor_to_aitf": {
+        "input.value": "gen_ai.retrieval.query.text",
+        "retrieval.documents": "gen_ai.retrieval.documents",
+        "embedding.model_name": "rag.query.embedding_model"
+      },
+      "ocsf_class_uid": 6005,
+      "ocsf_activity_id_map": { "vector_search": 1, "reranking": 5, "default": 1 },
+      "defaults": { "rag.pipeline.stage": "retrieve" }
+    },
+
+    "security": {
+      "vendor_to_aitf": {
+        "input.value": "security.details",
+        "output.value": "security.details"
+      },
+      "ocsf_class_uid": 2004,
+      "ocsf_activity_id_map": { "default": 1 },
+      "defaults": { "security.detection_method": "guardrail" }
+    },
+
+    "evaluation": {
+      "vendor_to_aitf": {
+        "eval.name": "gen_ai.evaluation.name",
+        "eval.score": "gen_ai.evaluation.score.value",
+        "eval.label": "gen_ai.evaluation.score.label",
+        "eval.explanation": "gen_ai.evaluation.explanation",
+        "session.id": "gen_ai.conversation.id"
+      },
+      "defaults": {}
+    }
+  },
+
+  "provider_detection": {
+    "attribute_keys": ["llm.system", "gen_ai.provider.name"],
+    "model_prefix_to_provider": {
+      "gpt-": "openai", "o1": "openai", "o3": "openai",
+      "claude-": "anthropic", "gemini-": "google",
+      "mistral-": "mistral", "command-": "cohere", "llama-": "meta"
+    }
+  },
+
+  "severity_mapping": {
+    "openinference.guardrail.triggered": { "true": 4, "false": 1 }
+  },
+
+  "metadata": {
+    "ocsf_product": { "name": "Arize Phoenix / OpenInference", "vendor_name": "Arize", "version": "1.0" }
+  }
+}

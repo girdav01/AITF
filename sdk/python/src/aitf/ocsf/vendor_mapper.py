@@ -253,30 +253,29 @@ class VendorMapper:
         name = span.name or ""
         attrs = dict(span.attributes or {})
 
+        # Pass 1 — strong, vendor-specific signals (a declared type-attribute
+        # value like `openinference.span.kind`, or a vendor-prefixed attribute
+        # like `crewai.*`). These are authoritative: a span carrying a vendor's
+        # own attribute belongs to that vendor regardless of its (often generic)
+        # span name, so they must win over another vendor's span-name patterns.
         for vendor_name, mapping in self._mappings.items():
-            # 1. Try span name patterns
-            event_type = mapping.classify_span(name)
-            if event_type:
-                return (vendor_name, event_type)
-
-            # 2. Try classification by a declared type attribute value
-            #    (e.g. Langfuse `langfuse.observation.type`)
             event_type = mapping.classify_by_attribute(attrs)
             if event_type:
                 return (vendor_name, event_type)
 
-            # 3. Try attribute-prefix heuristic (e.g. "crewai.*", "langchain.*")
             for attr_key in attrs:
                 if attr_key.startswith(f"{vendor_name}."):
-                    # Determine event type from the second segment
                     parts = attr_key.split(".")
                     if len(parts) >= 2:
-                        segment = parts[1]
-                        candidate = self._segment_to_event_type(
-                            segment, mapping
-                        )
+                        candidate = self._segment_to_event_type(parts[1], mapping)
                         if candidate:
                             return (vendor_name, candidate)
+
+        # Pass 2 — weak signal: span-name regex patterns.
+        for vendor_name, mapping in self._mappings.items():
+            event_type = mapping.classify_span(name)
+            if event_type:
+                return (vendor_name, event_type)
 
         return None
 

@@ -80,6 +80,13 @@ Each closes a gap where an AI event reuses an OCSF class that lacks the fields:
   trust/DID). Per-protocol objects would fragment cross-protocol detection and
   chase fast schema churn; mirror OCSF's "generic class + protocol id" pattern
   (`network_activity` + `tls`/`dns_query`).
+- **Agent memory operations** — an `ai_memory` object (operation
+  read/write/retrieve/evict, store type, key, hit, ttl, provenance, and an
+  integrity block for poisoning score / cross-session flag) on `agent_activity`,
+  reusing Detection Finding `2004` for memory-integrity violations. OCSF has no
+  representation of agent memory today (it is neither a datastore query nor a
+  file op), yet it is where poisoning and cross-session-leakage attacks land.
+  AITF already emits it as `memory.*` OTel telemetry.
 
 ### Backwards compatibility
 
